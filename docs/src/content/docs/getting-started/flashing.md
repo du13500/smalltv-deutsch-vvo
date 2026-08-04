@@ -3,7 +3,7 @@ title: Flashing
 description: How to install smalltv-mod on each board, back up the stock firmware first, and recover if something goes wrong.
 ---
 
-Flash the method that matches your board. The ESP8266 installs over the air from its stock web UI. The ESP32-C2 and the NM-TV-154 install over the USB cable with esptool. Back up the stock image first on any board so you can always go back.
+Flash the method that matches your board. The ESP8266 and the SmallTV Pro install over the air from their stock web UI. The ESP32-C2 and the NM-TV-154 install over the USB cable with esptool. Back up the stock image first on any board so you can always go back.
 
 Get the firmware image from the [Actions tab](https://github.com/giovi321/smalltv-mod/actions) (latest `build` run) or the [Releases page](https://github.com/giovi321/smalltv-mod/releases), or [build it yourself](/smalltv-mod/reference/building/).
 
@@ -115,6 +115,47 @@ python -m esptool --chip esp32 --port COM3 --baud 921600 write_flash 0x0 smalltv
 ```
 
 With a source checkout, `pio run -e smalltv_esp32 -t upload` does the same thing.
+
+## SmallTV Pro (classic ESP32, 8 MB)
+
+The SmallTV Pro has **no USB-serial chip** — its USB-C port is power only. There are two ways in: over the air from the stock web UI (no tools, no soldering), or over an internal UART header (needs opening the case and a 3.3 V USB-UART adapter).
+
+### Over the air, from the stock web UI
+
+The stock firmware exposes an OTA updater, the same way the ESP8266 SmallTV does. This firmware's 8 MB partition layout matches the stock table exactly (same OTA slots, verified from a live device), so the stock updater can install it directly:
+
+1. Find the device IP (shown in the stock Settings app).
+2. Browse to `http://<device-ip>/update`.
+3. Upload `smalltv-mod-firmware-esp32-pro.bin` (the plain app image, **not** the `.factory.bin`) from the [Releases page](https://github.com/giovi321/smalltv-mod/releases). It reboots into this firmware.
+
+This path keeps the stock bootloader and partition table in place and cannot be undone without a backup — the stock image is not redistributed anywhere official. If you want the option to return to stock, take the UART backup below **before** flashing OTA.
+
+### UART header, for backup, recovery, or a direct install
+
+Open the case. The PCB has a 6-pad serial header (pad map from the [HA community thread](https://community.home-assistant.io/t/installing-esphome-on-geekmagic-smart-weather-clock-smalltv-pro/618029/384)):
+
+| Pad | Function | Wire it to |
+|-----|----------|-----------|
+| 1 (square) | GND | GND on the adapter |
+| 2 | TX | the adapter's RX |
+| 3 | RX | the adapter's TX |
+| 4 | 3V3 | 3.3 V on the adapter |
+| 5 | GPIO0 | GND during power-on to enter download mode |
+| 6 | RST | optional, tie to GND briefly to reset |
+
+Hold pad 5 (GPIO0) to GND while the device powers on, then release it. Back up the full 8 MB stock image first:
+
+```bash
+python -m esptool --chip esp32 --port COM3 read_flash 0x0 0x800000 stock-backup.bin
+```
+
+Writing it back with `write_flash 0x0 stock-backup.bin` returns the device to factory at any point. To install this firmware over UART instead of OTA, write the merged image:
+
+```bash
+python -m esptool --chip esp32 --port COM3 --baud 921600 write_flash 0x0 smalltv-mod-firmware-esp32-pro.factory.bin
+```
+
+With a source checkout, `pio run -e smalltv_esp32_8mb -t upload` does the same thing over the adapter's COM port.
 
 ## After the first flash
 

@@ -9,7 +9,7 @@ Keep a `stock-backup.bin` from before your first flash and you can always return
 
 - **Re-flash anything** (your stock backup or this firmware) with the method for your board, described in [Flashing](/smalltv-mod/getting-started/flashing/).
 - **Factory reset** in the Update tab wipes saved settings and restarts in SETUP MODE. It does not change the firmware.
-- On the ESP32 boards (C2 and NM-TV-154), a bad flash never bricks the device: it still enters download mode over USB, so esptool can rewrite it.
+- On the ESP32 boards, a bad flash never bricks the device: it still enters download mode, so esptool can rewrite it — over USB on the C2 and the NM-TV-154, or over the internal UART header on the SmallTV Pro (no USB-serial chip; see [Flashing](/smalltv-mod/getting-started/flashing/#smalltv-pro-classic-esp32-8-mb)).
 
 ## Notes and limitations
 

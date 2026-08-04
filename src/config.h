@@ -21,6 +21,8 @@
 // Release asset the GitHub self-updater pulls — one app image per target.
 #if defined(SMALLTV_ESP32C2)
   #define UPDATE_ASSET "smalltv-mod-firmware-c2.bin"
+#elif defined(SMALLTV_ESP32_PRO)
+  #define UPDATE_ASSET "smalltv-mod-firmware-esp32-pro.bin"
 #elif defined(SMALLTV_ESP32)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32.bin"
 #else
@@ -36,6 +38,8 @@
 // ---------------------------------------------------------------------------
 #if defined(SMALLTV_ESP32C2)
   #include "board_esp32c2.h"
+#elif defined(SMALLTV_ESP32_PRO)
+  #include "board_esp32_pro.h"
 #elif defined(SMALLTV_ESP32)
   #include "board_esp32.h"
 #else

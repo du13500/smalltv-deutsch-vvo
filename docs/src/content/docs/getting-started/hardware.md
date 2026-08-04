@@ -1,11 +1,11 @@
 ---
 title: Hardware and variants
-description: The three supported boards (ESP8266, ESP32-C2, and the classic-ESP32 NM-TV-154), how to tell them apart, and the pin map for each.
+description: The four supported boards (ESP8266, ESP32-C2, the classic-ESP32 NM-TV-154, and the SmallTV Pro), how to tell them apart, and the pin map for each.
 ---
 
-Three boards wear the same cube. Confirm which one you have before you flash it, because they use different chips and flash differently. The screen is the same 1.54" 240×240 ST7789 IPS panel on all of them.
+Four boards wear the same cube. Confirm which one you have before you flash it, because they use different chips and flash differently. The screen is the same 1.54" 240×240 ST7789 IPS panel on all of them.
 
-The GeekMagic SmallTV is a 45 × 35 × 40 mm cube with a 28 × 28 mm colour screen and a USB-C port for power. It sells for about 6 to 8 EUR on AliExpress. A second version of the hardware, sold under the same "smart weather clock" listing, swaps the ESP8266 for an ESP32-C2 but keeps the case and screen. A third device, the NMMiner NM-TV-154 BTC lottery miner, uses the same cube and screen with a classic ESP32 inside.
+The GeekMagic SmallTV is a 45 × 35 × 40 mm cube with a 28 × 28 mm colour screen and a USB-C port for power. It sells for about 6 to 8 EUR on AliExpress. A second version of the hardware, sold under the same "smart weather clock" listing, swaps the ESP8266 for an ESP32-C2 but keeps the case and screen. A third device, the NMMiner NM-TV-154 BTC lottery miner, uses the same cube and screen with a classic ESP32 inside. And GeekMagic's own upmarket model, the SmallTV Pro, pairs a classic ESP32 with 8 MB of flash.
 
 ## Tell them apart
 
@@ -14,6 +14,7 @@ Look at the board through the case vents, or open it (four clips, no glue).
 - **SmallTV (ESP8266)**: an ESP8266 module, no separate USB-serial chip. Flashes over the air.
 - **SmallTV (ESP32-C2)**: a bare **ESP8684** chip (that is the ESP32-C2) plus a **CH340C** USB-serial chip next to the USB-C port. Flashes over USB-C.
 - **NM-TV-154 (ESP32)**: the PCB reads **NM-TV-Miner** and carries an **ESP32-WROOM-32E** module. Sold as an NMMiner BTC lottery miner, not as a weather clock. Flashes over USB.
+- **SmallTV Pro (ESP32)**: sold by GeekMagic as the **SmallTV Pro**, with a capacitive touch button on top of the case. A classic ESP32 with 8 MB flash. The USB-C port is power only (no USB-serial chip): flashes over the air from the stock web UI, or over an internal UART header.
 
 The two chips on the ESP32-C2 board are the giveaway. The main SoC is marked `ESP8684`, and the small 16-pin chip by the USB-C port is the `CH340C`.
 
@@ -105,6 +106,37 @@ The pin map comes from [NMMiner's own custom-firmware guide](https://www.nmminer
 | Panel power | 21 | driven low at boot to power the display |
 
 The pins are set in `src/board_esp32.h`.
+
+## SmallTV Pro (classic ESP32)
+
+![The GeekMagic SmallTV Pro running its stock firmware](/smalltv-mod/assets/product-pro.png)
+
+| | |
+|---|---|
+| MCU | classic ESP32, 8 MB flash |
+| Display | 1.54" 240×240 IPS ST7789V, SPI, RGB colour order |
+| Extras | capacitive touch button (GPIO 32, unused by this firmware) |
+| Build env | `smalltv_esp32_8mb` |
+
+GeekMagic's own higher-end model. Same cube and panel, but a classic ESP32 with 8 MB flash, which doubles the OTA app slots (2.125 MB each) and leaves about 3.7 MB for LittleFS. The partition layout matches the stock firmware's, verified from a live device.
+
+Unlike the ESP32-C2 board there is **no USB-serial chip**: the USB-C port is power only. The first install goes over the air from the stock web UI, and serial access means opening the case and wiring a 3.3 V USB-UART adapter to the internal header (see [Flashing](/smalltv-mod/getting-started/flashing/#smalltv-pro-classic-esp32-8-mb)).
+
+The pin map comes from the ESPHome SmallTV Pro community config and matches what the stock firmware uses. Confirmed working on a real device: display, colours, backlight PWM, and the 8 MB flash layout.
+
+### Pin map
+
+| Signal | GPIO | Note |
+|--------|------|------|
+| SPI CLK | 18 | |
+| SPI MOSI | 23 | |
+| DC | 2 | |
+| RST | 4 | |
+| CS | GND | tied low on the PCB, not driven |
+| Backlight | 25 | PWM, active-low |
+| Touch button | 32 | ESP32 T9 touch channel, unused |
+
+The pins are set in `src/board_esp32_pro.h`.
 
 ## If the screen looks wrong
 
