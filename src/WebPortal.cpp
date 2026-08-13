@@ -306,7 +306,8 @@ static void handleUsagePush() {
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
 
-// Attention overlay: {"state":"done"|"waiting","ttl":<seconds>}. Never persisted.
+// Attention overlay: {"state":"done"|"waiting","ttl":<seconds>,"label":"<text>"}.
+// Never persisted.
 static void handleNotify() {
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
   JsonDocument doc;
@@ -315,8 +316,9 @@ static void handleNotify() {
     return;
   }
   const char* state = doc["state"] | "";
+  const char* label = doc["label"] | "";
   uint32_t    ttl   = doc["ttl"] | (uint32_t)NOTIFY_TTL_DEFAULT_SEC;
-  bool ok = g_notifyMode.request(state, ttl);
+  bool ok = g_notifyMode.request(state, ttl, label);
   server.send(ok ? 200 : 400, "application/json",
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
