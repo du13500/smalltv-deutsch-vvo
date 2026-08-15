@@ -7,15 +7,16 @@ The settings page speaks plain HTTP and has no password. That is fine on your ow
 
 ## Which devices have it
 
-Only the **ESP32-C2** build. What decides this is how much space each board's firmware image has left, not what the chip could do.
+The **ESP32-C2** and the **SmallTV Pro**. What decides this is how much space each board's firmware image has left, not what the chip could do.
 
 | Board | WireGuard | Why |
 |---|---|---|
 | SmallTV (ESP8266) and SmallTV-ultra | no | The chip has ~80 KB of heap in total and the ticker's TLS already runs close to it. WireGuard on this platform also pulls in a second crypto stack alongside the BearSSL already in the image. |
-| SmallTV (ESP32-C2) | yes | With the client in it the image is 1,468,128 bytes, 93% of its 1,572,864-byte update slot. |
-| NM-TV-154 (classic ESP32) | no | The classic ESP32's own framework libraries cost about 100 KB more than the C2's, so this image is already 1,500,016 bytes, 95% of the same slot. Built with WireGuard the linker reported 1,571,195 bytes: it fits with about 1.6 KB to spare, which is not something to ship. |
+| SmallTV (ESP32-C2) | yes | With the client in it the image is 1,469,520 bytes, 93% of its 1,572,864-byte update slot. |
+| NM-TV-154 (classic ESP32) | no | The classic ESP32's own framework libraries cost about 100 KB more than the C2's, so this image is already 1,501,344 bytes, 95% of the same slot. Built with WireGuard the linker reported 1,571,195 bytes: it fits with about 1.6 KB to spare, which is not something to ship. |
+| SmallTV Pro (classic ESP32, 8 MB) | yes | Same chip family as the NM-TV-154 and the same image size, but its stock partition layout gives each OTA slot 2,228,224 bytes instead of 1,572,864, so the client fits with hundreds of kilobytes left over. |
 
-Giving the classic ESP32 more room means a different partition table, and a device already in the field cannot install one over the air; it would need a USB reflash. If yours is on the bench and you are happy to reflash it that way, [Building from source](/smalltv-mod/reference/building/) has the flags.
+The NM-TV-154 is the only board held back by the layout rather than the silicon. Giving it more room means a different partition table, and a device already in the field cannot install one over the air; it would need a USB reflash. If yours is on the bench and you are happy to reflash it that way, [Building from source](/smalltv-mod/reference/building/) has the flags.
 
 A device without the client still shows the section as absent rather than broken: the settings page simply has no WireGuard card.
 

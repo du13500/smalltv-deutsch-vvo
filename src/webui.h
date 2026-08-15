@@ -110,9 +110,10 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
   </div>
   <div class="card"><h2>Setup hotspot (AP)</h2>
    <label>AP name</label><input id="apSsid" type="text">
-   <label>AP password <span class="muted">(blank = open, else min 8 chars)</span></label>
+   <label>AP password <span class="muted">(min 8 chars)</span></label>
    <input id="apPass" type="text" placeholder="(unchanged)">
-   <small class="hint">The AP appears when no WiFi is configured or the connection fails.</small>
+   <div class="chk"><input id="apOpen" type="checkbox" onchange="apOpenChanged()"><label>No password (open hotspot)</label></div>
+   <small class="hint">The AP appears when no WiFi is configured or the connection fails. Like the WiFi passwords above, leaving the field blank keeps the stored one; tick the box to clear it and leave the hotspot open.</small>
   </div>
  </section>
 
@@ -260,7 +261,8 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
    <div class="row">
     <div><label>Range</label>
      <select id="rangeKm"><option value="5">5</option><option value="10">10</option>
-      <option value="15">15</option><option value="25">25</option><option value="50">50</option></select></div>
+      <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+      <option value="50">50</option></select></div>
     <div><label>Units</label>
      <select id="unitsMi"><option value="false">km</option><option value="true">mi</option></select></div>
     <div><label>Refresh (s)</label><input id="radarPollSec" type="number" min="3" max="3600"></div>
@@ -394,6 +396,12 @@ function hideFeat(name){
 function modeChanged(){if(!$('mode'))return;
  $('carouselRow').style.display=$('mode').value==='carousel'?'block':'none';}
 
+// The AP password is never read back into the form, so a blank field cannot be
+// told apart from "the user cleared it". Blank therefore keeps the stored one,
+// as the WiFi rows do, and the checkbox is the explicit way to clear it.
+function apOpenChanged(){var o=$('apOpen'),p=$('apPass');if(!o||!p)return;
+ p.disabled=o.checked; if(o.checked)p.value='';}
+
 // panel colour gains: slider + its live percentage label
 function setGain(id,lab,v){var n=(v!=null?v:100);sv(id,n);var e=$(lab);if(e)e.textContent=n}
 // Gains only: colour order and invert describe how the panel is wired, so a
@@ -412,7 +420,7 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  var pk=$('wgPrivateKey'); if(pk)pk.placeholder=w.privateKeySet?'(unchanged)':'paste the private key';
  var t=c.ticker||{}, u=c.usage||{};
  // shared
- ['apSsid','apPass','hostname'].forEach(function(k){$(k).value=c[k]!=null?c[k]:''});
+ ['apSsid','hostname'].forEach(function(k){$(k).value=c[k]!=null?c[k]:''});
  renderWifi(c.wifi||(c.staSsid?[{ssid:c.staSsid,passSet:c.staPassSet}]:[]));
  $('brightness').value=c.brightness; $('brVal').textContent=c.brightness;
  $('rotation').value=c.rotation;
@@ -447,7 +455,12 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  // radar slice
  var r=c.radar||{};
  sv('radarLat',r.lat); sv('radarLon',r.lon);
- sv('rangeKm',r.rangeKm||20);
+ // An imported config can carry any range from 1 to 500, and a value the list
+ // does not offer would leave the select blank. Add it rather than lose it.
+ var _rk=r.rangeKm||20, _rs=$('rangeKm');
+ if(_rs&&!_rs.querySelector('option[value="'+_rk+'"]')){var _ro=document.createElement('option');
+  _ro.value=_rk;_ro.textContent=_rk;_rs.appendChild(_ro);}
+ sv('rangeKm',_rk);
  sv('unitsMi',r.unitsMi?'true':'false');
  sv('radarPollSec',r.pollSec);
  sv('radarSource',r.source||'direct'); radarSrcChanged();
@@ -456,7 +469,8 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  sv('radarUiScale',r.uiScale!=null?r.uiScale:1);
  sv('radarMinAlt',r.minAltFt!=null?r.minAltFt:0);
  renderAps(r.airports||[]);
- var ap=$('apPass'); if(ap)ap.placeholder=c.apPassSet?'(unchanged)':'(open)';
+ var ap=$('apPass'); if(ap){ap.value='';ap.placeholder=c.apPassSet?'(unchanged)':'(open)';}
+ sc('apOpen',!c.apPassSet); apOpenChanged();
 })}
 
 function esc(s){return (''+(s==null?'':s)).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]})}
@@ -511,10 +525,15 @@ function collect(){
   rotation:parseInt(gv('rotation')),
   autoBrightness:gc('autoBrightness'),
   backlightInverted:gc('backlightInverted'),
-  hostname:gv('hostname'), apSsid:gv('apSsid'), apPass:gv('apPass'),
+  hostname:gv('hostname'), apSsid:gv('apSsid'),
   display:{colorOrder:gv('colorOrder')||'auto', invert:gc('colorInvert'),
    rGain:parseInt(gv('rGain'))||100, gGain:parseInt(gv('gGain'))||100, bGain:parseInt(gv('bGain'))||100},
   wifi:collectWifi()};
+ // Only send apPass when there is something to say: the typed value, or an
+ // explicit empty string when the user asked for an open hotspot. Sending the
+ // blank field unconditionally used to wipe the stored password on every save.
+ if(gc('apOpen')) o.apPass='';
+ else { var _ap=gv('apPass'); if(_ap) o.apPass=_ap; }
  // WireGuard: a blank private key means "keep the stored one", so only send it
  // when the user actually typed something.
  if($('wgCard')){

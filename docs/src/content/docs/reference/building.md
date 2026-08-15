@@ -82,12 +82,12 @@ The ESP32 targets have a few requirements the ESP8266 does not.
 
 ## WireGuard
 
-The optional WireGuard client is compiled only into `smalltv_c2`. Its switches live in that env in `platformio.ini`: `-D SMALLTV_WIREGUARD=1` plus `-D CONFIG_WIREGUARD_MAX_PEERS=1` and `-D CONFIG_WIREGUARD_MAX_SRC_IPS=5`, and `droscy/esp_wireguard @ 0.4.5` in `lib_deps`. These have to be `build_flags`, not `build_src_flags`, because they must reach the library's own translation units. Without the flag `src/WgClient.cpp` compiles to no-op stubs, so every other env builds unchanged.
+The optional WireGuard client is compiled into `smalltv_c2` and `smalltv_esp32_8mb`, the two envs whose app slot has room for it. Its switches live in those envs in `platformio.ini`: `-D SMALLTV_WIREGUARD=1` plus `-D CONFIG_WIREGUARD_MAX_PEERS=1` and `-D CONFIG_WIREGUARD_MAX_SRC_IPS=5`, and `droscy/esp_wireguard @ 0.4.5` in `lib_deps`. These have to be `build_flags`, not `build_src_flags`, because they must reach the library's own translation units. Without the flag `src/WgClient.cpp` compiles to no-op stubs, so every other env builds unchanged.
 
 To build it for `smalltv_esp32` anyway, copy those four lines into that env. It links, but at 1,571,195 bytes against a 1,572,864-byte app slot, so it fits only as long as nothing else grows. To give it real room, raise both `app0` and `app1` in `partitions/smalltv_4mb_ota.csv` and take the space from `spiffs` (0xF0000 is generous for one `config.json`). That is a partition-table change, so the device has to be flashed over USB with `firmware.factory.bin`; an over-the-air update cannot install it.
 
 ## Footprint
 
-Measured as the flashable `firmware.bin`, which is what an OTA slot has to hold: the ESP8266 build is 694 KB of a 1,020 KB budget and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The ESP32-C2 build is 1,468,128 bytes of a 1,572,864-byte app slot with the WireGuard client in it, using around 16 percent of RAM. The classic ESP32 build is 1,500,016 bytes in the same slot, which is why WireGuard is not in it. The mascot frame data lives in flash, not the heap.
+Measured as the flashable `firmware.bin`, which is what an OTA slot has to hold: the ESP8266 build is 694 KB of a 1,020 KB budget and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The ESP32-C2 build is 1,469,520 bytes of a 1,572,864-byte app slot with the WireGuard client in it, using around 16 percent of RAM. The classic ESP32 build is 1,501,344 bytes in the same slot, which is why WireGuard is not in it. The SmallTV Pro runs the same code in a 2,228,224-byte slot and comes to 1,573,904 bytes with the client, 71 percent. The mascot frame data lives in flash, not the heap.
 
 The PC-side usage daemon is a separate repo: [clawdmeter-daemon](https://github.com/giovi321/clawdmeter-daemon).

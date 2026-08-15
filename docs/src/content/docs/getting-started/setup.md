@@ -28,7 +28,7 @@ Live device info: mode, IP, signal, free heap, uptime, and, where the firmware h
 
 ### WiFi
 
-Scan and save up to 4 networks; the device joins the strongest visible one at boot and falls over to the others if the connection drops. Also sets the device hostname (its `.local` mDNS name), the setup hotspot name and password, and on the ESP32-C2 build the [WireGuard tunnel](/smalltv-mod/features/wireguard/).
+Scan and save up to 4 networks; the device joins the strongest visible one at boot and falls over to the others if the connection drops. Also sets the device hostname (its `.local` mDNS name), the setup hotspot name and password, and on the builds that carry it the [WireGuard tunnel](/smalltv-mod/features/wireguard/).
 
 ### Display
 
