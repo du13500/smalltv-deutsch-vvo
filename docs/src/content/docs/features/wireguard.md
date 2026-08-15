@@ -3,7 +3,7 @@ title: WireGuard VPN
 description: An optional built-in WireGuard tunnel, so you can reach the device from outside your network without opening its plain-HTTP port to the internet.
 ---
 
-The settings page speaks plain HTTP and has no password. That is fine on your own network and a bad idea on the open internet, so do not port-forward it. The WireGuard client is the alternative: the device joins your VPN itself, and you reach it on its tunnel address from anywhere the VPN reaches.
+The settings page speaks plain HTTP, and its password is optional and off by default. Either way it is fine on your own network and a bad idea on the open internet, so do not port-forward it. The WireGuard client is the alternative: the device joins your VPN itself, and you reach it on its tunnel address from anywhere the VPN reaches.
 
 ## Which devices have it
 

@@ -61,7 +61,7 @@ The fix is a two-step install through a tiny loader, no soldering. The loader is
 1. Get `smalltv-mod-loader.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases).
 2. Browse to `http://<device-ip>/update` and upload `smalltv-mod-loader.bin`. It fits the stock slot. The device reboots into the loader.
 3. The loader opens an open WiFi access point named `SmallTV-Loader`. Join it and browse to `http://192.168.4.1/update`.
-4. Upload `smalltv-mod-firmware.bin` there. It fits because the loader uses this firmware's flash layout, which leaves about 700 KB free for OTA against the roughly 651 KB image. The device reboots into the full smalltv-mod.
+4. Upload `smalltv-mod-firmware.bin` there. It fits because the loader uses this firmware's flash layout, which gives the sketch about 1,020 KB against an image of roughly 694 KB. The device reboots into the full smalltv-mod.
 5. It comes up in the usual `SmallTV-Setup` captive portal for WiFi. From here it is a normal ESP8266 smalltv-mod device.
 
 After this first install, normal OTA works from the System tab, because this firmware's layout has room for two sketch copies. You only need the loader once.

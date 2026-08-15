@@ -119,6 +119,7 @@ The pins are set in `src/board_esp32.h`.
 | MCU | classic ESP32, 8 MB flash |
 | Display | 1.54" 240×240 IPS ST7789V, SPI, RGB colour order |
 | Extras | capacitive touch button (GPIO 32, unused by this firmware) |
+| WireGuard VPN | included |
 | Build env | `smalltv_esp32_8mb` |
 
 GeekMagic's own higher-end model. Same cube and panel, but a classic ESP32 with 8 MB flash, which doubles the OTA app slots (2.125 MB each) and leaves about 3.7 MB for LittleFS. The partition layout matches the stock firmware's, verified from a live device.

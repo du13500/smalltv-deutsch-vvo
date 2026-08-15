@@ -34,7 +34,7 @@ If the `.local` address does not open in your browser, try the plain IP address 
 
 ## The device shows the wrong time, or night mode isn't dimming the screen
 
-The device gets the time from the internet, and it only checks it when something needs it: night mode, or a WireGuard tunnel on the models that have one. With both off, the clock line in the Display tab says as much, and nothing about this affects the ticker or radar.
+The device gets the time from the internet, and it only checks it when something needs it: night mode, or a WireGuard tunnel on the models that have one. The clock line in the Display tab reports on night mode only, so on a device using the clock purely for a tunnel it still reads as though NTP were idle. Either way, none of this affects the ticker or the radar.
 
 - Give it a minute after saving: the first check happens shortly after you enable night mode, not instantly.
 - Confirm the timezone in the Clock & night mode card matches where you are; a correct clock in the wrong timezone will dim at the wrong local time.

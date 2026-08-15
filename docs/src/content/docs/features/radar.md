@@ -3,15 +3,15 @@ title: Plane radar
 description: A radar scope of nearby aircraft, centred on your location, from the free adsb.fi feed or a LAN webhook.
 ---
 
-Switch **Display → Mode** to **Plane radar** and set it up in the **Radar** tab. The screen becomes a radar scope centred on where you are: range rings, a home marker in the middle, nearby aircraft as red heading triangles with a speed vector and a callsign or altitude label, traffic outside the ring as dots on the rim, and any airports you add as small markers.
+Switch **Display → Mode** to **Radar** and set it up in the **Radar** tab. The screen becomes a radar scope centred on where you are: range rings, a home marker in the middle, nearby aircraft as red heading triangles with a speed vector and a callsign or altitude label, traffic outside the ring as dots on the rim, and any airports you add as small markers.
 
 ## Set your location
 
-Enter your home latitude and longitude in decimal degrees, a range ring (5, 10, 15, 25, or 50), and whether to measure in km or miles. Then pick a data source, below.
+Enter your home latitude and longitude in decimal degrees, a range ring (5, 10, 15, 20, 25, or 50), and whether to measure in km or miles. Then pick a data source, below.
 
 ## Display options
 
-Three controls in the Radar tab tune what appears.
+The Radar tab's **What to show** card tunes what appears. Alongside the two settings below it carries independent toggles for the callsign and altitude labels, the speed vectors, and the rim dots for traffic beyond the outer ring.
 
 - **Marker and label size** (Small, Medium, Large) scales the triangles, markers, and text together. Medium is the default. Large reads from across the room; Small keeps a busy sky uncluttered.
 - **Hide aircraft below (ft)** drops ground and low traffic. Set it to `500` and planes taxiing at the airport disappear; `0` shows everything.

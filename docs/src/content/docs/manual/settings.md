@@ -53,7 +53,7 @@ Networks must be 2.4 GHz. If you cannot see your network in the scan, see [Troub
 
 ## Clawdmeter
 
-One field: the address of the daemon running on your PC, the small program that reads your Claude usage and sends it to the device. Leave it blank if that program is pushing to the device; fill it in with the PC's address if the device should instead pull from it. Full setup for that PC-side program is in [Claude usage meter](/smalltv-mod/features/usage/), a separate download from a separate project.
+Two fields: the address of the daemon running on your PC, the small program that reads your Claude usage and sends it to the device, and how often the device re-checks it. Leave it blank if that program is pushing to the device; fill it in with the PC's address if the device should instead pull from it. Full setup for that PC-side program is in [Claude usage meter](/smalltv-mod/features/usage/), a separate download from a separate project.
 
 ## Radar
 
