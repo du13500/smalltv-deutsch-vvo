@@ -24,29 +24,33 @@ The UI is a single page served from the device. Saving applies most changes live
 
 ### Status
 
-Live device info: mode, IP, signal, free heap, uptime, and the current ticker values. "Refresh data now" forces an immediate poll.
+Live device info: mode, IP, signal, free heap, uptime, and, where the firmware has the WireGuard client, the tunnel state.
 
 ### WiFi
 
-Scan and save up to 4 networks; the device joins the strongest visible one at boot and falls over to the others if the connection drops. Also sets the device hostname (its `.local` mDNS name) and the setup hotspot name and password.
+Scan and save up to 4 networks; the device joins the strongest visible one at boot and falls over to the others if the connection drops. Also sets the device hostname (its `.local` mDNS name), the setup hotspot name and password, and on the ESP32-C2 build the [WireGuard tunnel](/smalltv-mod/features/wireguard/).
 
 ### Display
 
 The mode selector (Stock ticker, Claude usage, Plane radar, or Carousel, which rotates through the ticked features on a timer), plus brightness with optional auto-brightness, orientation, and backlight polarity.
 
+#### Colour
+
+Per-channel Red, Green, and Blue gain (50 to 150 percent, 100 being the untouched image), a colour-order switch for panels that show red and blue swapped, and an invert toggle for panels that come up looking like a negative. These exist because the units do not all carry the same panel: two devices running this firmware side by side can render the same colour visibly differently. Changes apply as soon as you save.
+
 #### Clock and night mode
 
 The "Clock & night mode" card sets a timezone by IANA name (`Europe/Rome`, `Europe/Zurich`, `America/New_York`, and so on) from a dropdown; DST is handled automatically. Enabling the nightly window adds a From and To time (HH:MM) and a night brightness, where 0 turns the backlight fully off and any other value just dims it. Night mode is off by default. The device keeps rendering behind the dimmed or off backlight rather than sleeping, so WiFi, the web UI, and usage push stay up throughout.
 
-Night mode only switches on once NTP has confirmed the clock within the last few minutes. If NTP can't be reached, the screen stays on and the device keeps retrying until it syncs or the window ends in the morning, so a device that never reaches NTP is never left stuck dark. NTP itself only runs while night mode is enabled. On an ESP8266 this matters if you also use cash.ch tickers: their TLS handshake needs a large contiguous block of heap, and adding night mode's NTP client on top can leave too little. If a ticker stops fetching after enabling night mode, switch it to the GitHub source or leave night mode off on that device; ESP32 boards aren't affected.
+Night mode only switches on once NTP has confirmed the clock within the last few minutes. If NTP can't be reached, the screen stays on and the device keeps retrying until it syncs or the window ends in the morning, so a device that never reaches NTP is never left stuck dark. NTP itself only runs when something needs it: night mode, or a WireGuard tunnel, which cannot handshake without a correct clock. On an ESP8266 this matters if you also use cash.ch tickers: their TLS handshake needs a large contiguous block of heap, and adding night mode's NTP client on top can leave too little. If a ticker stops fetching after enabling night mode, switch it to the GitHub source or leave night mode off on that device; ESP32 boards aren't affected.
 
 ### Ticker
 
-Up to 8 tickers, each with its own data source (Yahoo Finance, cash.ch, GitHub, or your webhook). `symbol` follows the source: a Yahoo ticker (`AAPL`, `NESN.SW`, `BTC-USD`, `EURUSD=X`), a cash.ch listing key for cash.ch or GitHub (the built-in finder turns a cash.ch link or ISIN into one), or whatever your webhook expects. `name` is an optional label that overrides the source's own name. Optional `qty` and per-unit `cost` turn a ticker into a position: its page gains a P/L line and a portfolio summary page joins the rotation. The tab also sets the chart timeframe and point count, rotation and refresh intervals, the colour scheme, and which fields to draw.
+The live value of every ticker sits at the top, with a "Refresh data now" button that forces an immediate poll. Below it, up to 8 tickers, each with its own data source (Yahoo Finance, cash.ch, GitHub, or your webhook). `symbol` follows the source: a Yahoo ticker (`AAPL`, `NESN.SW`, `BTC-USD`, `EURUSD=X`), a cash.ch listing key for cash.ch or GitHub (the built-in finder turns a cash.ch link or ISIN into one), or whatever your webhook expects. `name` is an optional label that overrides the source's own name. Optional `qty` and per-unit `cost` turn a ticker into a position: its page gains a P/L line and a portfolio summary page joins the rotation. The tab also sets the chart timeframe and point count, rotation and refresh intervals, the colour scheme, and which fields to draw.
 
-### Update
+### System
 
-Check for and install the newest GitHub release (every board fetches its own image), upload a firmware file manually, export or import the full device configuration as a JSON file, reboot, or factory reset. The exported file contains the WiFi passwords in clear text, so treat it like a password.
+Check for and install the newest GitHub release (every board fetches its own image), upload a firmware file manually, export or import the full device configuration as a JSON file, reboot, or factory reset. The exported file contains the WiFi passwords and the WireGuard private key in clear text, so treat it like a password.
 
 ## Modes
 
@@ -55,3 +59,5 @@ Each mode has its own page:
 - [Stock and crypto ticker](/smalltv-mod/features/ticker/)
 - [Claude usage meter](/smalltv-mod/features/usage/)
 - [Plane radar](/smalltv-mod/features/radar/)
+
+Remote access over a tunnel is not a mode, but it has its own page too: [WireGuard VPN](/smalltv-mod/features/wireguard/).

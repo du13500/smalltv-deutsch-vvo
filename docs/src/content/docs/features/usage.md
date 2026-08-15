@@ -32,7 +32,7 @@ The PC-side daemon is a separate project, [clawdmeter-daemon](https://github.com
 
    On Windows it runs with a system-tray icon and can auto-start at login. See the [clawdmeter-daemon README](https://github.com/giovi321/clawdmeter-daemon) for tray setup and a durable login token.
 
-2. In the web UI open **Display → Mode → Claude usage**. For push, leave the **Usage URL** blank. For serve and pull, set it to `http://<that-pc-ip>:8787/`. Save.
+2. In the web UI open **Display → Mode → Claude usage**. Then open the **Clawdmeter** tab: for push, leave the **Usage daemon URL** blank; for serve and pull, set it to `http://<that-pc-ip>:8787/`. Save.
 
 The mascot animations are a curated subset of the [claudepix](https://claudepix.vercel.app) pixel-art set, re-rendered on the ST7789.
 

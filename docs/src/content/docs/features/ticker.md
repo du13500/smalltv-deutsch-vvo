@@ -10,7 +10,7 @@ The ticker is the default mode. It shows one symbol at a time and rotates throug
 - The current price, in the symbol's currency.
 - Absolute change and percent change with an arrow, coloured green for up and red for down.
 - A sparkline over the selected timeframe.
-- Optional extras you toggle in the Display tab: the name, the timeframe label, an "updated N s ago" line, and rotation dots.
+- Optional extras you toggle in the Ticker tab's "What to show" card: the name, the timeframe label, an "updated N s ago" line, and rotation dots.
 
 The **Change & % basis** setting in the Ticker tab picks what the change measures. The default, *Chart timeframe*, computes it over the same span the sparkline shows (live price versus the first charted point) and appends the live price as the chart's newest point, so the number, arrow, colours, and chart agree. Three caveats: it needs chart data, so with fewer than 2 chart points, a webhook that sends no `spark` series, or a failed chart fetch, the device falls back to the 1-day change until the data is there; at the 1-day timeframe the reference is the session's first data point, so an overnight gap is not part of the number; and GitHub-source tickers chart the span baked into `quotes-config.json`, so their change covers that span rather than the device timeframe. *1 day* shows the classic change since the previous close instead; a stock can be up on the day but down over a longer chart, so with this basis the number and the chart can legitimately point in opposite directions.
 
@@ -35,6 +35,8 @@ Give a ticker a `qty` and a per-unit `cost` and it becomes a position: its page 
 
 ## Timing and data
 
-Two intervals control the display: how often each symbol is shown (rotation) and how often data is refreshed (poll). Both are set in the Display tab. The default poll of 120 seconds is fine for 8 symbols.
+Two intervals control the display: how often each symbol is shown (rotation) and how often data is refreshed (poll). Both are set in the Ticker tab. The default poll of 120 seconds is fine for 8 symbols.
+
+Every symbol keeps its own schedule. A successful fetch waits the poll interval; one that fails is retried after 12 seconds, then 24, 48, 96, and from there at the poll interval for as long as it keeps failing, so a symbol is never given up on and a healthy one is not dragged into a failing one's retries. This also covers the ESP8266's heap-guard skip, where a cash.ch fetch is dropped because the heap is momentarily too fragmented for the handshake: that counts as a failure and comes back a few seconds later. The Ticker tab's **Live data** card lists what the device currently holds per symbol and, for the failing ones, how long until the next attempt.
 
 Where the prices come from is chosen per ticker. By default a ticker fetches Yahoo Finance directly over HTTPS with no backend; cash.ch works the same way for Swiss instruments, GitHub is a serverless cash.ch proxy that needs nothing of yours running, and a webhook ticker calls your own endpoint. All four are covered in [Data sources](/smalltv-mod/reference/data-sources/).

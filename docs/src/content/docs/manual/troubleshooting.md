@@ -27,13 +27,14 @@ If the `.local` address does not open in your browser, try the plain IP address 
 
 - Double check the spelling. Yahoo Finance symbols are case-sensitive-looking but usually written in capitals: `AAPL`, not `apple`. Swiss and European stocks need their exchange suffix, `NESN.SW` not `NESN`.
 - A brand-new symbol takes a few seconds to resolve after you save it; give it one full refresh cycle before assuming it is wrong.
-- Press **Refresh data now** in the Status tab to force an immediate retry rather than waiting for the next scheduled poll.
+- A failed symbol is retried on its own, without you doing anything: after 12 seconds, then 24, 48, 96, and from there at the normal refresh interval for as long as it keeps failing. The other symbols are not dragged into those retries and keep their usual schedule. The Ticker tab's **Live data** card shows which ones are failing and how long until the next attempt.
+- Press **Refresh data now** in the Ticker tab to force an immediate retry rather than waiting for that countdown.
 - If it is a cash.ch source symbol, it needs the exact listing key format, not a plain ticker; use the **cash.ch symbol finder** in the Ticker tab to generate it rather than typing one by hand.
 - If every symbol shows the error at once, the device likely lost its connection; check the Status tab for whether it still shows as connected, and see the WiFi section below.
 
 ## The device shows the wrong time, or night mode isn't dimming the screen
 
-The device gets the time from the internet and only checks it while night mode is turned on. If night mode is off, the clock line in the Display tab says as much and nothing about this affects the ticker or radar.
+The device gets the time from the internet, and it only checks it when something needs it: night mode, or a WireGuard tunnel on the models that have one. With both off, the clock line in the Display tab says as much, and nothing about this affects the ticker or radar.
 
 - Give it a minute after saving: the first check happens shortly after you enable night mode, not instantly.
 - Confirm the timezone in the Clock & night mode card matches where you are; a correct clock in the wrong timezone will dim at the wrong local time.
@@ -55,11 +56,20 @@ You do not need the old password to add a new network. Open the WiFi tab, scan, 
 
 If the device cannot reach any saved network at all (say, after a full house move), it falls back to its own SETUP MODE hotspot automatically, and you start over from [Quick start](/smalltv-mod/manual/quick-start/).
 
+## The WireGuard tunnel will not come up
+
+Only the ESP32-C2 model has this at all; the other boards have no WireGuard card in the settings page. The line at the top of the card names the problem, so read that first.
+
+- "Waiting for the endpoint name to resolve" means DNS has not answered. Check the endpoint hostname, or put the server's IP address there instead.
+- "Handshakes sent with no reply" means the device reached the server and got nothing back. The server needs a peer entry carrying this device's public key, and UDP on the endpoint port has to reach it.
+- "Tunnel suspended after repeated reboots" means the device crashed three times in a row with the tunnel enabled and stopped starting it. Check the settings and press **Save settings** again; re-saving is what clears the hold.
+- The tunnel is up but the device is unreachable at its tunnel address: this is almost always the Allowed IPs field. List the subnet the other end is on (`10.6.0.0/24`), not only the device's own address. [WireGuard VPN](/smalltv-mod/features/wireguard/) explains why.
+
 ## I pressed Factory reset and lost my settings
 
 Factory reset is meant to erase everything, so this is expected: it wipes saved WiFi networks, tickers, and every other setting, and restarts the device in first-time SETUP MODE. It does not touch the firmware itself, so no reinstall is needed. Set the device up again as in [Quick start](/smalltv-mod/manual/quick-start/).
 
-If you exported a settings backup beforehand (Update tab, "Export settings"), importing that file restores everything at once instead of re-entering it by hand.
+If you exported a settings backup beforehand (System tab, "Export settings"), importing that file restores everything at once instead of re-entering it by hand.
 
 ## The screen stays dark even though the device is powered
 
@@ -69,12 +79,12 @@ If you exported a settings backup beforehand (Update tab, "Export settings"), im
 
 ## The screen shows CRASH
 
-Rare, but if it happens: the device restarted after an internal fault, and stays on this screen instead of trying to redraw whatever crashed it. It shows a fault code and its IP address, and the settings page and firmware update are still reachable at that address. Reinstalling the latest firmware version through the Update tab normally clears it, and no settings are lost by doing so.
+Rare, but if it happens: the device restarted after an internal fault, and stays on this screen instead of trying to redraw whatever crashed it. It shows a fault code and its IP address, and the settings page and firmware update are still reachable at that address. Reinstalling the latest firmware version through the System tab normally clears it, and no settings are lost by doing so.
 
 ## Updating from GitHub fails
 
 - On the original ESP8266 model, firmware version 2.6.1 and earlier cannot update themselves due to a bug in that version's updater; a broken updater cannot fix itself. Update that device once by hand as described in [Flashing](/smalltv-mod/getting-started/flashing/#after-the-first-flash), and the automatic updater works normally afterwards.
-- A failed update leaves the device running its current version; nothing is lost, and the Update tab shows the reason for the failure. Usually pressing "Check for latest" and "Update now" again succeeds on a retry.
+- A failed update leaves the device running its current version; nothing is lost, and the System tab shows the reason for the failure. Usually pressing "Check for latest" and "Update now" again succeeds on a retry.
 - The download needs the device's normal internet connection; if WiFi is unstable at the time, wait and try again.
 
 ## Something else

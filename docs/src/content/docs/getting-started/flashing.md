@@ -64,9 +64,9 @@ The fix is a two-step install through a tiny loader, no soldering. The loader is
 4. Upload `smalltv-mod-firmware.bin` there. It fits because the loader uses this firmware's flash layout, which leaves about 700 KB free for OTA against the roughly 651 KB image. The device reboots into the full smalltv-mod.
 5. It comes up in the usual `SmallTV-Setup` captive portal for WiFi. From here it is a normal ESP8266 smalltv-mod device.
 
-After this first install, normal OTA works from the Update tab, because this firmware's layout has room for two sketch copies. You only need the loader once.
+After this first install, normal OTA works from the System tab, because this firmware's layout has room for two sketch copies. You only need the loader once.
 
-If the loader ever will not come back up, flash over the serial header instead. The board is a plain ESP-12F, so the [UART recovery](#uart-header-for-recovery) steps above apply directly: `esptool.py --port COM5 write_flash 0x0 smalltv-mod-firmware.bin`.
+If the loader ever will not come back up, flash over the serial header instead. The board is a plain ESP-12F, so the [UART recovery](#uart-header-for-recovery-or-a-direct-install) steps above apply directly: `esptool.py --port COM5 write_flash 0x0 smalltv-mod-firmware.bin`.
 
 ## SmallTV (ESP32-C2 / ESP8684)
 
@@ -159,16 +159,16 @@ With a source checkout, `pio run -e smalltv_esp32_8mb -t upload` does the same t
 
 ## After the first flash
 
-Every board then updates from the browser: open the web UI's **Update** tab and either let the device pull the newest GitHub release itself (each board fetches its own image) or upload a firmware file manually. The manual upload takes the plain app image (`smalltv-mod-firmware*.bin`), not the `.factory.bin`.
+Every board then updates from the browser: open the web UI's **System** tab and either let the device pull the newest GitHub release itself (each board fetches its own image) or upload a firmware file manually. The manual upload takes the plain app image (`smalltv-mod-firmware*.bin`), not the `.factory.bin`.
 
 :::caution[ESP8266 on firmware 2.6.1 or older: update manually once]
-The GitHub self-update was broken on the ESP8266 (original SmallTV and SmallTV-ultra) in every firmware up to and including 2.6.1: the release check misparsed GitHub's occasionally chunked responses, and the download needs a 16 KB TLS buffer that does not fit next to the running firmware, so it always failed with `download failed: HTTP error: connection failed`. A broken updater cannot update itself. Update these devices **once by hand**: download `smalltv-mod-firmware.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases) and upload it in the web UI's **Update** tab. From 2.7.0 on, self-update works on the ESP8266 too.
+The GitHub self-update was broken on the ESP8266 (original SmallTV and SmallTV-ultra) in every firmware up to and including 2.6.1: the release check misparsed GitHub's occasionally chunked responses, and the download needs a 16 KB TLS buffer that does not fit next to the running firmware, so it always failed with `download failed: HTTP error: connection failed`. A broken updater cannot update itself. Update these devices **once by hand**: download `smalltv-mod-firmware.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases) and upload it in the web UI's **System** tab. From 2.7.0 on, self-update works on the ESP8266 too.
 :::
 
-The ESP32 boards download and flash in place. The ESP8266 (from 2.7.0) uses an update-at-boot flow instead, because the download's 16 KB TLS buffer only fits before the firmware's features start: the device queues the update, reboots, shows `updating...` while it downloads, then reboots again into the new version. Expect two reboots and a couple of minutes; if the download fails, the device boots normally and the Update tab shows why.
+The ESP32 boards download and flash in place. The ESP8266 (from 2.7.0) uses an update-at-boot flow instead, because the download's 16 KB TLS buffer only fits before the firmware's features start: the device queues the update, reboots, shows `updating...` while it downloads, then reboots again into the new version. Expect two reboots and a couple of minutes; if the download fails, the device boots normally and the System tab shows why.
 
 ## Recovery
 
 - **Re-flash anything** (your stock backup or this firmware) with the method for your board.
-- **Factory reset** in the Update tab wipes saved settings and restarts in SETUP MODE. It does not change the firmware.
+- **Factory reset** in the System tab wipes saved settings and restarts in SETUP MODE. It does not change the firmware.
 - On the ESP32 boards, if a bad flash leaves the device unresponsive, it still enters download mode over USB, so esptool can always rewrite it.

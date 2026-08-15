@@ -46,7 +46,9 @@ The target is chosen by a build flag: `SMALLTV_ESP8266`, `SMALLTV_ESP32C2`, or `
 ```
 src/                    shared core (device, net, web, settings)
   main.cpp              setup/loop and the mode registry
+  loader.cpp            the standalone smalltv_loader image (built on its own)
   Platform.h            per-chip includes, aliases, and shims
+  Mode.h                the DisplayMode interface every feature implements
   board_esp8266.h       ESP8266 pin map and panel quirks
   board_esp32c2.h       ESP32-C2 pin map and panel quirks
   board_esp32.h         NM-TV-154 (classic ESP32) pin map and panel quirks
@@ -56,7 +58,10 @@ src/                    shared core (device, net, web, settings)
   Net.*                 WiFi station, fallback AP, captive portal, mDNS
   WebPortal.*           web server, REST API, OTA endpoint
   webui.h               the single-page UI (HTML/CSS/JS, served from flash)
-  Gfx.*                 shared ST7789 core (Arduino_GFX)
+  Gfx.*                 shared ST7789 core (Arduino_GFX), colour correction
+  Clock.*               SNTP and the night-mode window
+  WgClient.*            WireGuard tunnel (no-op stubs without SMALLTV_WIREGUARD)
+  BearSslTuning.cpp     ESP8266 TLS cipher/curve pinning
   OtaUpdate.*           GitHub self-update (ESP8266)
   features/
     ticker/             TickerMode + StockClient
@@ -75,8 +80,14 @@ The ESP32 targets have a few requirements the ESP8266 does not.
 - **Flashing the C2**: uploads call the system esptool, not the one bundled with PlatformIO, which hangs entering download mode on that board. Install it with `pip install esptool`. The classic ESP32 flashes with either.
 - **Partitions**: the 4 MB layout in `partitions/smalltv_4mb_ota.csv` gives two OTA app slots plus about 0.9 MB for LittleFS, and is shared by the C2 and the NM-TV-154. The SmallTV Pro's 8 MB layout in `partitions/smalltv_8mb_ota.csv` doubles the app slots (2.125 MB each) and gives about 3.7 MB of LittleFS, matching the stock firmware's table exactly.
 
+## WireGuard
+
+The optional WireGuard client is compiled only into `smalltv_c2`. Its switches live in that env in `platformio.ini`: `-D SMALLTV_WIREGUARD=1` plus `-D CONFIG_WIREGUARD_MAX_PEERS=1` and `-D CONFIG_WIREGUARD_MAX_SRC_IPS=5`, and `droscy/esp_wireguard @ 0.4.5` in `lib_deps`. These have to be `build_flags`, not `build_src_flags`, because they must reach the library's own translation units. Without the flag `src/WgClient.cpp` compiles to no-op stubs, so every other env builds unchanged.
+
+To build it for `smalltv_esp32` anyway, copy those four lines into that env. It links, but at 1,571,195 bytes against a 1,572,864-byte app slot, so it fits only as long as nothing else grows. To give it real room, raise both `app0` and `app1` in `partitions/smalltv_4mb_ota.csv` and take the space from `spiffs` (0xF0000 is generous for one `config.json`). That is a partition-table change, so the device has to be flashed over USB with `firmware.factory.bin`; an over-the-air update cannot install it.
+
 ## Footprint
 
-The ESP8266 build is about 620 KB of flash and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The ESP32-C2 build is about 1.27 MB in a 1.5 MB app slot, using around 15 percent of RAM. The mascot frame data lives in flash, not the heap.
+Measured as the flashable `firmware.bin`, which is what an OTA slot has to hold: the ESP8266 build is 694 KB of a 1,020 KB budget and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The ESP32-C2 build is 1,468,128 bytes of a 1,572,864-byte app slot with the WireGuard client in it, using around 16 percent of RAM. The classic ESP32 build is 1,500,016 bytes in the same slot, which is why WireGuard is not in it. The mascot frame data lives in flash, not the heap.
 
 The PC-side usage daemon is a separate repo: [clawdmeter-daemon](https://github.com/giovi321/clawdmeter-daemon).

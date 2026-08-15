@@ -36,6 +36,7 @@ Product photos show each unit running its stock firmware, not this one, and the 
 | Display | 1.54" 240×240 IPS ST7789, hardware SPI |
 | Body | 45 × 35 × 40 mm, USB-C power |
 | Light sensor | optional LDR on `A0` (not populated on all units) |
+| WireGuard VPN | not available on this chip |
 | Build env | `smalltv` |
 
 ### Pin map
@@ -61,6 +62,7 @@ Hardware SPI on the ESP8266 uses fixed clock and data pins. The rest are the Sma
 | USB-serial | CH340C on the USB-C port (auto-reset wired) |
 | Regulator | AMS1117-3.3 |
 | Display | 1.54" 240×240 IPS ST7789V, SPI, RGB colour order |
+| WireGuard VPN | included |
 | Build env | `smalltv_c2` |
 
 The ESP32-C2 has no native USB. The CH340C bridges the USB-C port to the chip's UART, which is how it is flashed. Its auto-reset is wired, so esptool enters download mode on its own with no button to hold.
@@ -78,7 +80,7 @@ The ESP32-C2 routes SPI through the GPIO matrix, so the display pins are arbitra
 | CS | GND | tied low on the panel, not driven |
 | Backlight | 18 | PWM, active-low |
 
-The pins are set in `src/board_esp32c2.h`. Two panel quirks are worth knowing: the display needs SPI mode 3, and its colour order is RGB. Both are handled in `src/Gfx.cpp`. If red and blue look swapped on your unit, flip `TFT_BGR` in the board header and reflash.
+The pins are set in `src/board_esp32c2.h`. Two panel quirks are worth knowing: the display needs SPI mode 3, and its colour order is RGB. Both are handled in `src/Gfx.cpp`. If red and blue look swapped on your unit, set "Colour order" to BGR in the Display tab; the board header's `TFT_BGR` is only the default the web UI starts from.
 
 ## NM-TV-154 (classic ESP32)
 
@@ -89,6 +91,7 @@ The pins are set in `src/board_esp32c2.h`. Two panel quirks are worth knowing: t
 | MCU | ESP32-WROOM-32E (ESP32-D0WD-V3), 40 MHz crystal, 4 MB flash |
 | Display | 1.54" 240×240 IPS ST7789, SPI, RGB colour order |
 | Sold as | NMMiner NM-TV-154 BTC lottery miner, PCB marked "NM-TV-Miner" |
+| WireGuard VPN | not in the published image, no flash left for it |
 | Build env | `smalltv_esp32` |
 
 The pin map comes from [NMMiner's own custom-firmware guide](https://www.nmminer.com/2026/03/02/how-to-develop-nm-tv-custom-firmware/) for the device and is confirmed working on hardware by a community tester in [issue #1](https://github.com/giovi321/smalltv-mod/issues/1): display, colours, backlight PWM, and the 4 MB flash layout all check out.
@@ -144,6 +147,8 @@ The pins are fixed to the SmallTV wiring and are not editable from the web UI. A
 
 - **Dark screen with backlight on**: try toggling "Backlight is active-low" in the Display tab. All boards default to active-low.
 - **Wrong orientation**: change Orientation in the Display tab.
-- **Red and blue swapped**: set `TFT_BGR` to `1` in your board's `src/board_*.h` header, rebuild, and reflash.
+- **Red and blue swapped**: set "Colour order" to BGR in the Display tab. The board headers still carry a `TFT_BGR` compile-time default per variant, but the web UI overrides it, so there is nothing to rebuild.
+- **Colours look warm, cold, or tinted**: the panels fitted to these units are not all the same part. Use the Red, Green, and Blue gain sliders in the Display tab's Colour card to pull the cast out.
+- **The screen looks like a negative**: tick "Invert the panel" in the same card.
 
 For a different board entirely, change the pins in the relevant `src/board_*.h` header.

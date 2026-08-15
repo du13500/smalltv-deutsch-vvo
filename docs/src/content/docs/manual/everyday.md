@@ -19,7 +19,7 @@ Two things you may see instead of a price:
 - `loading...` under a symbol, right after a restart or after you added it. It should turn into a price within a few seconds.
 - `fetch error`, meaning the device asked for that symbol and got nothing usable back. Usually the symbol is misspelled or does not exist at that data source. See [Troubleshooting](/smalltv-mod/manual/troubleshooting/#a-symbol-shows-fetch-error-or-stays-on-loading).
 
-A small red dot in the top-left corner means the last refresh failed and the numbers on screen are the last good ones, so they are older than they look. It clears itself when a refresh succeeds.
+A small red dot in the top-left corner means the last refresh failed and the numbers on screen are the last good ones, so they are older than they look. It clears itself when a refresh succeeds. The device keeps trying on its own: a symbol that fails comes back after 12 seconds, then 24, 48, 96, and after that at the normal refresh interval for as long as it keeps failing, so a ticker that broke while you were out fixes itself as soon as the data comes back. The Ticker tab lists which symbols are failing and when each is next due.
 
 ### The portfolio page
 
@@ -63,9 +63,11 @@ Everything is in the settings page, and every tab is described in [Settings expl
 - There is one **Save settings** button at the very bottom of the page, and it saves every tab at once. Changing something and closing the browser without pressing it changes nothing.
 - Most changes take effect within a second or two. Changing the WiFi network or the device name restarts the device, which takes a few seconds.
 
-## Brightness and the night schedule
+## Brightness, colour, and the night schedule
 
 Brightness sits in the Display tab, at 90 percent out of the box. If your unit has a light sensor, "Auto-brightness" lets it follow the room instead.
+
+The "Colour" card below it is for when the screen's colours look off. These devices do not all carry the same panel, so one unit can look warmer or greener than another running the same firmware. Pull a channel down with the Red, Green, and Blue sliders until it looks right, and press "Reset to 100%" to go back to the untouched image. Two rarer faults have their own controls in the same card: red and blue coming out swapped is the "Colour order" setting, and a screen that looks like a photographic negative is "Invert the panel". Colour changes show up on the screen as soon as you save, so adjust with the device in front of you.
 
 The "Clock & night mode" card can dim the screen, or switch the backlight off entirely, between two times you choose. Pick your timezone from the list first: the device has no clock of its own and gets the time from the internet, and the schedule needs to know which timezone your times are in. Daylight saving is handled for you. The device stays online and reachable through the night, it just stops lighting the screen.
 
@@ -84,11 +86,11 @@ You can save up to four WiFi networks in the WiFi tab, and at each start the dev
 
 New versions are published on GitHub and the device can install them itself.
 
-1. Open the **Update** tab. The installed version is at the top.
+1. Open the **System** tab. The installed version is at the top.
 2. Press **Check for latest**.
 3. If a newer version exists, press **Update now** and confirm.
 
-The download takes a minute or two. Leave the device powered until it comes back, and expect the screen to blank and the device to restart, twice on the ESP8266 model. If the download fails, the device just carries on with the version it has and the Update tab says why.
+The download takes a minute or two. Leave the device powered until it comes back, and expect the screen to blank and the device to restart, twice on the ESP8266 model. If the download fails, the device just carries on with the version it has and the System tab says why.
 
 Two exceptions worth knowing:
 
@@ -99,4 +101,4 @@ Two exceptions worth knowing:
 
 - The USB-C port is there to power the device. It does not have to be plugged into a computer.
 - The screen is a small IPS panel with no touch. Every control is in the web page.
-- There are no buttons on the case. A restart means unplugging it, or pressing Reboot in the Update tab.
+- There are no buttons on the case. A restart means unplugging it, or pressing Reboot in the System tab.
