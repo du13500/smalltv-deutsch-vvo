@@ -307,8 +307,12 @@ static void handleUsagePush() {
 }
 
 // Attention overlay: {"state":"done"|"waiting","ttl":<seconds>,"label":"<text>"}.
-// Never persisted.
+// Never persisted. Behind the password like the rest of the API: unlike the
+// daemon's usage push, whatever fires these is a script of your own and can
+// send credentials, and taking over the whole screen is not something to leave
+// open on a device you deliberately locked.
 static void handleNotify() {
+  if (!requireAuth()) return;
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
   JsonDocument doc;
   if (deserializeJson(doc, server.arg("plain"))) {
