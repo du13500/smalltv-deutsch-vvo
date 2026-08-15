@@ -3,7 +3,7 @@ title: Claude usage meter
 description: Show your Claude 5-hour and 7-day usage with an animated mascot, fed over WiFi from your PC.
 ---
 
-Switch **Display → Mode** to **Claude usage** and the device stops showing tickers and shows your Claude consumption instead. It is the idea of a desk usage meter, on the SmallTV, over WiFi. The device's USB is power only, so nothing is wired between it and your PC.
+Switch **Display → Mode** to **Clawdmeter** and the device stops showing tickers and shows your Claude consumption instead. It is the idea of a desk usage meter, on the SmallTV, over WiFi. The device's USB is power only, so nothing is wired between it and your PC.
 
 ## What it shows
 
@@ -32,7 +32,7 @@ The PC-side daemon is a separate project, [clawdmeter-daemon](https://github.com
 
    On Windows it runs with a system-tray icon and can auto-start at login. See the [clawdmeter-daemon README](https://github.com/giovi321/clawdmeter-daemon) for tray setup and a durable login token.
 
-2. In the web UI open **Display → Mode → Claude usage**. Then open the **Clawdmeter** tab: for push, leave the **Usage daemon URL** blank; for serve and pull, set it to `http://<that-pc-ip>:8787/`. Save.
+2. In the web UI open **Display → Mode → Clawdmeter**. Then open the **Clawdmeter** tab: for push, leave the **Usage daemon URL** blank; for serve and pull, set it to `http://<that-pc-ip>:8787/`. Save.
 
 The mascot animations are a curated subset of the [claudepix](https://claudepix.vercel.app) pixel-art set, re-rendered on the ST7789.
 

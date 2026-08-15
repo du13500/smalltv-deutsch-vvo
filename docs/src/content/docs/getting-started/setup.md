@@ -32,7 +32,7 @@ Scan and save up to 4 networks; the device joins the strongest visible one at bo
 
 ### Display
 
-The mode selector (Stock ticker, Claude usage, Plane radar, or Carousel, which rotates through the ticked features on a timer), plus brightness with optional auto-brightness, orientation, and backlight polarity.
+The mode selector, which lists each feature under the same name as its tab (Ticker, Clawdmeter, Radar, or Carousel, which rotates through the ticked features on a timer), plus brightness with optional auto-brightness, orientation, and backlight polarity.
 
 #### Colour
 
@@ -50,7 +50,7 @@ The live value of every ticker sits at the top, with a "Refresh data now" button
 
 ### System
 
-Check for and install the newest GitHub release (every board fetches its own image), upload a firmware file manually, export or import the full device configuration as a JSON file, reboot, or factory reset. The exported file contains the WiFi passwords and the WireGuard private key in clear text, so treat it like a password.
+Check for and install the newest GitHub release (every board fetches its own image), upload a firmware file manually, export or import the full device configuration as a JSON file, put the page behind a password, reboot, or factory reset. The exported file contains the WiFi passwords and the WireGuard private key in clear text, so treat it like a password.
 
 ## Modes
 

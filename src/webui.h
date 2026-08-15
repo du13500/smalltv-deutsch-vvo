@@ -122,18 +122,18 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
   <div class="card"><h2>Mode</h2>
    <label>What this device shows</label>
    <select id="mode" onchange="modeChanged()">
-    <option value="stocks">Stock / crypto ticker</option>
-    <option value="usage">Claude usage</option>
-    <option value="radar">Plane radar</option>
+    <option value="stocks">Ticker</option>
+    <option value="usage">Clawdmeter</option>
+    <option value="radar">Radar</option>
     <option value="carousel">Carousel (rotate modes)</option>
    </select>
    <div id="carouselRow">
     <label>Switch mode every (s)</label><input id="carouselSec" type="number" min="5" max="3600">
     <div class="chk"><input id="carouselTicker" type="checkbox"><label>Ticker</label></div>
-    <div class="chk"><input id="carouselUsage" type="checkbox"><label>Claude usage</label></div>
-    <div class="chk"><input id="carouselRadar" type="checkbox"><label>Plane radar</label></div>
+    <div class="chk"><input id="carouselUsage" type="checkbox"><label>Clawdmeter</label></div>
+    <div class="chk"><input id="carouselRadar" type="checkbox"><label>Radar</label></div>
    </div>
-   <small class="hint">Pick the active feature, then configure it in its own tab. Carousel rotates through the ticked features.</small>
+   <small class="hint">Each name here is the tab that configures it. Pick the active feature, then set it up in its own tab. Carousel rotates through the ticked features.</small>
   </div>
   <div class="card"><h2>Screen</h2>
    <label>Brightness: <span id="brVal"></span>%</label>
@@ -317,6 +317,12 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
    <div style="margin-top:10px"><button class="btn" onclick="importCfg()">Import &amp; reboot</button></div>
    <small class="hint">The export is the device's <code>config.json</code>, including WiFi passwords and the WireGuard private key in clear text; treat the file accordingly. Import applies everything and reboots.</small>
   </div>
+  <div class="card"><h2>Password</h2>
+   <div class="chk"><input id="authEnabled" type="checkbox"><label>Ask for a password to open this page</label></div>
+   <label>Username</label><input id="authUser" type="text" autocomplete="off" placeholder="admin">
+   <label>Password</label><input id="authPass" type="password" autocomplete="new-password" placeholder="(unchanged)">
+   <small class="hint">Off by default, which leaves the page open to anyone on your network. Turning it on puts the settings page, the API, and the firmware upload behind HTTP digest auth, so the password itself is never sent over the wire. The clawdmeter daemon's push endpoint stays open, because it has no way to send a password and it only writes the numbers on the screen. <b>There is no password recovery.</b> Forget it and the only way back in is to reflash the device over USB or the UART header, so write it down before you save.</small>
+  </div>
   <div class="card"><h2>Maintenance</h2>
    <button class="btn sec" onclick="reboot()">Reboot</button>
    <button class="btn danger" style="margin-left:8px" onclick="factory()">Factory reset</button>
@@ -469,6 +475,9 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  sv('radarUiScale',r.uiScale!=null?r.uiScale:1);
  sv('radarMinAlt',r.minAltFt!=null?r.minAltFt:0);
  renderAps(r.airports||[]);
+ var au=c.auth||{};
+ sc('authEnabled',!!au.enabled); sv('authUser',au.user||'admin');
+ var apw=$('authPass'); if(apw){apw.value='';apw.placeholder=au.passSet?'(unchanged)':'set a password';}
  var ap=$('apPass'); if(ap){ap.value='';ap.placeholder=c.apPassSet?'(unchanged)':'(open)';}
  sc('apOpen',!c.apPassSet); apOpenChanged();
 })}
@@ -529,6 +538,10 @@ function collect(){
   display:{colorOrder:gv('colorOrder')||'auto', invert:gc('colorInvert'),
    rGain:parseInt(gv('rGain'))||100, gGain:parseInt(gv('gGain'))||100, bGain:parseInt(gv('bGain'))||100},
   wifi:collectWifi()};
+ // Web UI password: same blank-keeps-stored rule as everywhere else. The
+ // firmware refuses to enable it without a stored password to check against.
+ if($('authEnabled')){var _a={enabled:gc('authEnabled'), user:gv('authUser')||'admin'};
+  var _ap2=gv('authPass'); if(_ap2)_a.pass=_ap2; o.auth=_a;}
  // Only send apPass when there is something to say: the typed value, or an
  // explicit empty string when the user asked for an open hotspot. Sending the
  // blank field unconditionally used to wipe the stored password on every save.

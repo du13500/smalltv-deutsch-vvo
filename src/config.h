@@ -12,7 +12,7 @@
 // Firmware identity
 // ---------------------------------------------------------------------------
 #define FW_NAME     "smalltv-mod"
-#define FW_VERSION  "2.9.0"
+#define FW_VERSION  "2.9.1"
 
 // Project / update references (shown in the web UI; used by the GitHub self-update)
 #define REPO_URL      "https://github.com/giovi321/smalltv-mod"
@@ -60,9 +60,20 @@
 #define MAX_URL_LEN     200    // webhook base URL
 
 // ---------------------------------------------------------------------------
-// WireGuard client (ESP32 targets only — see SMALLTV_WIREGUARD in platformio.ini)
-// Reaches the device from outside the LAN without forwarding its plain-HTTP
-// port to the internet. The ESP8266 has neither the flash nor the heap for it.
+// Web UI password (off by default). Digest auth, so the password itself is
+// never sent over the wire even though the UI is plain HTTP.
+// ---------------------------------------------------------------------------
+#define MAX_AUTH_USER_LEN 32
+#define MAX_AUTH_PASS_LEN 64
+#define DEFAULT_AUTH_USER "admin"
+#define AUTH_REALM        "SmallTV"
+
+// ---------------------------------------------------------------------------
+// WireGuard client. Compiled only where the image has room for it: see
+// SMALLTV_WIREGUARD in platformio.ini, which sets it for the ESP32-C2 and the
+// 8 MB SmallTV Pro. Reaches the device from outside the LAN without forwarding
+// its plain-HTTP port to the internet. The ESP8266 has neither the flash nor
+// the heap for it.
 // ---------------------------------------------------------------------------
 #define MAX_WG_KEY_LEN    48   // base64 x25519 key is 44 chars + NUL, with headroom
 #define MAX_WG_HOST_LEN   64   // endpoint hostname or IP

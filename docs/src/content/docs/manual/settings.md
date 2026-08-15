@@ -29,7 +29,7 @@ Networks must be 2.4 GHz. If you cannot see your network in the scan, see [Troub
 
 ## Display
 
-**Mode**: which of the three features is on screen, or **Carousel** to rotate between the ones you tick below it, staying on each for the number of seconds you set. Each mode is configured in its own tab regardless of whether it is the active one, so you can set up the ticker and the radar ahead of time and only switch to Carousel once both are ready.
+**Mode**: which of the three features is on screen, named after the tab that configures it, or **Carousel** to rotate between the ones you tick below it, staying on each for the number of seconds you set. Each mode is configured in its own tab regardless of whether it is the active one, so you can set up the ticker and the radar ahead of time and only switch to Carousel once both are ready.
 
 **Screen**: brightness as a percentage; "Auto-brightness" if your unit has a light sensor and you want the screen to follow the room instead of a fixed level; orientation, if the device is mounted sideways or upside down; and a fix for a dark screen with the backlight visibly on, "Backlight is active-low", which is on by default and should stay that way unless the screen looks wrong.
 
@@ -72,5 +72,7 @@ One field: the address of the daemon running on your PC, the small program that 
 **Manual update (OTA)**: upload a firmware file by hand instead, useful if the device cannot reach GitHub or you built the firmware yourself.
 
 **Settings backup**: "Export settings" downloads the device's whole configuration as a file, including saved WiFi passwords and the WireGuard private key in plain text, so store that file the way you would store a password. "Import" applies a previously exported file and restarts the device; useful when replacing a unit or copying one device's setup to another.
+
+**Password**: off by default, which is why the settings page opens for anyone on your network. Tick "Ask for a password to open this page", set a username and password, and save; from then on the browser asks for them before showing the page, and the same applies to the firmware upload and everything the page talks to. The one exception is the address the Clawdmeter program on your PC pushes to, which has no way to send a password and can only change the numbers on the screen. There is no way to recover a forgotten password: the only way back into a locked device is to reinstall the firmware over a cable. Write it down somewhere before you save.
 
 **Maintenance**: "Reboot" restarts the device without changing anything. "Factory reset" erases every saved setting, including WiFi networks, and puts the device back into first-time SETUP MODE; it does not remove or downgrade the firmware itself.

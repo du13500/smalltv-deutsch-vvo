@@ -28,6 +28,23 @@ static void scheduleReboot(uint32_t inMs) {
   g_rebootAt = millis() + inMs;
 }
 
+// ---- optional web UI password ---------------------------------------------
+// Off by default. When on, every handler below starts with this line and every
+// page and endpoint needs the credentials. Digest, not basic, so the password
+// is never sent over a plain-HTTP LAN. Two deliberate exceptions:
+//   - the captive-portal probes, which a phone fires before anyone can type a
+//     password and which only ever redirect,
+//   - /api/usage, the daemon's push endpoint, which has no way to carry
+//     credentials and only writes the numbers on the screen.
+// Returns true when the request may proceed; on false it has already answered.
+static bool requireAuth() {
+  if (!S->auth.enabled || !S->auth.pass.length()) return true;
+  if (server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str())) return true;
+  server.requestAuthentication(HTTPAuthMethod::DIGEST_AUTH, AUTH_REALM,
+                               "Authentication required");
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 static void sendJson(JsonDocument& doc, int code = 200) {
   String out;
@@ -36,11 +53,13 @@ static void sendJson(JsonDocument& doc, int code = 200) {
 }
 
 static void handleRoot() {
+  if (!requireAuth()) return;
   server.sendHeader("Cache-Control", "no-cache");
   server.send_P(200, "text/html", WEBUI_HTML);
 }
 
 static void handleGetConfig() {
+  if (!requireAuth()) return;
   JsonDocument doc;
   JsonObject root = doc.to<JsonObject>();
   settingsToJson(*S, root, /*includeSecrets=*/false);
@@ -68,6 +87,7 @@ static void handleGetConfig() {
 }
 
 static void handleStatus() {
+  if (!requireAuth()) return;
   JsonDocument doc;
   JsonObject o = doc.to<JsonObject>();
   o["fw"] = FW_NAME;
@@ -147,6 +167,7 @@ static String wgFingerprint(const Settings& s) {
 }
 
 static void handlePostConfig() {
+  if (!requireAuth()) return;
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
 
   JsonDocument doc;
@@ -186,6 +207,7 @@ static void handlePostConfig() {
 }
 
 static void handleScan() {
+  if (!requireAuth()) return;
   int n = WiFi.scanNetworks();
   JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
@@ -200,11 +222,13 @@ static void handleScan() {
 }
 
 static void handleReboot() {
+  if (!requireAuth()) return;
   server.send(200, "application/json", "{\"ok\":true}");
   scheduleReboot(400);
 }
 
 static void handleFactory() {
+  if (!requireAuth()) return;
   factoryReset(*S);
   saveSettings(*S);
   server.send(200, "application/json", "{\"ok\":true}");
@@ -214,6 +238,7 @@ static void handleFactory() {
 // Full settings backup: stream the persisted config.json verbatim. It includes
 // the WiFi passwords — same trust domain as typing them into this page.
 static void handleExport() {
+  if (!requireAuth()) return;
   File f = LittleFS.open("/config.json", "r");
   if (!f) { server.send(404, "text/plain", "no config saved yet"); return; }
   server.sendHeader("Content-Disposition", "attachment; filename=smalltv-config.json");
@@ -223,6 +248,7 @@ static void handleExport() {
 
 // Restore a backup: apply everything, persist, reboot (WiFi/hostname may change).
 static void handleImport() {
+  if (!requireAuth()) return;
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
   JsonDocument doc;
   if (deserializeJson(doc, server.arg("plain"))) {
@@ -236,6 +262,7 @@ static void handleImport() {
 }
 
 static void handleRefresh() {
+  if (!requireAuth()) return;
 #if WITH_TICKER
   stocksForceRefresh();
 #endif
@@ -244,6 +271,7 @@ static void handleRefresh() {
 
 // Check the newest GitHub release against the running version.
 static void handleCheckUpdate() {
+  if (!requireAuth()) return;
   OtaLatest r = otaCheckLatest(*S);
   JsonDocument doc;
   JsonObject o = doc.to<JsonObject>();
@@ -258,6 +286,7 @@ static void handleCheckUpdate() {
 // Trigger the self-update. The actual (blocking) download runs from the loop so
 // this response returns first; on success the device reboots into the new image.
 static void handleSelfUpdate() {
+  if (!requireAuth()) return;
   g_selfUpdate = true;
   g_updateMsg = "starting...";
   server.send(200, "application/json", "{\"ok\":true}");
@@ -278,14 +307,24 @@ static void handleUsagePush() {
 
 // ---- OTA ------------------------------------------------------------------
 static void handleUpdateDone() {
+  if (!requireAuth()) return;
   bool ok = !Update.hasError();
   server.sendHeader("Connection", "close");
   server.send(ok ? 200 : 500, "text/plain", ok ? "OK" : platformUpdateError().c_str());
   if (ok) scheduleReboot(1200);
 }
 
+// The upload callback runs while the body streams in, ahead of
+// handleUpdateDone, so the password has to be checked here too: guarding only
+// the final handler would let an unauthenticated POST write a whole image to
+// flash and merely lose the 200 at the end.
 static void handleUpdateUpload() {
   HTTPUpload& up = server.upload();
+  if (S->auth.enabled && S->auth.pass.length() &&
+      !server.authenticate(S->auth.user.c_str(), S->auth.pass.c_str())) {
+    if (up.status != UPLOAD_FILE_START) Update.end();
+    return;
+  }
   if (up.status == UPLOAD_FILE_START) {
 #if defined(SMALLTV_ESP8266)
     WiFiUDP::stopAll();   // free UDP sockets so the OTA has max contiguous flash/heap

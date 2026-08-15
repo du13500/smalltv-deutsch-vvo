@@ -86,6 +86,21 @@ struct ClockSettings {
   void fromJson(JsonObjectConst o);
 };
 
+// ---- Web UI password slice (device-wide) -----------------------------------
+// Off by default: the settings page is open on the LAN, as it always was.
+// Turning it on puts every page and every API endpoint behind HTTP digest auth,
+// with the exceptions listed in WebPortal.cpp. Like the other secrets here, the
+// password reaches the config file and the settings export, never the web API.
+struct AuthSettings {
+  bool   enabled;
+  String user;
+  String pass;
+
+  void setDefaults();
+  void toJson(JsonObject o, bool includeSecrets) const;
+  void fromJson(JsonObjectConst o);
+};
+
 // ---- WireGuard slice (device-wide) -----------------------------------------
 // One tunnel, one peer. Only reaches the wire on builds that compile the client
 // in (the ESP32-C2); elsewhere the settings persist but nothing uses them.
@@ -178,6 +193,7 @@ struct Settings {
   ClockSettings   clock;
   DisplaySettings display;   // panel colour correction
   WgSettings      wg;        // WireGuard tunnel (ESP32 targets)
+  AuthSettings    auth;      // optional web UI password
 
   void setDefaults();
 };

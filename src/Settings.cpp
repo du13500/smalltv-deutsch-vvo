@@ -183,6 +183,39 @@ void ClockSettings::fromJson(JsonObjectConst o) {
 }
 
 // ===========================================================================
+// Web UI password slice
+// ===========================================================================
+void AuthSettings::setDefaults() {
+  enabled = false;
+  user = DEFAULT_AUTH_USER;
+  pass = "";
+}
+
+void AuthSettings::toJson(JsonObject o, bool includeSecrets) const {
+  // Never enable in the saved config without a password to check against; a
+  // blank one would lock the page with a credential nobody can supply.
+  o["enabled"] = enabled && pass.length() > 0;
+  o["user"]    = user;
+  o["passSet"] = pass.length() > 0;
+  if (includeSecrets) o["pass"] = pass;
+}
+
+void AuthSettings::fromJson(JsonObjectConst o) {
+  if (o["user"].is<const char*>()) user = o["user"].as<String>();
+  // Blank keeps the stored password, as everywhere else in this file.
+  if (o["pass"].is<const char*>()) {
+    String p = o["pass"].as<String>();
+    if (p.length()) pass = p;
+  }
+  if (o["enabled"].is<bool>()) enabled = o["enabled"];
+  if (user.length() >= MAX_AUTH_USER_LEN) user.remove(MAX_AUTH_USER_LEN - 1);
+  if (pass.length() >= MAX_AUTH_PASS_LEN) pass.remove(MAX_AUTH_PASS_LEN - 1);
+  if (!user.length()) user = DEFAULT_AUTH_USER;
+  // Same guard as toJson, for a config imported by hand.
+  if (!pass.length()) enabled = false;
+}
+
+// ===========================================================================
 // WireGuard slice
 // ===========================================================================
 void WgSettings::setDefaults() {
@@ -371,6 +404,7 @@ void Settings::setDefaults() {
   clock.setDefaults();
   display.setDefaults();
   wg.setDefaults();
+  auth.setDefaults();
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +490,7 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   s.clock.toJson(root["clock"].to<JsonObject>());
   s.display.toJson(root["display"].to<JsonObject>());
   s.wg.toJson(root["wg"].to<JsonObject>(), includeSecrets);
+  s.auth.toJson(root["auth"].to<JsonObject>(), includeSecrets);
 }
 
 // Apply only the keys that are present (partial update friendly). Accepts both
@@ -531,4 +566,5 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
   if (root["clock"].is<JsonObjectConst>()) s.clock.fromJson(root["clock"].as<JsonObjectConst>());
   if (root["display"].is<JsonObjectConst>()) s.display.fromJson(root["display"].as<JsonObjectConst>());
   if (root["wg"].is<JsonObjectConst>()) s.wg.fromJson(root["wg"].as<JsonObjectConst>());
+  if (root["auth"].is<JsonObjectConst>()) s.auth.fromJson(root["auth"].as<JsonObjectConst>());
 }
