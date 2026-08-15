@@ -18,6 +18,7 @@
 #include "OtaUpdate.h"
 #include "Mode.h"
 #include "Clock.h"
+#include "WgClient.h"
 
 #if WITH_TICKER
 #include "TickerMode.h"
@@ -177,7 +178,15 @@ void setup() {
   // TLS handshake on the ESP8266). clockReapply arms it iff needed. Skipped after a
   // crash so a fault in here can't boot-loop before the web server starts (the
   // device then comes up in safe mode, OTA-recoverable, instead of needing UART).
-  if (!g_safeMode) clockReapply(g_settings);
+  // ...unless a WireGuard tunnel is configured, which needs the clock and only
+  // exists on an ESP32 where the heap argument for the skip does not apply.
+  if (!g_safeMode || wgNeedsClock(g_settings)) clockReapply(g_settings);
+
+  // Optional WireGuard tunnel (ESP32 targets). Arms the state machine only;
+  // the bring-up itself runs from loop(), so nothing here can delay the web
+  // server. A crash last boot feeds the three-strikes hold that keeps a bad
+  // tunnel config from locking the device out of its own web UI.
+  wgBegin(g_settings, g_safeMode);
 
   // A GitHub update queued from the web UI runs now, before the features claim
   // the heap (the download needs a 16 KB TLS buffer that only fits at boot).
@@ -218,6 +227,11 @@ void loop() {
     delay(120);
     ESP.restart();
   }
+
+  // Before the safe-mode return on purpose: if the crash had nothing to do with
+  // the tunnel, remote access survives it, and if it did, the three-strikes hold
+  // stops the retries by itself.
+  wgService(g_settings);
 
   if (g_safeMode) {
     delay(5);

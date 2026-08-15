@@ -25,6 +25,14 @@ struct StockData {
   bool     userNamed; // user supplied a custom name (don't override from source)
   uint32_t lastOkMs;  // millis() of last good update
 
+  // Per-symbol fetch schedule. Every ticker carries its own due time, so one
+  // that fails (bad symbol, a provider hiccup, or an ESP8266 heap-guard skip)
+  // is retried on its own short backoff instead of waiting out the shared poll
+  // interval, and a healthy ticker is not re-fetched just because a neighbour
+  // is failing.
+  uint32_t nextTryMs; // millis() when this symbol is next due
+  uint8_t  fails;     // consecutive failed attempts (drives the backoff)
+
   void clear() {
     symbol[0] = name[0] = currency[0] = rangeLabel[0] = 0;
     source = DEFAULT_SOURCE;
@@ -36,5 +44,7 @@ struct StockData {
     error = false;
     userNamed = false;
     lastOkMs = 0;
+    nextTryMs = 0;
+    fails = 0;
   }
 };

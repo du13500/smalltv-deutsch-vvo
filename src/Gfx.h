@@ -10,19 +10,30 @@
 class Arduino_GFX;   // fwd-decl: only the drawing .cpp files pull in the full lib
 
 // ---- Shared colors (RGB565) ----------------------------------------------
-#define C_BLACK  0x0000
-#define C_WHITE  0xFFFF
-#define C_GREEN  0x07E0
-#define C_RED    0xF800
-#define C_GRAY   0x8410
-#define C_DGRAY  0x4208
-#define C_YELLOW 0xFFE0
-#define C_BLUE   0x041F
+// The SmallTV variants ship visibly different panels: some run warm, some cold,
+// and a few have red and blue swapped in the controller. gfxTint() applies the
+// per-channel gain set in the Display tab to every colour on its way to the
+// panel, so a unit can be matched to the others without touching each renderer.
+// Colours computed inside a feature go through it too (see UsageMode/RadarMode).
+uint16_t gfxTint(uint16_t rgb565);
+
+#define C_BLACK  gfxTint(0x0000)
+#define C_WHITE  gfxTint(0xFFFF)
+#define C_GREEN  gfxTint(0x07E0)
+#define C_RED    gfxTint(0xF800)
+#define C_GRAY   gfxTint(0x8410)
+#define C_DGRAY  gfxTint(0x4208)
+#define C_YELLOW gfxTint(0xFFE0)
+#define C_BLUE   gfxTint(0x041F)
 
 // ---- Device lifecycle -----------------------------------------------------
 void         gfxBegin(const Settings& s);
 void         gfxSetBrightness(uint8_t pct, bool inverted);
 void         gfxSetRotation(uint8_t r);
+// Push the Display tab's colour settings to the panel: MADCTL colour order,
+// the inversion bit, and the per-channel gain gfxTint() applies. Callers repaint
+// afterwards — already-drawn pixels keep the previous correction.
+void         gfxApplyColors(const Settings& s);
 Arduino_GFX* gfxDev();                 // shared draw target for feature renderers
 
 // ---- Text helpers (built-in 6x8 font, integer scaled) ---------------------

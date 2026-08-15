@@ -83,8 +83,10 @@ void TickerSettings::fromJson(JsonObjectConst o) {
   if (o["webhookUrl"].is<const char*>()) webhookUrl = o["webhookUrl"].as<String>();
   if (o["range"].is<const char*>())      range = o["range"].as<String>();
   if (o["points"].is<int>())             points = constrain((int)o["points"], 0, MAX_SPARK_POINTS);
-  if (o["pollSec"].is<int>())            pollSec = max(10, (int)o["pollSec"]);
-  if (o["rotateSec"].is<int>())          rotateSec = max(2, (int)o["rotateSec"]);
+  // Clamped at both ends: these land in a uint16_t, and the web UI's own
+  // min/max are only advisory (the page POSTs JSON, it does not submit a form).
+  if (o["pollSec"].is<int>())            pollSec = constrain((int)o["pollSec"], 10, 3600);
+  if (o["rotateSec"].is<int>())          rotateSec = constrain((int)o["rotateSec"], 2, 3600);
   if (o["colorInverted"].is<bool>())     colorInverted = o["colorInverted"];
   if (o["changeOnRange"].is<bool>())     changeOnRange = o["changeOnRange"];
 
@@ -133,7 +135,7 @@ void UsageSettings::toJson(JsonObject o) const {
 
 void UsageSettings::fromJson(JsonObjectConst o) {
   if (o["usageUrl"].is<const char*>()) usageUrl = o["usageUrl"].as<String>();
-  if (o["pollSec"].is<int>())          pollSec = max(10, (int)o["pollSec"]);
+  if (o["pollSec"].is<int>())          pollSec = constrain((int)o["pollSec"], 10, 3600);
 }
 
 // ===========================================================================
@@ -178,6 +180,85 @@ void ClockSettings::fromJson(JsonObjectConst o) {
   if (o["nightStart"].is<const char*>())  nightStartMin = hhmmToMin(o["nightStart"], nightStartMin);
   if (o["nightEnd"].is<const char*>())    nightEndMin   = hhmmToMin(o["nightEnd"], nightEndMin);
   if (o["nightLevel"].is<int>())          nightLevel = constrain((int)o["nightLevel"], 0, 100);
+}
+
+// ===========================================================================
+// WireGuard slice
+// ===========================================================================
+void WgSettings::setDefaults() {
+  enabled = false;
+  privateKey = "";
+  peerPublicKey = "";
+  endpointHost = "";
+  endpointPort = DEFAULT_WG_PORT;
+  address = "";
+  allowedIps = "";
+  keepalive = DEFAULT_WG_KEEPALIVE;
+}
+
+void WgSettings::toJson(JsonObject o, bool includeSecrets) const {
+  o["enabled"]        = enabled;
+  o["peerPublicKey"]  = peerPublicKey;
+  o["endpointHost"]   = endpointHost;
+  o["endpointPort"]   = endpointPort;
+  o["address"]        = address;
+  o["allowedIps"]     = allowedIps;
+  o["keepalive"]      = keepalive;
+  // The private key follows the same rule as the WiFi passwords: it reaches
+  // the config file and the settings export, never the web API.
+  o["privateKeySet"]  = privateKey.length() > 0;
+  if (includeSecrets) o["privateKey"] = privateKey;
+}
+
+void WgSettings::fromJson(JsonObjectConst o) {
+  if (o["enabled"].is<bool>())              enabled = o["enabled"];
+  if (o["peerPublicKey"].is<const char*>()) peerPublicKey = o["peerPublicKey"].as<String>();
+  if (o["endpointHost"].is<const char*>())  endpointHost = o["endpointHost"].as<String>();
+  if (o["endpointPort"].is<int>())          endpointPort = constrain((int)o["endpointPort"], 1, 65535);
+  if (o["address"].is<const char*>())       address = o["address"].as<String>();
+  if (o["allowedIps"].is<const char*>())    allowedIps = o["allowedIps"].as<String>();
+  if (o["keepalive"].is<int>())             keepalive = constrain((int)o["keepalive"], 0, 3600);
+  // Blank keeps the stored key, so the web UI can save the rest of the form
+  // without ever holding the secret. Clearing it takes a factory reset or an
+  // imported config that carries a new one.
+  if (o["privateKey"].is<const char*>()) {
+    String p = o["privateKey"].as<String>();
+    if (p.length()) privateKey = p;
+  }
+  if (peerPublicKey.length() >= MAX_WG_KEY_LEN)   peerPublicKey.remove(MAX_WG_KEY_LEN - 1);
+  if (privateKey.length()    >= MAX_WG_KEY_LEN)   privateKey.remove(MAX_WG_KEY_LEN - 1);
+  if (endpointHost.length()  >= MAX_WG_HOST_LEN)  endpointHost.remove(MAX_WG_HOST_LEN - 1);
+  if (allowedIps.length()    >= MAX_WG_ALLOWED_LEN) allowedIps.remove(MAX_WG_ALLOWED_LEN - 1);
+}
+
+// ===========================================================================
+// Panel colour slice
+// ===========================================================================
+void DisplaySettings::setDefaults() {
+  colorOrder = DEFAULT_COLOR_ORDER;
+  invert     = DEFAULT_COLOR_INVERT;
+  rGain = gGain = bGain = DEFAULT_COLOR_GAIN;
+}
+
+void DisplaySettings::toJson(JsonObject o) const {
+  o["colorOrder"] = (colorOrder == COLOR_ORDER_RGB) ? "rgb"
+                  : (colorOrder == COLOR_ORDER_BGR) ? "bgr" : "auto";
+  o["invert"] = invert;
+  o["rGain"]  = rGain;
+  o["gGain"]  = gGain;
+  o["bGain"]  = bGain;
+}
+
+void DisplaySettings::fromJson(JsonObjectConst o) {
+  if (o["colorOrder"].is<const char*>()) {
+    String c = o["colorOrder"].as<String>();
+    colorOrder = c.equalsIgnoreCase("rgb") ? COLOR_ORDER_RGB
+               : c.equalsIgnoreCase("bgr") ? COLOR_ORDER_BGR : COLOR_ORDER_AUTO;
+  }
+  if (o["invert"].is<bool>()) invert = o["invert"];
+  if (o["rGain"].is<int>()) rGain = constrain((int)o["rGain"], MIN_COLOR_GAIN, MAX_COLOR_GAIN);
+  if (o["gGain"].is<int>()) gGain = constrain((int)o["gGain"], MIN_COLOR_GAIN, MAX_COLOR_GAIN);
+  if (o["bGain"].is<int>()) bGain = constrain((int)o["bGain"], MIN_COLOR_GAIN, MAX_COLOR_GAIN);
 }
 
 // ===========================================================================
@@ -235,7 +316,7 @@ void RadarSettings::fromJson(JsonObjectConst o) {
   }
   if (o["webhookUrl"].is<const char*>()) webhookUrl = o["webhookUrl"].as<String>();
   if (o["rangeKm"].is<int>())    rangeKm = constrain((int)o["rangeKm"], 1, 500);
-  if (o["pollSec"].is<int>())    pollSec = max(3, (int)o["pollSec"]);
+  if (o["pollSec"].is<int>())    pollSec = constrain((int)o["pollSec"], 3, 3600);
   if (o["unitsMi"].is<bool>())   unitsMi = o["unitsMi"];
   if (o["showLabels"].is<bool>())  showLabels = o["showLabels"];
   if (o["showVectors"].is<bool>()) showVectors = o["showVectors"];
@@ -288,6 +369,8 @@ void Settings::setDefaults() {
   usage.setDefaults();
   radar.setDefaults();
   clock.setDefaults();
+  display.setDefaults();
+  wg.setDefaults();
 }
 
 // ---------------------------------------------------------------------------
@@ -371,6 +454,8 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   s.usage.toJson(root["usage"].to<JsonObject>());
   s.radar.toJson(root["radar"].to<JsonObject>());
   s.clock.toJson(root["clock"].to<JsonObject>());
+  s.display.toJson(root["display"].to<JsonObject>());
+  s.wg.toJson(root["wg"].to<JsonObject>(), includeSecrets);
 }
 
 // Apply only the keys that are present (partial update friendly). Accepts both
@@ -444,4 +529,6 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
   // Radar has no legacy flat layout; only apply when its nested object is present.
   if (root["radar"].is<JsonObjectConst>()) s.radar.fromJson(root["radar"].as<JsonObjectConst>());
   if (root["clock"].is<JsonObjectConst>()) s.clock.fromJson(root["clock"].as<JsonObjectConst>());
+  if (root["display"].is<JsonObjectConst>()) s.display.fromJson(root["display"].as<JsonObjectConst>());
+  if (root["wg"].is<JsonObjectConst>()) s.wg.fromJson(root["wg"].as<JsonObjectConst>());
 }

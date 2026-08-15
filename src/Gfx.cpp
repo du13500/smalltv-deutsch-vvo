@@ -9,6 +9,13 @@
 // screen stays black even with the backlight on. Subclass begin() to force mode 3
 // — matching the known-good GeekMagic community firmwares. (On ESP32 the base
 // class already selects mode 3, so the override is harmless there.)
+
+// Runtime panel colour order, read by the setRotation override below. The board
+// header's TFT_BGR is the factory default for that variant; the Display tab can
+// override it, because units of the same model do turn up with red and blue
+// swapped in the controller.
+static bool g_bgr = (TFT_BGR != 0);
+
 class Arduino_ST7789_SmallTV : public Arduino_ST7789 {
  public:
   using Arduino_ST7789::Arduino_ST7789;   // inherit constructors
@@ -17,10 +24,11 @@ class Arduino_ST7789_SmallTV : public Arduino_ST7789 {
     return Arduino_TFT::begin(speed);
   }
 
-#if TFT_BGR
-  // This board's panel is wired B-G-R. Arduino_ST7789 hardcodes the MADCTL RGB
-  // order, so re-issue MADCTL with the BGR bit (0x08) set on every rotation
-  // change. Only rotations 0-3 are used by the SmallTV (setRotation(r & 3)).
+  // Arduino_ST7789 hardcodes the MADCTL RGB order, so re-issue MADCTL with the
+  // BGR bit (0x08) tracking g_bgr on every rotation change. The MX/MY/MV values
+  // below are the base class's own mapping (ST7789_MADCTL_RGB is 0x00), so with
+  // g_bgr false this writes exactly what the library would have written. Only
+  // rotations 0-3 are used by the SmallTV (setRotation(r & 3)).
   void setRotation(uint8_t r) override {
     Arduino_TFT::setRotation(r);           // updates _rotation + width/height
     uint8_t madctl;
@@ -30,13 +38,26 @@ class Arduino_ST7789_SmallTV : public Arduino_ST7789 {
       case 3:  madctl = ST7789_MADCTL_MY | ST7789_MADCTL_MV; break;
       default: madctl = 0; break;          // case 0
     }
-    madctl |= 0x08;                         // BGR
+    if (g_bgr) madctl |= 0x08;              // BGR
     _bus->beginWrite();
     _bus->writeC8D8(ST7789_MADCTL, madctl);
     _bus->endWrite();
   }
-#endif
 };
+
+// ---- colour correction ----------------------------------------------------
+// Per-channel gain in percent, 100 = untouched. Kept as plain bytes so the
+// all-default case is a single comparison on the hot drawing path.
+static uint8_t g_rGain = 100, g_gGain = 100, g_bGain = 100;
+
+uint16_t gfxTint(uint16_t c) {
+  if (g_rGain == 100 && g_gGain == 100 && g_bGain == 100) return c;
+  uint32_t r = (c >> 11) & 0x1F, g = (c >> 5) & 0x3F, b = c & 0x1F;
+  r = r * g_rGain / 100; if (r > 31) r = 31;
+  g = g * g_gGain / 100; if (g > 63) g = 63;
+  b = b * g_bGain / 100; if (b > 31) b = 31;
+  return (uint16_t)((r << 11) | (g << 5) | b);
+}
 
 static Arduino_DataBus* bus = nullptr;
 static Arduino_GFX*     gfx = nullptr;
@@ -74,7 +95,10 @@ void gfxBegin(const Settings& s) {
   gfx = new Arduino_ST7789_SmallTV(bus, TFT_RST, 0 /*rotation*/, true /*IPS*/,
                                    TFT_WIDTH, TFT_HEIGHT, 0, 0, 0, 0);
   gfx->begin();
-  gfx->setRotation(s.rotation & 3);
+  // Colour order/inversion/gain before the first pixel, so the panel comes up
+  // already corrected instead of flashing an uncorrected boot screen. This also
+  // writes MADCTL for the configured rotation.
+  gfxApplyColors(s);
   // Nothing in this UI ever wants wrapped text: overflowing labels used to
   // wrap around to x=0 on the next line (stray characters at the left edge).
   gfx->setTextWrap(false);
@@ -90,6 +114,18 @@ void gfxSetBrightness(uint8_t pct, bool inverted) {
 
 void gfxSetRotation(uint8_t r) {
   if (gfx) gfx->setRotation(r & 3);
+}
+
+void gfxApplyColors(const Settings& s) {
+  g_rGain = s.display.rGain;
+  g_gGain = s.display.gGain;
+  g_bGain = s.display.bGain;
+  g_bgr = (s.display.colorOrder == COLOR_ORDER_BGR) ? true
+        : (s.display.colorOrder == COLOR_ORDER_RGB) ? false
+                                                    : (TFT_BGR != 0);
+  if (!gfx) return;
+  gfx->setRotation(s.rotation & 3);   // re-issues MADCTL with the new order
+  gfx->invertDisplay(s.display.invert);
 }
 
 // ---- text helpers (built-in 6x8 font, integer scaled) ---------------------

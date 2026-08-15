@@ -6,12 +6,14 @@
 
 UsageMode g_usageMode;
 
-// Claude-usage palette (Anthropic-inspired dark theme, RGB565 of the originals)
-#define C_ACCENT  0xDBAA   // terra-cotta 0xd97757
-#define C_UGREEN  0x7C6B   // green 0x788c5d
-#define C_PANEL   0x18E3   // card fill 0x1f1f1e
-#define C_BARBG   0x2945   // unfilled bar track 0x2a2a28
-#define C_DIM     0xB574   // secondary text 0xb0aea5
+// Claude-usage palette (Anthropic-inspired dark theme, RGB565 of the originals).
+// Through gfxTint() like the shared palette, so the Display tab's colour
+// correction reaches these too.
+#define C_ACCENT  gfxTint(0xDBAA)   // terra-cotta 0xd97757
+#define C_UGREEN  gfxTint(0x7C6B)   // green 0x788c5d
+#define C_PANEL   gfxTint(0x18E3)   // card fill 0x1f1f1e
+#define C_BARBG   gfxTint(0x2945)   // unfilled bar track 0x2a2a28
+#define C_DIM     gfxTint(0xB574)   // secondary text 0xb0aea5
 
 // Mascot diff state for the flicker-free full-screen idle animation.
 static bool            s_mascotPrimed  = false;
@@ -21,10 +23,12 @@ static uint8_t         s_prevCells[MASCOT_GRID * MASCOT_GRID];
 // Copy a mascot palette into a local RAM array using *byte* reads. pgm_read_byte
 // is safe from both RAM and flash; a 16-bit load straight from flash (irom) faults
 // on the ESP8266, so this never depends on where the palette actually lives.
+// Tinted on the way out so the mascot's own palette follows the Display tab's
+// colour correction like everything else.
 static void loadPalette(const uint16_t* palette, uint16_t* out) {
   const uint8_t* p = (const uint8_t*)palette;
   for (int k = 0; k < MASCOT_PALETTE_SIZE; k++)
-    out[k] = (uint16_t)(pgm_read_byte(p + 2 * k) | (pgm_read_byte(p + 2 * k + 1) << 8));
+    out[k] = gfxTint((uint16_t)(pgm_read_byte(p + 2 * k) | (pgm_read_byte(p + 2 * k + 1) << 8)));
 }
 
 // Draw a 20x20 mascot frame at (x0,y0), cellPx per cell. Reads PROGMEM frame data.

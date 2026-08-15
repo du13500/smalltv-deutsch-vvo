@@ -13,6 +13,11 @@ uint8_t          stocksCount();
 const StockData& stockAt(uint8_t i);
 bool             stocksAnyValid();
 
+// Seconds until symbol i is fetched again (0 = due now). Each symbol keeps its
+// own schedule, so a failed one retries on a short backoff while the rest stay
+// on the poll interval; the web UI shows this next to a failing ticker.
+uint32_t stockRetryInSec(uint8_t i);
+
 // Effective change for display. With ticker.changeOnRange it is the move over
 // the charted timeframe (live price vs the first spark point) so the sign
 // agrees with the chart; otherwise (or without chart data) it is the

@@ -6,7 +6,7 @@
 
 RadarMode g_radarMode;
 
-#define C_MAGENTA 0xF81F   // speed vector (not in the shared palette)
+#define C_MAGENTA gfxTint(0xF81F)   // speed vector (not in the shared palette)
 
 // Radar geometry (square 240x240 panel; the circle leaves the corners empty).
 static const int CX = TFT_WIDTH / 2;

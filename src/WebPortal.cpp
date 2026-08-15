@@ -9,6 +9,7 @@
 #include "StockClient.h"
 #include "UsageClient.h"
 #include "Clock.h"
+#include "WgClient.h"
 
 // Defined in main.cpp — re-init every mode + force a repaint after a config change.
 extern void appInvalidate();
@@ -48,6 +49,13 @@ static void handleGetConfig() {
   feat["ticker"] = (bool)WITH_TICKER;
   feat["usage"]  = (bool)WITH_USAGE;
   feat["radar"]  = (bool)WITH_RADAR;
+  // WireGuard is a per-chip decision rather than a per-feature one: it is
+  // compiled only where the image has room for it (the ESP32-C2 build).
+#if defined(SMALLTV_WIREGUARD)
+  feat["wireguard"] = true;
+#else
+  feat["wireguard"] = false;
+#endif
   // Which chip this build runs on (the UI warns about per-chip limitations).
 #if defined(SMALLTV_ESP32C2)
   root["chip"] = "esp32c2";
@@ -82,6 +90,7 @@ static void handleStatus() {
   o["night"]     = clockNightActive();   // dimming now
   o["nightHeld"] = clockNightHeld();      // in the window but waiting for a fresh NTP sync
   o["clockFresh"] = clockTrusted();       // last NTP sync within the trust window
+  wgStatusJson(o["wg"].to<JsonObject>()); // tunnel state (compiledIn=false where it isn't built)
 
 #if WITH_TICKER
   JsonArray arr = o["tickers"].to<JsonArray>();
@@ -91,6 +100,7 @@ static void handleStatus() {
     t["symbol"] = d.symbol;
     t["valid"] = d.valid;
     t["error"] = d.error;
+    if (d.error) t["retryIn"] = stockRetryInSec(i);   // seconds to the next attempt
     if (d.valid) {
       t["price"] = d.price;
       float chg, pct;
@@ -121,6 +131,21 @@ static String netFingerprint(const Settings& s) {
   return f;
 }
 
+// Everything the tunnel is built from. A change here tears it down and brings
+// it back up with the new settings; an unchanged save leaves a working tunnel
+// alone.
+static String wgFingerprint(const Settings& s) {
+  String f(s.wg.enabled ? '1' : '0');
+  f += s.wg.privateKey;    f += '\x01';
+  f += s.wg.peerPublicKey; f += '\x01';
+  f += s.wg.endpointHost;  f += '\x01';
+  f += String(s.wg.endpointPort); f += '\x01';
+  f += s.wg.address;       f += '\x01';
+  f += s.wg.allowedIps;    f += '\x01';
+  f += String(s.wg.keepalive);
+  return f;
+}
+
 static void handlePostConfig() {
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
 
@@ -131,7 +156,7 @@ static void handlePostConfig() {
   }
 
   String oldNet = netFingerprint(*S);
-  uint8_t oldRot = S->rotation;
+  String oldWg = wgFingerprint(*S);
 
   settingsApplyJson(*S, doc.as<JsonObjectConst>());
   saveSettings(*S);
@@ -139,15 +164,23 @@ static void handlePostConfig() {
   // Live apply (no reboot needed for these)
   clockReapply(*S);         // re-arm SNTP iff the timezone changed
   appApplyBrightness();     // apply effective brightness (respects night/auto/manual)
-  if (S->rotation != oldRot) gfxSetRotation(S->rotation);
+  gfxApplyColors(*S);       // rotation, panel colour order/inversion, channel gain
   appInvalidate();          // re-init every mode + repaint (covers mode/URL/symbol changes)
 
+  // Rebuild the tunnel when its settings changed. A save that changes nothing
+  // still rebuilds while the tunnel is held after repeated crashes: that
+  // re-save is the deliberate "I fixed it, try again".
+  bool wgChanged = (wgFingerprint(*S) != oldWg) || wgHeld();
   bool wifiChanged = netFingerprint(*S) != oldNet;
 
   JsonDocument res;
   res["ok"] = true;
   res["reboot"] = wifiChanged;
   sendJson(res);
+
+  // After the response, not before: a browser reaching the device *through* the
+  // tunnel would otherwise lose the answer to the very save that rebuilt it.
+  if (wgChanged) wgReapply(*S);
 
   if (wifiChanged) scheduleReboot(800);
 }

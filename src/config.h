@@ -12,7 +12,7 @@
 // Firmware identity
 // ---------------------------------------------------------------------------
 #define FW_NAME     "smalltv-mod"
-#define FW_VERSION  "2.8.2"
+#define FW_VERSION  "2.9.0"
 
 // Project / update references (shown in the web UI; used by the GitHub self-update)
 #define REPO_URL      "https://github.com/giovi321/smalltv-mod"
@@ -58,6 +58,18 @@
 #define MAX_NAME_LEN     20    // friendly name shown on screen
 #define MAX_SPARK_POINTS 60    // sparkline samples kept per symbol
 #define MAX_URL_LEN     200    // webhook base URL
+
+// ---------------------------------------------------------------------------
+// WireGuard client (ESP32 targets only — see SMALLTV_WIREGUARD in platformio.ini)
+// Reaches the device from outside the LAN without forwarding its plain-HTTP
+// port to the internet. The ESP8266 has neither the flash nor the heap for it.
+// ---------------------------------------------------------------------------
+#define MAX_WG_KEY_LEN    48   // base64 x25519 key is 44 chars + NUL, with headroom
+#define MAX_WG_HOST_LEN   64   // endpoint hostname or IP
+#define MAX_WG_ADDR_LEN   24   // tunnel address without the prefix
+#define MAX_WG_ALLOWED_LEN 80  // comma-separated allowed-IPs list
+#define DEFAULT_WG_PORT        51820
+#define DEFAULT_WG_KEEPALIVE      25   // seconds; 0 = off. 25 survives most NATs
 
 // ---------------------------------------------------------------------------
 // Display mode — what the device shows
@@ -178,13 +190,30 @@
 #define DEFAULT_AP_PASS      ""              // empty => open AP
 #define DEFAULT_HOSTNAME     "smalltv"
 #define DEFAULT_POLL_SEC      120            // how often to refresh data
-#define TICKER_RETRY_SEC       12            // fast retry after a failed/skipped fetch
-#define TICKER_RETRY_MAX        4            // consecutive fast retries before backing off
+// Per-symbol retry after a failed or skipped fetch: the first retry comes after
+// TICKER_RETRY_SEC and then doubles (12s, 24s, 48s, 96s) for TICKER_RETRY_MAX
+// steps, after which the symbol settles at the poll interval and keeps retrying
+// there. A retry is never scheduled further out than the poll interval.
+#define TICKER_RETRY_SEC       12
+#define TICKER_RETRY_MAX        4
 #define DEFAULT_ROTATE_SEC    10             // how long each symbol is shown
 #define DEFAULT_RANGE        "1d"            // chart timeframe (e.g. 1d/5d/1mo/1y)
 #define DEFAULT_POINTS        48             // sparkline points requested
 #define DEFAULT_BRIGHTNESS    90             // 0..100 %
 #define DEFAULT_HTTP_TIMEOUT  8000           // ms per request
+
+// --- Panel colour correction (device-wide) ---
+// Panels differ between (and within) the SmallTV variants: white balance drifts
+// and some controllers have red and blue swapped. AUTO keeps the board header's
+// TFT_BGR default; RGB/BGR force the MADCTL colour-order bit either way.
+#define COLOR_ORDER_AUTO   0
+#define COLOR_ORDER_RGB    1
+#define COLOR_ORDER_BGR    2
+#define DEFAULT_COLOR_ORDER  COLOR_ORDER_AUTO
+#define DEFAULT_COLOR_INVERT false
+#define DEFAULT_COLOR_GAIN   100     // percent per channel; 50..150 accepted
+#define MIN_COLOR_GAIN        50
+#define MAX_COLOR_GAIN       150
 
 // --- Clock / night mode (device-wide) ---
 #define NTP_SERVER1             "pool.ntp.org"

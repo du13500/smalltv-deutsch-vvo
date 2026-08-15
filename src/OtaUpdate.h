@@ -12,7 +12,7 @@
 // The ESP8266 therefore updates AT BOOT: the web UI queues the request in
 // LittleFS and reboots, otaBootUpdate() runs early in setup() with ~45 KB
 // free, and the device reboots again into the new image. Manual OTA (upload
-// the .bin in the Update tab) stays as the fallback.
+// the .bin in the System tab) stays as the fallback.
 #pragma once
 #include <Arduino.h>
 #include "Settings.h"

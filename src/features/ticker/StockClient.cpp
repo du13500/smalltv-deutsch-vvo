@@ -8,8 +8,6 @@ static uint8_t   g_count = 0;
 
 static bool     g_refreshing = false;
 static uint8_t  g_fetchIdx = 0;
-static uint32_t g_nextPollMs = 0;
-static uint8_t  g_retryBurst = 0;   // consecutive fast retries after a failed cycle
 
 // ---------------------------------------------------------------------------
 void stocksInit(const Settings& s) {
@@ -24,18 +22,28 @@ void stocksInit(const Settings& s) {
     strlcpy(g_stocks[i].name,
             g_stocks[i].userNamed ? s.ticker.symbols[i].name : s.ticker.symbols[i].symbol,
             MAX_NAME_LEN);
+    g_stocks[i].nextTryMs = millis();     // every symbol is due right away
   }
   g_refreshing = false;
-  g_nextPollMs = millis();
 }
 
 void stocksForceRefresh() {
-  g_nextPollMs = millis();
+  uint32_t now = millis();
+  for (uint8_t i = 0; i < g_count; i++) {
+    g_stocks[i].nextTryMs = now;
+    g_stocks[i].fails = 0;                // a manual refresh starts the backoff over
+  }
   g_refreshing = false;
 }
 
 uint8_t          stocksCount()        { return g_count; }
 const StockData& stockAt(uint8_t i)   { return g_stocks[i]; }
+
+uint32_t stockRetryInSec(uint8_t i) {
+  if (i >= g_count) return 0;
+  int32_t left = (int32_t)(g_stocks[i].nextTryMs - millis());
+  return left > 0 ? (uint32_t)left / 1000UL : 0;
+}
 
 bool stocksAnyValid() {
   for (uint8_t i = 0; i < g_count; i++)
@@ -549,46 +557,57 @@ static bool stepSymbol(const Settings& s, StockData& d) {
   return true;
 }
 
+// How long until this symbol is fetched again. A good fetch waits the poll
+// interval; a failed one comes back on a short, doubling backoff (typically a
+// cash fetch skipped because the heap was momentarily too fragmented for TLS,
+// which recovers within seconds). The backoff is capped at the poll interval so
+// a genuinely dead symbol settles into the normal cadence and keeps retrying
+// there — it is never given up on.
+static uint32_t symbolPeriodMs(const Settings& s, const StockData& d) {
+  uint32_t poll = (uint32_t)s.ticker.pollSec * 1000UL;
+  if (!d.error || d.fails > TICKER_RETRY_MAX) return poll;   // ladder spent -> normal cadence
+  uint32_t back = (uint32_t)TICKER_RETRY_SEC * 1000UL;
+  for (uint8_t i = 1; i < d.fails; i++) back <<= 1;          // 12 s, 24, 48, 96
+  return back < poll ? back : poll;                          // never slower than a good fetch
+}
+
+// True once the symbol's own due time has passed (millis()-safe subtraction).
+static bool symbolDue(const StockData& d) {
+  return (int32_t)(millis() - d.nextTryMs) >= 0;
+}
+
 // ---------------------------------------------------------------------------
 void stocksService(const Settings& s) {
   if (g_count == 0) return;
 
+  // A pass starts as soon as ANY symbol is due, and visits only the symbols
+  // that are due. A failing ticker on its 12 s backoff therefore no longer
+  // drags the healthy ones through an extra TLS handshake each time round.
   if (!g_refreshing) {
-    if ((int32_t)(millis() - g_nextPollMs) >= 0) {
-      g_refreshing = true;
-      g_fetchIdx = 0;
-      g_fetchPhase = 0;
-    } else {
-      return;
-    }
+    uint8_t first = g_count;
+    for (uint8_t i = 0; i < g_count; i++)
+      if (symbolDue(g_stocks[i])) { first = i; break; }
+    if (first >= g_count) return;
+    g_refreshing = true;
+    g_fetchIdx = first;
+    g_fetchPhase = 0;
   }
+
+  while (g_fetchIdx < g_count && !symbolDue(g_stocks[g_fetchIdx])) g_fetchIdx++;
 
   // One network request per call so net/web/display keep getting serviced
   // between the (slow, on the ESP8266) TLS handshakes.
   if (g_fetchIdx < g_count) {
     StockData& d = g_stocks[g_fetchIdx];
-    if (stepSymbol(s, d)) {          // symbol finished -> move to the next
+    if (stepSymbol(s, d)) {          // symbol finished -> schedule it, move on
+      if (d.error) { if (d.fails < 250) d.fails++; }
+      else         { d.fails = 0; }
+      d.nextTryMs = millis() + symbolPeriodMs(s, d);
       g_fetchIdx++;
       g_fetchPhase = 0;
     }
+    return;
   }
 
-  if (g_fetchIdx >= g_count) {
-    g_refreshing = false;
-    // If any symbol failed this cycle (typically a cash fetch skipped because
-    // the heap was momentarily too fragmented for TLS), retry soon instead of
-    // waiting the full poll interval — the heap usually recovers within
-    // seconds. Cap the burst so a genuinely bad symbol doesn't hammer forever.
-    bool anyErr = false;
-    for (uint8_t i = 0; i < g_count; i++) if (g_stocks[i].error) { anyErr = true; break; }
-    uint32_t period = (uint32_t)s.ticker.pollSec * 1000UL;
-    if (anyErr && g_retryBurst < TICKER_RETRY_MAX) {
-      g_retryBurst++;
-      uint32_t fast = (uint32_t)TICKER_RETRY_SEC * 1000UL;
-      if (fast < period) period = fast;
-    } else {
-      g_retryBurst = 0;   // all good, or burst spent -> back to normal cadence
-    }
-    g_nextPollMs = millis() + period;
-  }
+  g_refreshing = false;
 }

@@ -1,8 +1,10 @@
 // webui.h — single-page config UI served from PROGMEM
 //
-// Tabs are segmented per feature: shared Status/WiFi/Display/Update plus one tab
-// per feature (Ticker / Usage; Radar is added with WITH_RADAR). The config JSON
-// mirrors the nested Settings layout: { ..shared.., ticker:{...}, usage:{...} }.
+// Tabs are segmented per feature: shared Status/WiFi/Display/System plus one tab
+// per feature (Ticker / Clawdmeter; Radar is added with WITH_RADAR). Tab ids stay
+// at their original names (usage, update) so a lean build's hideFeat() and the
+// config keys keep matching. The config JSON mirrors the nested Settings layout:
+// { ..shared.., ticker:{...}, usage:{...} }.
 #pragma once
 #include <Arduino.h>
 
@@ -12,12 +14,14 @@ static const char WEBUI_HTML[] PROGMEM = R"HTMLPAGE(<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SmallTV</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjJjNTVlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iNyIgeT0iMTMiIHdpZHRoPSI1MCIgaGVpZ2h0PSIzOCIgcng9IjYiLz48cG9seWxpbmUgcG9pbnRzPSIxNSwzOCAyMywzMCAzMCwzNCAzNywyMiA0NCwyOCA1MCwyMCIvPjxwYXRoIGQ9Ik0yNCA1MXY2TTQwIDUxdjZNMjAgNTdoOE0zNiA1N2g4Ii8+PC9nPjwvc3ZnPg==">
 <style>
 :root{--bg:#0e1116;--card:#171c24;--mut:#8b96a5;--fg:#e6edf3;--acc:#3fb950;--acc2:#2f81f7;--red:#f85149;--bd:#262d38}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);font-size:15px}
 header{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;margin:0;font-weight:600}
+header .logo{width:26px;height:26px;flex:0 0 auto}
 header .dot{width:9px;height:9px;border-radius:50%;background:var(--mut)}
 header .dot.ok{background:var(--acc)}
 nav{display:flex;gap:4px;padding:8px;overflow-x:auto;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--bg);z-index:5}
@@ -55,22 +59,20 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
 .chip{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:.03em;background:var(--acc2);color:#fff;vertical-align:middle}
 </style></head>
 <body>
-<header><span id="dot" class="dot"></span><h1>SmallTV</h1><span id="chip" class="chip" style="display:none"></span><span id="hi" class="muted"></span></header>
+<header><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="13" width="50" height="38" rx="6"/><polyline points="15,38 23,30 30,34 37,22 44,28 50,20"/><path d="M24 51v6M40 51v6M20 57h8M36 57h8"/></g></svg><span id="dot" class="dot"></span><h1>SmallTV</h1><span id="chip" class="chip" style="display:none"></span><span id="hi" class="muted"></span></header>
 <nav>
  <button data-t="status" class="active">Status</button>
  <button data-t="wifi">WiFi</button>
  <button data-t="display">Display</button>
  <button data-t="ticker">Ticker</button>
- <button data-t="usage">Usage</button>
+ <button data-t="usage">Clawdmeter</button>
  <button data-t="radar">Radar</button>
- <button data-t="update">Update</button>
+ <button data-t="update">System</button>
 </nav>
 <main>
  <!-- STATUS -->
  <section id="status" class="tab active">
   <div class="card"><h2>Device</h2><div id="statusBox" class="muted">Loading...</div></div>
-  <div class="card"><h2>Tickers</h2><div id="tickBox" class="muted">-</div>
-   <button class="btn sec" style="margin-top:10px" onclick="refreshNow()">Refresh data now</button></div>
  </section>
 
  <!-- WIFI -->
@@ -86,6 +88,25 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
   <div class="card"><h2>Device name</h2>
    <label>Hostname</label><input id="hostname" type="text" placeholder="smalltv">
    <small class="hint">Reachable as <code>http://&lt;hostname&gt;.local</code> via mDNS. Running several SmallTVs? Give each its own name (<code>smalltv-desk</code>, <code>smalltv-shelf</code>) so browsers and the clawdmeter daemon's <code>--push-to</code> reach the right device. Saving a new name reboots the device.</small>
+  </div>
+  <div class="card" id="wgCard"><h2>WireGuard VPN</h2>
+   <div id="wgStatus" class="muted" style="margin-bottom:10px">-</div>
+   <div class="chk"><input id="wgEnabled" type="checkbox"><label>Enable the tunnel</label></div>
+   <label>This device's private key</label>
+   <input id="wgPrivateKey" type="password" autocomplete="off" placeholder="(unchanged)">
+   <label>Peer public key</label>
+   <input id="wgPeerPublicKey" type="text" autocomplete="off" placeholder="server public key">
+   <div class="row">
+    <div><label>Endpoint host</label><input id="wgEndpointHost" type="text" placeholder="vpn.example.com"></div>
+    <div style="flex:0 0 110px"><label>Port</label><input id="wgEndpointPort" type="number" min="1" max="65535"></div>
+   </div>
+   <label>Tunnel address</label>
+   <input id="wgAddress" type="text" placeholder="10.6.0.12/32">
+   <label>Allowed IPs</label>
+   <input id="wgAllowedIps" type="text" placeholder="10.6.0.0/24">
+   <label>Keepalive (s, 0 = off)</label>
+   <input id="wgKeepalive" type="number" min="0" max="3600">
+   <small class="hint">Reaches the device from outside your LAN without forwarding port 80 to the internet. Generate the key pair on your computer (<code>wg genkey | tee dev.key | wg pubkey</code>), put the private key here and the public one on the server as this device's peer; most VPN servers and providers hand you both. <b>Allowed IPs</b> decides what the device routes into the tunnel, and it also sets the tunnel netmask, so a lone <code>/32</code> address reaches nothing: list the subnet the peer is on (<code>10.6.0.0/24</code>). <code>0.0.0.0/0</code> sends everything through the VPN. The private key stays on the device and in its settings export; the page never reads it back. The tunnel needs the clock, so NTP starts whenever it is enabled.</small>
   </div>
   <div class="card"><h2>Setup hotspot (AP)</h2>
    <label>AP name</label><input id="apSsid" type="text">
@@ -122,6 +143,23 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
     <option value="2">180&deg;</option><option value="3">270&deg;</option></select>
    <div class="chk"><input id="backlightInverted" type="checkbox"><label>Backlight is active-low (try if screen stays dark)</label></div>
   </div>
+  <div class="card"><h2>Colour</h2>
+   <label>Colour order</label>
+   <select id="colorOrder">
+    <option value="auto">Panel default</option>
+    <option value="rgb">RGB</option>
+    <option value="bgr">BGR (swap red and blue)</option>
+   </select>
+   <div class="chk" style="margin-top:10px"><input id="colorInvert" type="checkbox"><label>Invert the panel</label></div>
+   <label>Red: <span id="rgVal"></span>%</label>
+   <input id="rGain" type="range" min="50" max="150" oninput="rgVal.textContent=this.value">
+   <label>Green: <span id="ggVal"></span>%</label>
+   <input id="gGain" type="range" min="50" max="150" oninput="ggVal.textContent=this.value">
+   <label>Blue: <span id="bgVal"></span>%</label>
+   <input id="bGain" type="range" min="50" max="150" oninput="bgVal.textContent=this.value">
+   <div style="margin-top:10px"><button class="btn sec" onclick="resetColors()">Reset to 100%</button></div>
+   <small class="hint">The panels shipped in these devices are not the same part, so the same firmware can look warm on one unit and green on another. Turn a channel down to pull that cast out. If red and blue come out swapped, switch the colour order; if the whole screen looks like a negative, tick Invert. Saving applies it immediately, so you can watch the screen while you adjust.</small>
+  </div>
   <div class="card"><h2>Clock &amp; night mode</h2>
    <label>Timezone</label>
    <select id="tz"></select>
@@ -139,6 +177,9 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
 
  <!-- TICKER (feature) -->
  <section id="ticker" class="tab">
+  <div class="card"><h2>Live data</h2><div id="tickBox" class="muted">-</div>
+   <button class="btn sec" style="margin-top:10px" onclick="refreshNow()">Refresh data now</button>
+   <small class="hint">What the device holds right now for each ticker. Green is a good fetch, red means the last fetch failed and the device is retrying it on its own.</small></div>
   <div class="card"><h2>Rotation &amp; data</h2>
    <div class="row">
     <div><label>Show each ticker (s)</label><input id="rotateSec" type="number" min="2" max="300"></div>
@@ -272,7 +313,7 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
    <button class="btn sec" onclick="location.href='/api/export'">Export settings</button>
    <input id="cfgFile" type="file" accept=".json,application/json" style="margin-top:10px">
    <div style="margin-top:10px"><button class="btn" onclick="importCfg()">Import &amp; reboot</button></div>
-   <small class="hint">The export is the device's <code>config.json</code>, including WiFi passwords in clear text; treat the file accordingly. Import applies everything and reboots.</small>
+   <small class="hint">The export is the device's <code>config.json</code>, including WiFi passwords and the WireGuard private key in clear text; treat the file accordingly. Import applies everything and reboots.</small>
   </div>
   <div class="card"><h2>Maintenance</h2>
    <button class="btn sec" onclick="reboot()">Reboot</button>
@@ -352,8 +393,23 @@ function hideFeat(name){
 }
 function modeChanged(){if(!$('mode'))return;
  $('carouselRow').style.display=$('mode').value==='carousel'?'block':'none';}
+
+// panel colour gains: slider + its live percentage label
+function setGain(id,lab,v){var n=(v!=null?v:100);sv(id,n);var e=$(lab);if(e)e.textContent=n}
+// Gains only: colour order and invert describe how the panel is wired, so a
+// unit that needs them keeps needing them after the sliders are put back.
+function resetColors(){setGain('rGain','rgVal',100);setGain('gGain','ggVal',100);setGain('bGain','bgVal',100);
+ toast('Gains reset — press Save settings to apply')}
 function loadConfig(){return j('/api/config').then(function(c){C=c;
  var f=c.features||{}; ['ticker','usage','radar'].forEach(function(k){if(f[k]===false)hideFeat(k)});
+ // WireGuard is only built for the chips with room for it; drop the card otherwise
+ if(f.wireguard===false){var wc=$('wgCard'); if(wc)wc.remove()}
+ var w=c.wg||{};
+ sc('wgEnabled',!!w.enabled); sv('wgPeerPublicKey',w.peerPublicKey);
+ sv('wgEndpointHost',w.endpointHost); sv('wgEndpointPort',w.endpointPort||51820);
+ sv('wgAddress',w.address); sv('wgAllowedIps',w.allowedIps);
+ sv('wgKeepalive',w.keepalive!=null?w.keepalive:25);
+ var pk=$('wgPrivateKey'); if(pk)pk.placeholder=w.privateKeySet?'(unchanged)':'paste the private key';
  var t=c.ticker||{}, u=c.usage||{};
  // shared
  ['apSsid','apPass','hostname'].forEach(function(k){$(k).value=c[k]!=null?c[k]:''});
@@ -362,6 +418,10 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  $('rotation').value=c.rotation;
  $('autoBrightness').checked=!!c.autoBrightness;
  $('backlightInverted').checked=!!c.backlightInverted;
+ // panel colour slice
+ var dp=c.display||{};
+ sv('colorOrder',dp.colorOrder||'auto'); sc('colorInvert',!!dp.invert);
+ setGain('rGain','rgVal',dp.rGain); setGain('gGain','ggVal',dp.gGain); setGain('bGain','bgVal',dp.bGain);
  // header chip = which chip this firmware was built for
  var chipName={esp8266:'ESP8266',esp32c2:'ESP32-C2',esp32:'ESP32'}[c.chip]||'';
  var chE=$('chip'); if(chE&&chipName){chE.textContent=chipName;chE.style.display='inline-block';}
@@ -452,7 +512,19 @@ function collect(){
   autoBrightness:gc('autoBrightness'),
   backlightInverted:gc('backlightInverted'),
   hostname:gv('hostname'), apSsid:gv('apSsid'), apPass:gv('apPass'),
+  display:{colorOrder:gv('colorOrder')||'auto', invert:gc('colorInvert'),
+   rGain:parseInt(gv('rGain'))||100, gGain:parseInt(gv('gGain'))||100, bGain:parseInt(gv('bGain'))||100},
   wifi:collectWifi()};
+ // WireGuard: a blank private key means "keep the stored one", so only send it
+ // when the user actually typed something.
+ if($('wgCard')){
+  var w={enabled:gc('wgEnabled'), peerPublicKey:gv('wgPeerPublicKey'),
+   endpointHost:gv('wgEndpointHost'), endpointPort:parseInt(gv('wgEndpointPort'))||51820,
+   address:gv('wgAddress'), allowedIps:gv('wgAllowedIps'),
+   keepalive:parseInt(gv('wgKeepalive'))||0};
+  var pk=gv('wgPrivateKey'); if(pk)w.privateKey=pk;
+  o.wg=w;
+ }
  // ticker slice (only if compiled in)
  if($('ticker')){
   var t={colorInverted:gv('colorInverted')==='true',changeOnRange:gv('changeOnRange')==='true'};
@@ -556,7 +628,7 @@ function loadStatus(){j('/api/status').then(function(s){
  var fw=$('fwVer'); if(fw)fw.textContent=s.fw+' '+s.version;
  // Surface the result of a boot-time GitHub update (ESP8266) once on first load,
  // so a failure that happened across the reboot is visible even if the original
- // Update tab was closed. Don't clobber an in-progress check/update message.
+ // System tab was closed. Don't clobber an in-progress check/update message.
  if(!window._otaShown){window._otaShown=1;var gm=$('ghMsg');if(gm&&!gm.textContent&&s.updateMsg&&s.updateMsg!=='updating...')gm.textContent='Last update: '+s.updateMsg}
  var fv=$('footVer'); if(fv)fv.textContent=' v'+s.version;
  if(s.repo){var rl=$('repoLink'); if(rl)rl.href=s.repo+'/releases'; var fr=$('footRepo'); if(fr)fr.href=s.repo;}
@@ -564,15 +636,35 @@ function loadStatus(){j('/api/status').then(function(s){
   kv('Firmware',s.fw+' '+s.version)+kv('Mode',s.mode.toUpperCase())+
   kv('Network',s.ssid||'-')+kv('IP',s.ip||'-')+kv('mDNS','http://'+(C.hostname||'smalltv')+'.local')+
   kv('Signal',s.rssi?s.rssi+' dBm':'-')+
-  kv('Free heap',s.heap+' B')+kv('Uptime',fmtUp(s.uptime))+kv('Last reset',s.reset||'-');
- var h='';(s.tickers||[]).forEach(function(t){
+  kv('Free heap',s.heap+' B')+kv('Uptime',fmtUp(s.uptime))+kv('Last reset',s.reset||'-')+
+  ((s.wg&&s.wg.compiledIn)?kv('VPN',s.wg.held?'held':(s.wg.up?'up':(s.wg.enabled?'connecting':'off'))):'');
+ var wgs=$('wgStatus'); if(wgs)wgs.textContent=wgLine(s.wg);
+ var tb=$('tickBox');
+ if(tb){var h='';(s.tickers||[]).forEach(function(t){
   var c=t.error?'var(--red)':(t.valid?'var(--acc)':'var(--mut)');
   var pc=t.changePct!=null?(t.changePct>=0?'+':'')+t.changePct.toFixed(2)+'%':'';
-  h+='<div class="kv"><b style="color:'+c+'">'+t.symbol+'</b><span>'+
-   (t.valid?(t.price+'  '+pc):(t.error?'error':'...'))+'</span></div>';});
- $('tickBox').innerHTML=h||'<span class="muted">No tickers configured</span>';
+  var st=t.valid?(t.price+'  '+pc):(t.error?'error':'...');
+  // A failed ticker keeps its last good price on screen, so say when the next
+  // attempt is due rather than leaving the row looking simply broken.
+  if(t.error&&t.retryIn!=null)st+=' <span class="muted">(retry '+t.retryIn+'s)</span>';
+  h+='<div class="kv"><b style="color:'+c+'">'+t.symbol+'</b><span>'+st+'</span></div>';});
+ tb.innerHTML=h||'<span class="muted">No tickers configured</span>';}
 })}
 function kv(k,v){return '<div class="kv"><span class="muted">'+k+'</span><b>'+v+'</b></div>'}
+// WireGuard: one line that names the failure rather than just saying "down".
+// The handshake age is measured against the browser's clock, which is the one
+// we can trust to be right.
+function wgLine(w){
+ if(!w)return '';
+ if(!w.compiledIn)return 'WireGuard is not part of this build.';
+ if(!w.enabled)return 'Tunnel off.';
+ if(w.held)return 'Tunnel suspended after repeated reboots. Check the settings and save again to retry.';
+ if(w.badConfig)return 'Tunnel not started: a field below is empty or malformed. Check the tunnel address, which needs a prefix like /32.';
+ if(w.up){var a=w.lastHandshake?Math.max(0,Math.round(Date.now()/1000-w.lastHandshake)):null;
+  return 'Tunnel up'+(a!=null?', last handshake '+(a<120?a+'s':Math.round(a/60)+'m')+' ago':'')+'.'}
+ if(!w.endpointIp)return 'Tunnel on, waiting for the endpoint name to resolve.';
+ return 'Tunnel on, handshakes sent to '+w.endpointIp+' with no reply. Check that the peer lists this device\'s public key and that UDP to that port is open.';
+}
 function fmtUp(s){var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
  return (d?d+'d ':'')+(h?h+'h ':'')+m+'m'}
 function refreshNow(){j('/api/refresh',{method:'POST'}).then(function(){toast('Refreshing...');setTimeout(loadStatus,1500)})}
