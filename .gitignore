@@ -38,5 +38,5 @@ Thumbs.db
 # pioarduino-generated dependency lock
 dependencies.lock
 
-# manual quotes-branch staging dir (see .github/workflows/quotes.yml)
+# manual quotes-branch staging dir (see .github/scripts/fetch-quotes.mjs)
 /out/

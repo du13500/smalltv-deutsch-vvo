@@ -53,7 +53,7 @@
 // Limits (bound RAM usage on the ESP8266)
 // ---------------------------------------------------------------------------
 #define MAX_SYMBOLS       8    // max tickers in the rotation
-#define MAX_SYMBOL_LEN   24    // e.g. "BTC-USD", cash.ch key "147478611-246-333"
+#define MAX_SYMBOL_LEN   24    // e.g. "BTC-USD", cash.ch key "123456789-246-333"
 #define MAX_WIFI_NETS     4    // saved WiFi networks; strongest visible wins at boot
 #define MAX_NAME_LEN     20    // friendly name shown on screen
 #define MAX_SPARK_POINTS 60    // sparkline samples kept per symbol
@@ -133,7 +133,7 @@
 #define SRC_WEBHOOK  0
 #define SRC_YAHOO    1
 #define SRC_CASH     2
-#define SRC_GHUB     3   // static JSON published to the repo's data branch (see below)
+#define SRC_GHUB     3   // static JSON read from a repo's data branch (see below)
 #define DEFAULT_SOURCE  SRC_YAHOO            // works out of the box, no server
 
 // Yahoo Finance public chart endpoint. A browser-like User-Agent is required —
@@ -159,14 +159,17 @@
 // large enough contiguous heap block is free. The GitHub source below is a
 // zero-crash fallback if a device ever proves too tight for the direct path.
 
-// GitHub source (SRC_GHUB): a scheduled workflow (.github/workflows/quotes.yml)
-// fetches cash.ch server-side and publishes one JSON file per listing key to
-// the repo's `data` branch. The device reads it from raw.githubusercontent.com,
-// which — unlike cash.ch — still accepts the ESP8266's static-RSA handshake
-// (the same one GitHub self-update and Yahoo use). The file is the same JSON
-// the webhook parser accepts. The symbol is the cash.ch listing key; only keys
-// listed in quotes-config.json are published. raw sends a ~4 KB certificate
-// record and does not negotiate MFLN, so this path uses a larger TLS buffer.
+// GitHub source (SRC_GHUB): static quote JSON published to a git repo's `data`
+// branch and read from raw.githubusercontent.com, which — unlike cash.ch —
+// still accepts the ESP8266's static-RSA handshake (the same one GitHub
+// self-update and Yahoo use). The file is the same JSON the webhook parser
+// accepts, and the symbol is the cash.ch listing key. You publish the files
+// yourself from a fork: .github/scripts/fetch-quotes.mjs + quotes-config.json
+// are the example fetcher and symbol list, and the docs
+// (reference/data-sources) show an example scheduled workflow that pushes them
+// to a `data` branch — point REPO_OWNER/REPO_NAME at that fork. raw sends a
+// ~4 KB certificate record and does not negotiate MFLN, so this path uses a
+// larger TLS buffer.
 #define GH_QUOTES_BASE "https://raw.githubusercontent.com/" REPO_OWNER "/" REPO_NAME "/data/quotes/"
 #define GH_QUOTES_RXBUF 5120
 #define CASH_GQL_HOST   "www.cash.ch"

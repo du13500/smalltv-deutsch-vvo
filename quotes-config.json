@@ -1,10 +1,8 @@
 {
-  "_comment": "Symbols published as static JSON for devices that cannot reach cash.ch directly (the ESP8266). Edit this list to add/remove instruments; the scheduled workflow (.github/workflows/quotes.yml) writes one file per key to the 'data' branch, served at raw.githubusercontent.com/giovi321/smalltv-mod/data/quotes/<key>.json. On the device, set a ticker's source to 'GitHub' and its symbol to the listing key.",
+  "_comment": "Example symbol list for .github/scripts/fetch-quotes.mjs, the fetcher behind the firmware's 'GitHub' ticker source: one static JSON file per listing key, meant to be published to a 'data' branch and served at raw.githubusercontent.com/<owner>/<repo>/data/quotes/<key>.json, a host even the ESP8266 can reach over its older static-RSA HTTPS. This repo does not run the publishing workflow; copy the script and the example workflow from the docs (reference/data-sources) into your own fork to use it. On the device, set a ticker's source to 'GitHub' and its symbol to the listing key. Keys use the cash.ch form valor-marketId-currencyId; the example below is a placeholder.",
   "range": "6mo",
   "points": 48,
   "symbols": [
-    { "key": "147478611-246-333", "name": "AI Factor" },
-    { "key": "147478609-246-333", "name": "AI Factor LS" },
-    { "key": "152994768-246-333", "name": "AI LargeCaps" }
+    { "key": "123456789-246-333", "name": "Example instrument" }
   ]
 }

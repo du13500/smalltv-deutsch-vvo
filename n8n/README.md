@@ -12,7 +12,7 @@ Flask app, a static file…). Two ready-to-import n8n workflows are included:
 - [`smalltv-stock-webhook.json`](smalltv-stock-webhook.json) sources everything
   from Yahoo Finance, the same endpoint the firmware calls on its own.
 - [`smalltv-stock-webhook-cash.json`](smalltv-stock-webhook-cash.json) routes
-  cash.ch listing keys (symbols like `147478611-246-333`) to cash.ch's public
+  cash.ch listing keys (symbols like `123456789-246-333`) to cash.ch's public
   GraphQL API and everything else to Yahoo. Since firmware 2.4.0 each ticker
   picks its own source directly on the device, so this workflow is only needed
   if you want webhook tickers to cover both, e.g. to add caching or massage

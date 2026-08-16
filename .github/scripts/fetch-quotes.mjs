@@ -1,7 +1,10 @@
 // fetch-quotes.mjs — cash.ch -> SmallTV webhook JSON, one file per listing key.
 //
-// Runs on a GitHub Actions runner (full modern TLS, so it reaches cash.ch's
-// ECDHE-only CDN that the ESP8266 cannot). Reads quotes-config.json, fetches a
+// Example fetcher for the firmware's "GitHub" ticker source. Meant to run on a
+// GitHub Actions runner in your own fork (full modern TLS, so it reaches
+// cash.ch's ECDHE-only CDN that the ESP8266 cannot); the docs
+// (reference/data-sources) carry an example scheduled workflow that runs this
+// script and pushes the output to a 'data' branch. Reads quotes-config.json, fetches a
 // quote + a daily-close series per symbol, and writes out/quotes/<key>.json in
 // the exact JSON the firmware's webhook parser already accepts. The device then
 // reads those files from raw.githubusercontent.com over its static-RSA HTTPS.

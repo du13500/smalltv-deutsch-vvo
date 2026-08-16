@@ -45,7 +45,7 @@ The device gets the time from the internet, and it only checks it when something
 
 This is specific to the original ESP8266 model with cash.ch tickers. Night mode's clock check and a cash.ch fetch both need a chunk of the device's limited memory at the same time, and on this older chip that can be too much at once, so the cash.ch ticker starts failing. Two fixes, either one works:
 
-- switch that ticker's source from **cash.ch** to **GitHub** in the Ticker tab; it fetches the same instrument through a route that costs less memory, or
+- switch that ticker's source from **cash.ch** to **GitHub** in the Ticker tab; it fetches the same instrument through a route that costs less memory (you publish the quote files yourself from a fork — see [Data sources](/smalltv-mod/reference/data-sources/)), or
 - turn night mode off on that particular device
 
 The newer ESP32-based models have more memory and are not affected by this.

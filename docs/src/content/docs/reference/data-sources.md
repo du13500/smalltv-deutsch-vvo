@@ -3,7 +3,7 @@ title: Data sources
 description: "Where each ticker gets its prices: Yahoo Finance, cash.ch, GitHub, or your own webhook."
 ---
 
-The ticker can pull prices four ways. Yahoo Finance works out of the box with no server. cash.ch covers Swiss instruments Yahoo does not carry, also with no server. GitHub is a serverless proxy for cash.ch that needs nothing of yours running. A custom webhook lets you own the source. Every ticker picks its own source in the **Ticker** tab, so a rotation can mix all of them freely.
+The ticker can pull prices four ways. Yahoo Finance works out of the box with no server. cash.ch covers Swiss instruments Yahoo does not carry, also with no server. GitHub is a serverless proxy for cash.ch that you host yourself from a fork — still nothing running on hardware of yours. A custom webhook lets you own the source. Every ticker picks its own source in the **Ticker** tab, so a rotation can mix all of them freely.
 
 ## Yahoo Finance, the default
 
@@ -23,7 +23,7 @@ No API key, no account, no backend. The only requirement is outbound HTTPS, whic
 
 Yahoo does not know many Swiss-listed products: structured products, AMCs and tracker certificates, and anything quoted off-exchange. The Swiss finance portal [cash.ch](https://www.cash.ch) does. The device queries cash.ch's public GraphQL endpoint directly over HTTPS, two small requests per symbol: a ~200-byte quote (price and day change) and a slim series of daily closes for the sparkline. No API key, no account.
 
-With this source the `symbol` field is not a ticker but a cash.ch **listing key** in the form `valor-marketId-currencyId`, for example `147478611-246-333`. The web UI's **cash.ch symbol finder** (Ticker tab) turns a pasted cash.ch link, ISIN, valor, or instrument name into one: it queries cash.ch's search from your browser and one click adds the result as a ticker. Manual fallback: open the instrument's page on cash.ch, open the browser dev tools' Network tab filtered to `graphql`, reload, and read the key from `variables.id` or `listingKeys` of any chart request.
+With this source the `symbol` field is not a ticker but a cash.ch **listing key** in the form `valor-marketId-currencyId`, for example `123456789-246-333`. The web UI's **cash.ch symbol finder** (Ticker tab) turns a pasted cash.ch link, ISIN, valor, or instrument name into one: it queries cash.ch's search from your browser and one click adds the result as a ticker. Manual fallback: open the instrument's page on cash.ch, open the browser dev tools' Network tab filtered to `graphql`, reload, and read the key from `variables.id` or `listingKeys` of any chart request.
 
 Worth knowing:
 
@@ -38,7 +38,7 @@ cash.ch's CDN requires a modern TLS handshake (ECDHE). The ESP32 boards do this 
 
 If you want a device that never even attempts the handshake, the **GitHub** source below is a drop-in alternative for the same listing keys.
 
-One more thing to watch on the ESP8266: the web UI's Display tab has a "Clock & night mode" card, and enabling it runs NTP to know when to dim. NTP only starts while night mode is enabled, but on an ESP8266 that already has cash.ch tickers, the heap NTP holds can be enough to starve the large contiguous block the cash.ch TLS handshake needs, and cash.ch tickers can stop fetching. If you run night mode on an ESP8266 with cash.ch tickers, switch those tickers to the **GitHub** source for the same listing keys, or leave night mode off on that device. ESP32 boards have enough headroom for both at once.
+One more thing to watch on the ESP8266: the web UI's Display tab has a "Clock & night mode" card, and enabling it runs NTP to know when to dim. NTP only starts while night mode is enabled, but on an ESP8266 that already has cash.ch tickers, the heap NTP holds can be enough to starve the large contiguous block the cash.ch TLS handshake needs, and cash.ch tickers can stop fetching. If you run night mode on an ESP8266 with cash.ch tickers, switch those tickers to the **GitHub** source for the same listing keys (published by you, see below), or leave night mode off on that device. ESP32 boards have enough headroom for both at once.
 
 ## Custom webhook
 
@@ -70,9 +70,62 @@ The device pulls rather than receives a push, so your backend never needs to kno
 
 ## GitHub
 
-The **GitHub** source is a serverless proxy for cash.ch that needs nothing of yours running. A scheduled GitHub Action in this repo fetches cash.ch and publishes one small JSON file per listing key to the `data` branch; the device reads it from `raw.githubusercontent.com`, which every board can reach over plain static-RSA HTTPS (the same handshake GitHub self-update and Yahoo use). No ECDHE on the device, so it cannot hit the memory limits the direct cash.ch path pushes against.
+The **GitHub** source is a serverless proxy for cash.ch. A scheduled GitHub Action fetches cash.ch and publishes one small JSON file per listing key to a `data` branch; the device reads it from `raw.githubusercontent.com`, which every board can reach over plain static-RSA HTTPS (the same handshake GitHub self-update and Yahoo use). No ECDHE on the device, so it cannot hit the memory limits the direct cash.ch path pushes against.
 
-Use it the same way as the cash.ch source: set a ticker's source to **GitHub** and its symbol to the cash.ch listing key. The one difference is that a key only works once it is published, so add it to [`quotes-config.json`](https://github.com/giovi321/smalltv-mod/blob/main/quotes-config.json) and let the workflow run (or trigger it once by hand). The workflow is free: GitHub Actions has no minute limit on public repositories.
+This repo does **not** run that publishing workflow — it only ships the pieces, as an example you wire up in your own fork:
+
+- [`.github/scripts/fetch-quotes.mjs`](https://github.com/giovi321/smalltv-mod/blob/main/.github/scripts/fetch-quotes.mjs) — the fetcher. No dependencies beyond Node 20+; reads the config, writes `out/quotes/<key>.json` in the exact JSON the firmware's webhook parser accepts.
+- [`quotes-config.json`](https://github.com/giovi321/smalltv-mod/blob/main/quotes-config.json) — the symbol list, with a placeholder entry showing the format.
+
+To run it yourself, fork the repo, list your listing keys in `quotes-config.json`, and add a workflow like this as `.github/workflows/quotes.yml` in the fork:
+
+```yaml
+name: quotes
+
+on:
+  schedule:
+    - cron: '2,17,32,47 * * * *'   # ~every 15 min, off the top of the hour
+  workflow_dispatch:
+
+concurrency:
+  group: quotes
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4          # for quotes-config.json + the script
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch quotes
+        env:
+          RUN_STAMP: ${{ github.run_id }}
+        run: node .github/scripts/fetch-quotes.mjs
+
+      # Publish as a single-commit orphan 'data' branch (force-pushed each run),
+      # so the JSON never accumulates history in the repo.
+      - name: Publish to data branch
+        run: |
+          cd out
+          git init -q
+          git checkout -q -b data
+          git add quotes
+          git -c user.name='quotes-bot' -c user.email='quotes-bot@users.noreply.github.com' \
+              commit -q -m "quotes ${GITHUB_RUN_ID}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Committing every run also keeps the schedule alive: GitHub disables scheduled workflows after 60 days of no repo activity. The workflow is free — GitHub Actions has no minute limit on public repositories.
+
+Two last steps: point the firmware at the fork by setting `REPO_OWNER`/`REPO_NAME` in `src/config.h` (they build the `raw.githubusercontent.com/<owner>/<repo>/data/quotes/` base URL) and flash it, then use it like the cash.ch source — set a ticker's source to **GitHub** and its symbol to the cash.ch listing key. A key only works once it is published, so let the workflow run once (or trigger it by hand) after adding a key.
 
 This is the belt-and-suspenders option. On the ESP32 boards the direct cash.ch source is simpler and needs no published file. On the ESP8266 the direct source works too, but GitHub is there if you would rather the device never do the ECDHE handshake at all.
 
