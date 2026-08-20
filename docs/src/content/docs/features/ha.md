@@ -35,6 +35,7 @@ Keep payloads small. The numbers that matter:
 | Payload size | ~2 KB | ~700 B |
 | Screens (slots) | 8 | 4 |
 | Draw primitives per screen | 48 | 24 |
+| Bitmap width and height | 48 px | 32 px |
 
 ## Drawing on the screen
 
@@ -73,12 +74,27 @@ The primitives:
 | `line` | `x`, `y`, `x2`, `y2`, `c` | A straight line. |
 | `text` | `x`, `y`, `s`, `c`, `a`, `v` | A string in the built-in 6×8 font. |
 | `icon` | `x`, `y`, `s`, `c`, `a`, `v` | A built-in icon; `v` is the icon name. |
+| `bitmap` | `x`, `y`, `w`, `h`, `c`, `a`, `d` | A 1-bit bitmap; `d` is the pixel data as a hex string. |
 
 Colours are `#RRGGBB`. Text `s` is an integer scale of the 6×8 font, and `a` aligns the string left (`l`), centre (`c`), or right (`r`) around `x`. The string is capped at 64 characters; stick to plain ASCII, as anything else disappears rather than drawing.
 
 For `icon`, `s` is a 1-8 scale and the icon occupies a 24×`s` px box; `x` is the left/centre/right edge of that box according to `a` (default `l`), and `y` is its top edge. The icon names are: `thermometer`, `humidity`, `sun`, `cloud`, `rain`, `snow`, `wind`, `home`, `door-open`, `door-closed`, `window-open`, `window-closed`, `motion`, `plug`, `battery`, `alert`, `check`, `x`, `arrow-up`, `arrow-down`. An unknown name is skipped like any other malformed primitive.
 
+For `bitmap`, `d` carries the pixels as a hex string: 1 bit per pixel, row-major, MSB-first within each byte. A set bit draws in colour `c`; an unset bit is transparent and leaves whatever was painted underneath. The bitmap occupies a `w`×`h` box, `a` anchors `x` to the left, centre, or right of that box, and `y` is the top edge. The string must be exactly ceil(`w`×`h`/8) bytes, two hex chars per byte: a 24×24 bitmap is 72 bytes and 144 hex chars, and a 2×2 bitmap with only the top-left pixel set is `"8000"`. Width and height cap at 48 on the ESP32 builds and 32 on the ESP8266, and an oversized or malformed bitmap is skipped like any other bad primitive. Watch the payload budget: a 48×48 bitmap alone is 576 hex chars, so it only fits an ESP32-family payload.
+
 Parsing is forgiving in one direction. Unknown fields are ignored, so you can add your own annotations. A malformed primitive is skipped and the rest of the list still draws. But a payload that is not valid JSON at all leaves the slot exactly as it was, so a templating mistake in Home Assistant cannot blank a working screen.
+
+### Custom bitmaps (MDI icons)
+
+The built-in icon set is small. The whole Material Design Icons catalogue works too, with one extra step: MDI ships as SVG paths and the device has no font or SVG rasteriser, so the conversion happens on your machine. The `tools/mdi_to_hex.py` script in the repository rasterises any MDI icon to the hex string the `bitmap` primitive expects:
+
+```bash
+python tools/mdi_to_hex.py window-open --size 24
+```
+
+It prints the raw hex plus a ready-made JSON fragment for a screen payload. Paste the hex into the bitmap field of the screen board blueprint, where it replaces the icon and draws in the foreground colour, or build the primitive yourself from the fragment. The script needs two Python packages (`svg.path` and `Pillow`); install them with `pip install -r tools/requirements-mdi.txt` into a virtualenv, not globally.
+
+Sizes 24 and 32 stay under the 700 B ESP8266 payload limit. A 48 px bitmap pushes a screen payload past it and only works on the ESP32 builds; on an ESP8266 the firmware ignores the oversized message.
 
 ## The window screen from Home Assistant
 
@@ -166,9 +182,15 @@ Slot order is the carousel order, so the leading `z` on `zenergy` is deliberate:
 
 ## A whole board from one blueprint
 
-Writing four near-identical automations gets old. The [`screen_board.yaml`](https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml) blueprint publishes up to four independent sensor screens from a single automation, one retained message per slot. Each screen is a collapsed input section with an entity (any domain), an optional title (the entity's friendly name is used when empty), an optional icon from the built-in set, foreground and background colours, and a slot name. An empty entity disables that screen and skips its publish entirely.
+Writing four near-identical automations gets old. The [`screen_board.yaml`](https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml) blueprint publishes up to four independent screens from a single automation, one retained message per slot. Each screen is a collapsed input section with an entity (any domain), an optional title (the entity's friendly name is used when empty), an icon from the built-in set, foreground and background colours, and a slot name. Each rendered screen is the icon centred at the top, the title below it, and the value in big type underneath. An empty entity disables that screen, unless you set its value template.
 
-Each rendered screen is the icon centred at the top, the title below it, and the state with its unit in big type underneath. A single `watched_entities` list drives the state triggers, so every screen refreshes the moment any of its entities moves, with a one-minute safety refresh on top. Slot names sort lexicographically and must be unique per device across every automation publishing to the same hostname. Import it like the window blueprint above; a filled-in example lives in [`examples/ha/screen_board_instance.md`](https://github.com/giovi321/smalltv-mod/blob/main/examples/ha/screen_board_instance.md).
+The title, value, icon, foreground, and background of each screen also take an optional Jinja template, which you edit in a template editor in the blueprint UI. A template that is set wins over its static input; one left empty, or one that renders to an empty string, falls back to the static value. With the value template set you can skip the entity entirely and treat the screen like a small Lovelace card: combine two sensors into one line, switch the icon between `window-open` and `window-closed`, turn the foreground red above a threshold.
+
+Text always fits the panel. Each line gets a 232 px budget (a 4 px margin on each side). The title stays a single line: it drops from scale 2 to 1 and is then cut at 38 characters. The value line takes a minimum and maximum text size per screen (scales 1 to 4, the full range by default). The blueprint picks the largest size in that range that fits on one line; text that does not fit even at the smallest size wraps onto up to four lines at that size, and only the last line is cut if the text runs longer. A runaway template cannot overflow the screen or break the JSON. Other failures degrade instead of breaking the board: a template that renders a malformed colour makes the device skip that primitive, an unknown icon name draws no icon, and the rest of the screen still draws.
+
+Templates do not add triggers. List every entity your templates use in the `watched_entities` input, or that screen only refreshes on the one-minute safety timer. Slot names sort lexicographically and must be unique per device across every automation publishing to the same hostname. Import it like the window blueprint above; a filled-in example with one templated screen lives in [`examples/ha/screen_board_instance.md`](https://github.com/giovi321/smalltv-mod/blob/main/examples/ha/screen_board_instance.md).
+
+Each screen also takes a custom bitmap: a hex string from the MDI converter above, at 24, 32, or 48 px, pasted into a multiline field. A bitmap that is set wins over the icon template and the icon picker, and draws centred at the icon spot in the resolved foreground colour. A template variant of the field renders to a hex string and can switch bitmaps by state; when it renders non-empty it wins over the pasted bitmap, and the size picker still applies.
 
 ## Deleting a screen
 
@@ -181,6 +203,16 @@ Publish an empty retained payload to the slot's topic. The broker drops its reta
     retain: true
     payload: ""
 ```
+
+### Screens that clean themselves up
+
+Screens published by the screen board blueprint carry a time-to-live, set by the `screen_ttl` input (900 seconds by default). The blueprint republishes every minute, so the countdown never runs out while the automation exists. Delete the automation and its screens expire on their own within the TTL. The broker still holds the retained copy, though, so a device reboot can briefly bring a dead screen back. The remaining time is persisted across reboots, so the device expires it again on the same clock instead of restarting the countdown. Set the input to 0 for the old sticky behaviour, where a screen stays until you delete it by hand.
+
+### Clearing everything at once
+
+The device's web UI has a Clear screens button in the MQTT card. It wipes the device's screen store and publishes an empty retained payload for every slot the device knows, so broker zombies die at once instead of waiting out the TTL. Scripts can call the same thing as `POST /api/ha/clear`.
+
+The button can only clear slots the device currently knows about. If the device was offline when a screen appeared or rotated out, the broker may hold a slot the device never saw. Clear that one with the `mosquitto_pub` empty-payload line below.
 
 ## Trying it without Home Assistant
 

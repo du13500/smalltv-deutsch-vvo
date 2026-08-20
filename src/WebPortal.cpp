@@ -13,6 +13,10 @@
 #endif
 #include "Clock.h"
 #include "WgClient.h"
+#if WITH_HA
+#include "HaScreens.h"
+#include "MqttClient.h"
+#endif
 
 // Defined in main.cpp — re-init every mode + force a repaint after a config change.
 extern void appInvalidate();
@@ -274,6 +278,37 @@ static void handleRefresh() {
   server.send(200, "application/json", "{\"ok\":true}");
 }
 
+#if WITH_HA
+// Purge every HA screen: empties the local store + deletes /ha_screens.json,
+// then deletes the broker's retained copies by publishing an empty retained
+// payload per known slot — the same delete the MQTT contract defines for a
+// zero-length payload. haScreensClearAll() sets the renderer dirty flag, so
+// the HA mode repaints on its next tick without an explicit appInvalidate().
+// Slots whose retained messages exist only on the broker (the device was
+// offline when the screen was deleted) are unknowable from here and survive;
+// "broker" in the reply tells the UI whether the broker side was purged at all.
+static void handleHaClear() {
+  if (!requireAuth()) return;
+  char names[HA_MAX_SCREENS][HA_SLOT_LEN];
+  uint8_t n = haScreensClearAll(names, HA_MAX_SCREENS);
+  bool broker = mqttConnected();
+  if (broker) {
+    for (uint8_t i = 0; i < n; i++) {
+      char topic[128];   // slot is <= 24 chars; hostname is a bounded String, but
+                         // the compiler can't prove it — keep the buffer generous
+      snprintf(topic, sizeof(topic), "smalltv/%s/screen/%s",
+               S->hostname.c_str(), names[i]);
+      if (!mqttPublish(topic, "", /*retained=*/true)) broker = false;
+    }
+  }
+  JsonDocument res;
+  res["ok"] = true;
+  res["cleared"] = n;
+  res["broker"] = broker;   // false: local purge done, broker copies may remain
+  sendJson(res);
+}
+#endif
+
 // Check the newest GitHub release against the running version.
 static void handleCheckUpdate() {
   if (!requireAuth()) return;
@@ -401,6 +436,9 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/checkupdate", HTTP_GET, handleCheckUpdate);
   server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
+#if WITH_HA
+  server.on("/api/ha/clear", HTTP_POST, handleHaClear);  // purge HA screens (device + broker retained)
+#endif
 #if WITH_NOTIFY
   server.on("/api/notify", HTTP_POST, handleNotify);     // full-screen attention overlay
 #endif

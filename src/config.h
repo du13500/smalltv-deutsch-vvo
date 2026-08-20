@@ -136,10 +136,14 @@
   #define HA_MAX_SCREENS   8      // slots kept; carousel order = slot name order
   #define HA_MAX_PRIMS     48     // draw primitives kept per screen
   #define HA_TEXT_POOL     2048   // per-screen pool backing the text primitives
+  #define HA_BITMAP_POOL   2048   // per-screen pool of decoded 1-bit bitmap bytes
+  #define HA_BITMAP_MAX_DIM 48    // bitmap w/h cap: one bitmap is <= 288 B
 #else
   #define HA_MAX_SCREENS   4
   #define HA_MAX_PRIMS     24
   #define HA_TEXT_POOL     512    // the 768 B MQTT payload bounds text anyway
+  #define HA_BITMAP_POOL   512
+  #define HA_BITMAP_MAX_DIM 32    // one bitmap is <= 128 B (256 hex chars)
 #endif
 #define HA_MAX_TEXT        65     // one text value: 64 chars + NUL
 #define HA_SLOT_LEN        25     // slot (topic suffix) cap: 24 chars + NUL

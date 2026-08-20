@@ -5,7 +5,7 @@
 // keeps the parsed result as fixed-size structs — no JsonDocument is retained —
 // packed and sorted by slot name, so iterating it IS the carousel order
 // (lexicographic). Limits come from config.h (HA_MAX_SCREENS / HA_MAX_PRIMS /
-// HA_TEXT_POOL), per chip family.
+// HA_TEXT_POOL / HA_BITMAP_POOL), per chip family.
 //
 // Screens persist to LittleFS /ha_screens.json, written with a debounce after
 // the last change, so they survive a reboot; the broker's retained copies
@@ -23,23 +23,25 @@ enum HaPrimType : uint8_t {
   HA_P_LINE,    // x y x2 y2 c
   HA_P_TEXT,    // x y s c a v   (s in aux, a in align, v in the text pool)
   HA_P_ICON,    // x y s c a v   (like text, but v is an icon name from HaIcons)
+  HA_P_BITMAP,  // x y w h c a d (w/h in x2/y2, d decoded into the bitmap pool at voff)
 };
 
 enum HaAlign : uint8_t { HA_A_LEFT, HA_A_CENTER, HA_A_RIGHT };
 
 // One draw primitive, 16 bytes. Text payloads live in the owning screen's
-// text pool (voff indexes it); a screen's pool is bounded by HA_TEXT_POOL and
-// in practice by the MQTT payload cap, which is smaller than an all-text
-// screen at the 64-char string limit.
+// text pool and decoded bitmap data in its bitmap pool (voff indexes the
+// matching pool); a screen's pools are bounded by HA_TEXT_POOL /
+// HA_BITMAP_POOL and in practice by the MQTT payload cap, which is smaller
+// than an all-text screen at the 64-char string limit.
 struct HaPrim {
   uint8_t  type;        // HaPrimType
   uint8_t  aux;         // text: font scale (>=1); circle/rrect: radius
-  uint8_t  align;       // text only: HaAlign
+  uint8_t  align;       // text/icon/bitmap only: HaAlign
   uint8_t  _pad;
   int16_t  x, y;        // rect/rrect: top-left; circle: centre; text: anchor
-  int16_t  x2, y2;      // line: end point; rect/rrect: w / h
+  int16_t  x2, y2;      // line: end point; rect/rrect/bitmap: w / h
   uint16_t color;       // RGB565
-  uint16_t voff;        // text only: offset into the screen's text pool
+  uint16_t voff;        // text/icon: offset into text[]; bitmap: into bitmap[]
 };
 static_assert(sizeof(HaPrim) == 16, "HaPrim must stay compact");
 
@@ -48,9 +50,14 @@ struct HaScreen {
   uint16_t bg;                  // RGB565 background (default black)
   uint32_t expiresAt;           // millis() deadline; 0 = sticky (ttl 0)
   uint16_t textUsed;            // bytes used in text[]
+  uint16_t bitmapUsed;          // bytes used in bitmap[]
   uint8_t  primCount;
   HaPrim   prims[HA_MAX_PRIMS];
   char     text[HA_TEXT_POOL];  // NUL-terminated strings referenced by voff
+  // Decoded 1-bit bitmap data (row-major, MSB-first) referenced by voff of
+  // HA_P_BITMAP prims. Kept per screen, like text[], so the packed-store
+  // memmove mechanics stay correct without any pool bookkeeping.
+  uint8_t  bitmap[HA_BITMAP_POOL];
 };
 
 void haScreensBegin();     // load /ha_screens.json (idempotent)
@@ -72,3 +79,11 @@ const HaScreen* haScreenAt(uint8_t liveIndex);
 // Set on any store change (set/delete/parse); the renderer takes it once per
 // repaint so a screen pushed over MQTT shows up without waiting for rotation.
 bool haScreensTakeDirty();
+
+// Web UI "clear screens" (/api/ha/clear). Copies the current slot names (up to
+// maxNames) into `names` so the caller can publish an empty retained payload
+// per slot, then empties the store and deletes /ha_screens.json immediately.
+// Returns the number of slots that were in the store. Slots whose retained
+// messages exist only on the broker (the device was offline when the screen
+// was deleted) are unknowable from here and are NOT covered by this call.
+uint8_t haScreensClearAll(char names[][HA_SLOT_LEN], uint8_t maxNames);

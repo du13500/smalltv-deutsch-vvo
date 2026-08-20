@@ -38,6 +38,15 @@ static void colorToStr(uint16_t c, char out[8]) {
            (unsigned)((c & 0x1F) << 3));
 }
 
+// Hex digit value, case-insensitive; -1 for anything else. Used by the bitmap
+// primitive, which carries its 1-bit pixels as a hex string on the wire.
+static int hexVal(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return -1;
+}
+
 // ---------------------------------------------------------------------------
 // Parsing. parseScreen() fully rebuilds `sc` from a valid screen object; it is
 // shared by the MQTT path and the persistence loader (same JSON shape).
@@ -111,6 +120,29 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
       if (c >= 32 && c <= 126) sc.text[sc.textUsed++] = c;
     }
     sc.text[sc.textUsed++] = 0;
+  } else if (!strcmp(t, "bitmap")) {
+    // d: hex string (case-insensitive) of 1-bit pixels, row-major, MSB-first
+    // within each byte. Decoded straight into the screen's bitmap pool at
+    // parse time — no String, no heap (ESP8266 discipline). Any shape error
+    // (bad w/h, wrong length, non-hex digit, full pool) skips the primitive.
+    const char* d = p["d"];
+    if (!d) return false;
+    int w = p["w"] | 0, h = p["h"] | 0;
+    if (w < 1 || h < 1 || w > HA_BITMAP_MAX_DIM || h > HA_BITMAP_MAX_DIM) return false;
+    size_t need = ((size_t)w * h + 7) / 8;          // decoded bytes
+    if (strlen(d) != need * 2) return false;        // exact hex length required
+    if (sc.bitmapUsed + need > sizeof(sc.bitmap)) return false;  // pool full: skip
+    for (size_t i = 0; i < need * 2; i++)           // validate before touching
+      if (hexVal(d[i]) < 0) return false;           //   the pool
+    out.type  = HA_P_BITMAP;
+    out.x2    = (int16_t)w;
+    out.y2    = (int16_t)h;
+    const char* a = p["a"] | "l";
+    out.align = (a[0] == 'c') ? HA_A_CENTER : (a[0] == 'r') ? HA_A_RIGHT : HA_A_LEFT;
+    out.voff  = sc.bitmapUsed;
+    for (size_t i = 0; i < need; i++)
+      sc.bitmap[sc.bitmapUsed + i] = (uint8_t)((hexVal(d[2 * i]) << 4) | hexVal(d[2 * i + 1]));
+    sc.bitmapUsed += need;
   } else {
     return false;                               // unknown primitive type
   }
@@ -227,6 +259,20 @@ bool haScreensTakeDirty() {
   return d;
 }
 
+uint8_t haScreensClearAll(char names[][HA_SLOT_LEN], uint8_t maxNames) {
+  uint8_t n = g_count;
+  for (uint8_t i = 0; i < g_count && i < maxNames; i++)
+    strlcpy(names[i], g_screens[i].name, HA_SLOT_LEN);
+  g_count = 0;
+  // Not markChanged(): instead of a debounced persist of the now-empty store,
+  // the file is deleted outright and any pending write of the old data is
+  // dropped. g_dirty still goes to the renderer so it repaints next tick.
+  g_persistDue = false;
+  LittleFS.remove(HA_PATH);
+  g_dirty = true;
+  return n;
+}
+
 // ---------------------------------------------------------------------------
 // Persistence: /ha_screens.json, same JSON shape as the wire format, so the
 // loader reuses parseScreen(). ttl is written as the remaining seconds;
@@ -269,6 +315,24 @@ static void primToJson(const HaScreen& sc, const HaPrim& p, JsonObject o) {
       o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
       o["v"] = sc.text + p.voff;
       break;
+    case HA_P_BITMAP: {
+      o["t"] = "bitmap";
+      o["x"] = p.x; o["y"] = p.y; o["w"] = p.x2; o["h"] = p.y2;
+      o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
+      // Re-encode the decoded bytes as the same hex string shape that came in,
+      // so a load through parseScreen() reproduces the primitive exactly.
+      size_t n = ((size_t)p.x2 * p.y2 + 7) / 8;
+      char hex[HA_BITMAP_MAX_DIM * HA_BITMAP_MAX_DIM / 8 * 2 + 1];
+      static const char HEXD[] = "0123456789ABCDEF";
+      for (size_t i = 0; i < n; i++) {
+        uint8_t b = sc.bitmap[p.voff + i];
+        hex[2 * i]     = HEXD[b >> 4];
+        hex[2 * i + 1] = HEXD[b & 0x0F];
+      }
+      hex[2 * n] = 0;
+      o["d"] = hex;
+      break;
+    }
   }
 }
 

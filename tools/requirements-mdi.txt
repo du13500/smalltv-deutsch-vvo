@@ -1,0 +1,5 @@
+# Dependencies for tools/mdi_to_hex.py. Install into an isolated env only:
+#   python -m venv tools/.venv-mdi
+#   tools/.venv-mdi/Scripts/python -m pip install -r tools/requirements-mdi.txt
+svg.path
+Pillow

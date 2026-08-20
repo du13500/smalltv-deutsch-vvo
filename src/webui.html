@@ -298,7 +298,9 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
     <div><label>Username <span class="muted">(optional)</span></label><input id="haBrokerUser" type="text" autocomplete="off"></div>
     <div><label>Password <span class="muted">(optional)</span></label><input id="haBrokerPass" type="password" autocomplete="new-password" placeholder="(unchanged)"></div>
    </div>
+   <div style="margin-top:10px"><button class="btn sec" onclick="haClearScreens()">Clear screens</button></div>
    <small class="hint">Plain TCP, not TLS — keep the broker on your LAN. Leave the host blank to switch the feature off. The device subscribes to <code>smalltv/&lt;hostname&gt;/screen/&lt;slot&gt;</code>: publish a screen there as <b>retained</b> JSON and it joins the on-screen rotation; an empty retained payload deletes it. Screens survive a reboot, and the broker's retained copies repopulate them on reconnect. Like the other passwords here, a blank password field keeps the stored one.</small>
+   <small class="hint"><b>Clear screens</b> wipes every screen off the device and deletes the broker's retained copies, so screens from a deleted Home Assistant automation stop coming back on every reconnect. It only covers slots the device currently knows about; if the broker is unreachable the device side is still wiped.</small>
   </div>
  </section>
 
@@ -720,6 +722,11 @@ function wgLine(w){
 function fmtUp(s){var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
  return (d?d+'d ':'')+(h?h+'h ':'')+m+'m'}
 function refreshNow(){j('/api/refresh',{method:'POST'}).then(function(){toast('Refreshing...');setTimeout(loadStatus,1500)})}
+
+// HA screens purge: wipes the device store and the broker's retained copies.
+function haClearScreens(){if(!confirm('Clear all HA screens on the device and on the broker?'))return;
+ j('/api/ha/clear',{method:'POST'}).then(function(r){
+  toast('Cleared '+r.cleared+' screen(s)'+(r.broker?'':' — device only, broker not connected'));})}
 
 // GitHub self-update
 function checkUpdate(){$('ghMsg').textContent='Checking GitHub...';$('chkBtn').disabled=true;

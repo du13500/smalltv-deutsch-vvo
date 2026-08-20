@@ -46,6 +46,13 @@ void mqttBegin(const Settings& s) {
   g_mqtt.setCallback(onMessage);
 }
 
+bool mqttConnected() { return g_mqtt.connected(); }
+
+bool mqttPublish(const char* topic, const char* payload, bool retained) {
+  if (!g_mqtt.connected()) return false;
+  return g_mqtt.publish(topic, payload, retained);
+}
+
 void mqttLoop() {
   haScreensService();   // debounced persist, even with no broker configured
   if (!S) return;

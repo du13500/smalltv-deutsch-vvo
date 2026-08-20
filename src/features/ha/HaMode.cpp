@@ -55,6 +55,22 @@ static void renderScreen(const HaScreen& sc, uint8_t pageIndex, uint8_t pageCoun
         haDrawIcon(v, x, p.y, sz, c);   // unknown names skip silently
         break;
       }
+      case HA_P_BITMAP: {
+        // Same anchor math as the icon, with the bitmap's own w as the box
+        // width; y is always the top edge. Set bits draw in c, clear bits
+        // leave the background untouched (transparent).
+        int w = p.x2, h = p.y2;
+        int x = (p.align == HA_A_CENTER) ? p.x - w / 2
+              : (p.align == HA_A_RIGHT)  ? p.x - w : p.x;
+        const uint8_t* bits = sc.bitmap + p.voff;
+        for (int py = 0; py < h; py++)
+          for (int px = 0; px < w; px++) {
+            int i = py * w + px;
+            if (bits[i >> 3] & (0x80 >> (i & 7)))
+              gfx->drawPixel(x + px, p.y + py, c);
+          }
+        break;
+      }
     }
   }
 

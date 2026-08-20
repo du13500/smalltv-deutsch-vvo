@@ -18,3 +18,9 @@
 
 void mqttBegin(const Settings& s);   // arm; connects from the loop, not here
 void mqttLoop();                     // call every main-loop tick, after netLoop()
+
+bool mqttConnected();                                        // broker link up right now
+// Publish from outside the loop's own availability traffic. Returns false when
+// not connected. An empty payload with retained=true is exactly how a broker
+// deletes a retained message (used by /api/ha/clear to purge zombie screens).
+bool mqttPublish(const char* topic, const char* payload, bool retained);

@@ -3,12 +3,18 @@ blueprint:
   description: >-
     Publishes up to four sensor screens to a SmallTV running smalltv-mod,
     one retained MQTT message per slot, and the device rotates through them
-    in the carousel. Each screen shows an optional icon on top, a title, and
-    the entity's state with its unit. All four screens are generic, so any
-    entity domain works. A screen with no entity set is skipped. The
-    publishes are retained, so the device keeps the screens across reboots,
-    and a startup trigger republishes them after every Home Assistant
-    restart.
+    in the carousel. Each screen shows an optional icon on top, a title,
+    and a big value line that defaults to the entity's state with its
+    unit. Every part of a screen can also be driven by a Jinja template:
+    value, icon, foreground, and background each have an optional template
+    that wins over the static input when set. With the templates filled
+    in, one screen works like a small Lovelace card, combining sensors
+    and switching icon and colour by state. A screen with no entity and
+    no value template is skipped. The publishes are retained, so the
+    device keeps the screens across reboots, and a startup trigger
+    republishes them after every Home Assistant restart. Screens also
+    carry a time-to-live, so deleting this automation makes them expire
+    on their own instead of staying on the broker forever.
   domain: automation
   source_url: https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml
   homeassistant:
@@ -24,20 +30,46 @@ blueprint:
     watched_entities:
       name: Watched entities
       description: >-
-        Every entity used by the screens below. A state change on any of them
-        republishes the whole board instantly, so list them all here once
-        instead of per screen.
+        Every entity used by the screens below, including every entity named
+        inside any template. A state change on any of them republishes the
+        whole board instantly, so list them all here once instead of per
+        screen. An entity that only appears in a template and is not listed
+        here leaves its screen refreshing on the one-minute timer only.
       default: []
       selector:
         entity:
           multiple: true
+    screen_ttl:
+      name: Screen time-to-live
+      description: >-
+        Seconds a screen stays in the rotation after its last publish.
+        The one-minute refresh keeps every screen alive while this
+        automation exists, so while you change nothing the TTL never runs
+        out. Delete the automation and each screen vanishes from the
+        device within this time. A stale copy can briefly reappear after
+        a device reboot because the broker still holds the retained
+        message; the device then expires it again on the same clock. The
+        remaining time survives reboots, so the countdown is not reset by
+        a power cycle. Set 0 to show forever: the old behaviour, where
+        screens only go away when you publish an empty payload or press
+        the device's Clear screens button.
+      default: 900
+      selector:
+        number:
+          min: 0
+          max: 86400
+          step: 60
+          unit_of_measurement: s
+          mode: slider
     screen_1_section:
       name: Screen 1
       collapsed: true
       input:
         screen_1_entity:
           name: Entity
-          description: Any entity, any domain. Leave empty to disable this screen.
+          description: >-
+            Any entity, any domain. Leave empty to disable this screen,
+            unless a value template below is set.
           default: ""
           selector:
             entity:
@@ -47,6 +79,58 @@ blueprint:
           default: ""
           selector:
             text:
+        screen_1_title_tpl:
+          name: Title template
+          description: >-
+            Optional Jinja template for the title line, for example
+            Outside {{ states('sensor.outside_temperature') }}°. When set it
+            wins over the static title, which still falls back to the
+            entity's friendly name. The rendered title scales down to fit
+            the panel like any other text. Leave empty to keep the static
+            title.
+          default: ""
+          selector:
+            template:
+        screen_1_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When set, its
+            rendered result replaces the default state-plus-unit text, so
+            you can combine sensors or show anything Home Assistant can
+            template, for example
+            {{ states('sensor.indoor') }}° / {{ states('sensor.outdoor') }}°.
+            The text scales down within the size range below and wraps onto
+            multiple lines when it gets long. Leave empty to keep the
+            entity's state.
+          default: ""
+          selector:
+            template:
+        screen_1_value_max_size:
+          name: Value maximum text size
+          description: >-
+            Biggest text scale allowed for the value line, 1 to 4. The
+            blueprint picks the largest size in this range that still fits
+            the text on one line.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_1_value_min_size:
+          name: Value minimum text size
+          description: >-
+            Smallest text scale for the value line, 1 to 4. Text that does
+            not fit on one line even at this size wraps onto multiple lines
+            at this size instead of shrinking further or being cut.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_1_icon:
           name: Icon
           description: Optional icon drawn centred at the top of the screen.
@@ -75,18 +159,92 @@ blueprint:
                 - x
                 - arrow-up
                 - arrow-down
+        screen_1_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template that renders to an icon name, for
+            state-based icons. Example:
+            {{ 'window-open' if is_state('binary_sensor.window', 'on') else 'window-closed' }}.
+            When set it wins over the icon picker above; when it renders
+            empty, the picker value is used. An unknown name draws no icon,
+            so a bad template degrades gracefully.
+          default: ""
+          selector:
+            template:
+        screen_1_bitmap_size:
+          name: Bitmap size
+          description: >-
+            Pixel size of the custom bitmap below, drawn centred at the
+            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
+            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
+            makes the whole message oversized and the firmware ignores it.
+          default: "24"
+          selector:
+            select:
+              options:
+                - "24"
+                - "32"
+                - "48"
+        screen_1_bitmap:
+          name: Custom bitmap
+          description: >-
+            A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
+            in the repository; any Material Design Icons name converts.
+            When set, the bitmap replaces both the icon template and the
+            icon picker, drawn in the foreground colour. Clear it to fall
+            back to the icon.
+          default: ""
+          selector:
+            text:
+              multiline: true
+        screen_1_bitmap_tpl:
+          name: Custom bitmap template
+          description: >-
+            Optional Jinja template that renders to a bitmap hex string, for
+            example from tools/mdi_to_hex.py, so the bitmap can switch by
+            state:
+            {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
+            When it renders non-empty it wins over the static bitmap field
+            above; when it renders empty, the pasted bitmap is used. The
+            bitmap size still comes from the size picker, so keep the hex
+            length matched to it.
+          default: ""
+          selector:
+            template:
         screen_1_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
           default: "#FFFFFF"
           selector:
             text:
+        screen_1_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB colour, for
+            example
+            {{ '#FF0000' if states('sensor.temp') | float(0) > 28 else '#FFFFFF' }}.
+            When set it wins over the static colour; when it renders empty,
+            the static colour is used. A malformed colour makes the device
+            skip the primitive instead of breaking the screen.
+          default: ""
+          selector:
+            template:
         screen_1_bg:
           name: Background colour
           description: Screen background, as #RRGGBB.
           default: "#000000"
           selector:
             text:
+        screen_1_bg_tpl:
+          name: Background colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB background.
+            When set it wins over the static background; when it renders
+            empty, the static background is used. A malformed colour is
+            ignored by the device.
+          default: ""
+          selector:
+            template:
         screen_1_slot:
           name: Screen slot
           description: >-
@@ -105,7 +263,9 @@ blueprint:
       input:
         screen_2_entity:
           name: Entity
-          description: Any entity, any domain. Leave empty to disable this screen.
+          description: >-
+            Any entity, any domain. Leave empty to disable this screen,
+            unless a value template below is set.
           default: ""
           selector:
             entity:
@@ -115,6 +275,58 @@ blueprint:
           default: ""
           selector:
             text:
+        screen_2_title_tpl:
+          name: Title template
+          description: >-
+            Optional Jinja template for the title line, for example
+            Outside {{ states('sensor.outside_temperature') }}°. When set it
+            wins over the static title, which still falls back to the
+            entity's friendly name. The rendered title scales down to fit
+            the panel like any other text. Leave empty to keep the static
+            title.
+          default: ""
+          selector:
+            template:
+        screen_2_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When set, its
+            rendered result replaces the default state-plus-unit text, so
+            you can combine sensors or show anything Home Assistant can
+            template, for example
+            {{ states('sensor.indoor') }}° / {{ states('sensor.outdoor') }}°.
+            The text scales down within the size range below and wraps onto
+            multiple lines when it gets long. Leave empty to keep the
+            entity's state.
+          default: ""
+          selector:
+            template:
+        screen_2_value_max_size:
+          name: Value maximum text size
+          description: >-
+            Biggest text scale allowed for the value line, 1 to 4. The
+            blueprint picks the largest size in this range that still fits
+            the text on one line.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_2_value_min_size:
+          name: Value minimum text size
+          description: >-
+            Smallest text scale for the value line, 1 to 4. Text that does
+            not fit on one line even at this size wraps onto multiple lines
+            at this size instead of shrinking further or being cut.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_2_icon:
           name: Icon
           description: Optional icon drawn centred at the top of the screen.
@@ -143,18 +355,92 @@ blueprint:
                 - x
                 - arrow-up
                 - arrow-down
+        screen_2_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template that renders to an icon name, for
+            state-based icons. Example:
+            {{ 'window-open' if is_state('binary_sensor.window', 'on') else 'window-closed' }}.
+            When set it wins over the icon picker above; when it renders
+            empty, the picker value is used. An unknown name draws no icon,
+            so a bad template degrades gracefully.
+          default: ""
+          selector:
+            template:
+        screen_2_bitmap_size:
+          name: Bitmap size
+          description: >-
+            Pixel size of the custom bitmap below, drawn centred at the
+            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
+            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
+            makes the whole message oversized and the firmware ignores it.
+          default: "24"
+          selector:
+            select:
+              options:
+                - "24"
+                - "32"
+                - "48"
+        screen_2_bitmap:
+          name: Custom bitmap
+          description: >-
+            A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
+            in the repository; any Material Design Icons name converts.
+            When set, the bitmap replaces both the icon template and the
+            icon picker, drawn in the foreground colour. Clear it to fall
+            back to the icon.
+          default: ""
+          selector:
+            text:
+              multiline: true
+        screen_2_bitmap_tpl:
+          name: Custom bitmap template
+          description: >-
+            Optional Jinja template that renders to a bitmap hex string, for
+            example from tools/mdi_to_hex.py, so the bitmap can switch by
+            state:
+            {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
+            When it renders non-empty it wins over the static bitmap field
+            above; when it renders empty, the pasted bitmap is used. The
+            bitmap size still comes from the size picker, so keep the hex
+            length matched to it.
+          default: ""
+          selector:
+            template:
         screen_2_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
           default: "#FFFFFF"
           selector:
             text:
+        screen_2_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB colour, for
+            example
+            {{ '#FF0000' if states('sensor.temp') | float(0) > 28 else '#FFFFFF' }}.
+            When set it wins over the static colour; when it renders empty,
+            the static colour is used. A malformed colour makes the device
+            skip the primitive instead of breaking the screen.
+          default: ""
+          selector:
+            template:
         screen_2_bg:
           name: Background colour
           description: Screen background, as #RRGGBB.
           default: "#000000"
           selector:
             text:
+        screen_2_bg_tpl:
+          name: Background colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB background.
+            When set it wins over the static background; when it renders
+            empty, the static background is used. A malformed colour is
+            ignored by the device.
+          default: ""
+          selector:
+            template:
         screen_2_slot:
           name: Screen slot
           description: >-
@@ -173,7 +459,9 @@ blueprint:
       input:
         screen_3_entity:
           name: Entity
-          description: Any entity, any domain. Leave empty to disable this screen.
+          description: >-
+            Any entity, any domain. Leave empty to disable this screen,
+            unless a value template below is set.
           default: ""
           selector:
             entity:
@@ -183,6 +471,58 @@ blueprint:
           default: ""
           selector:
             text:
+        screen_3_title_tpl:
+          name: Title template
+          description: >-
+            Optional Jinja template for the title line, for example
+            Outside {{ states('sensor.outside_temperature') }}°. When set it
+            wins over the static title, which still falls back to the
+            entity's friendly name. The rendered title scales down to fit
+            the panel like any other text. Leave empty to keep the static
+            title.
+          default: ""
+          selector:
+            template:
+        screen_3_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When set, its
+            rendered result replaces the default state-plus-unit text, so
+            you can combine sensors or show anything Home Assistant can
+            template, for example
+            {{ states('sensor.indoor') }}° / {{ states('sensor.outdoor') }}°.
+            The text scales down within the size range below and wraps onto
+            multiple lines when it gets long. Leave empty to keep the
+            entity's state.
+          default: ""
+          selector:
+            template:
+        screen_3_value_max_size:
+          name: Value maximum text size
+          description: >-
+            Biggest text scale allowed for the value line, 1 to 4. The
+            blueprint picks the largest size in this range that still fits
+            the text on one line.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_3_value_min_size:
+          name: Value minimum text size
+          description: >-
+            Smallest text scale for the value line, 1 to 4. Text that does
+            not fit on one line even at this size wraps onto multiple lines
+            at this size instead of shrinking further or being cut.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_3_icon:
           name: Icon
           description: Optional icon drawn centred at the top of the screen.
@@ -211,18 +551,92 @@ blueprint:
                 - x
                 - arrow-up
                 - arrow-down
+        screen_3_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template that renders to an icon name, for
+            state-based icons. Example:
+            {{ 'window-open' if is_state('binary_sensor.window', 'on') else 'window-closed' }}.
+            When set it wins over the icon picker above; when it renders
+            empty, the picker value is used. An unknown name draws no icon,
+            so a bad template degrades gracefully.
+          default: ""
+          selector:
+            template:
+        screen_3_bitmap_size:
+          name: Bitmap size
+          description: >-
+            Pixel size of the custom bitmap below, drawn centred at the
+            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
+            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
+            makes the whole message oversized and the firmware ignores it.
+          default: "24"
+          selector:
+            select:
+              options:
+                - "24"
+                - "32"
+                - "48"
+        screen_3_bitmap:
+          name: Custom bitmap
+          description: >-
+            A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
+            in the repository; any Material Design Icons name converts.
+            When set, the bitmap replaces both the icon template and the
+            icon picker, drawn in the foreground colour. Clear it to fall
+            back to the icon.
+          default: ""
+          selector:
+            text:
+              multiline: true
+        screen_3_bitmap_tpl:
+          name: Custom bitmap template
+          description: >-
+            Optional Jinja template that renders to a bitmap hex string, for
+            example from tools/mdi_to_hex.py, so the bitmap can switch by
+            state:
+            {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
+            When it renders non-empty it wins over the static bitmap field
+            above; when it renders empty, the pasted bitmap is used. The
+            bitmap size still comes from the size picker, so keep the hex
+            length matched to it.
+          default: ""
+          selector:
+            template:
         screen_3_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
           default: "#FFFFFF"
           selector:
             text:
+        screen_3_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB colour, for
+            example
+            {{ '#FF0000' if states('sensor.temp') | float(0) > 28 else '#FFFFFF' }}.
+            When set it wins over the static colour; when it renders empty,
+            the static colour is used. A malformed colour makes the device
+            skip the primitive instead of breaking the screen.
+          default: ""
+          selector:
+            template:
         screen_3_bg:
           name: Background colour
           description: Screen background, as #RRGGBB.
           default: "#000000"
           selector:
             text:
+        screen_3_bg_tpl:
+          name: Background colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB background.
+            When set it wins over the static background; when it renders
+            empty, the static background is used. A malformed colour is
+            ignored by the device.
+          default: ""
+          selector:
+            template:
         screen_3_slot:
           name: Screen slot
           description: >-
@@ -241,7 +655,9 @@ blueprint:
       input:
         screen_4_entity:
           name: Entity
-          description: Any entity, any domain. Leave empty to disable this screen.
+          description: >-
+            Any entity, any domain. Leave empty to disable this screen,
+            unless a value template below is set.
           default: ""
           selector:
             entity:
@@ -251,6 +667,58 @@ blueprint:
           default: ""
           selector:
             text:
+        screen_4_title_tpl:
+          name: Title template
+          description: >-
+            Optional Jinja template for the title line, for example
+            Outside {{ states('sensor.outside_temperature') }}°. When set it
+            wins over the static title, which still falls back to the
+            entity's friendly name. The rendered title scales down to fit
+            the panel like any other text. Leave empty to keep the static
+            title.
+          default: ""
+          selector:
+            template:
+        screen_4_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When set, its
+            rendered result replaces the default state-plus-unit text, so
+            you can combine sensors or show anything Home Assistant can
+            template, for example
+            {{ states('sensor.indoor') }}° / {{ states('sensor.outdoor') }}°.
+            The text scales down within the size range below and wraps onto
+            multiple lines when it gets long. Leave empty to keep the
+            entity's state.
+          default: ""
+          selector:
+            template:
+        screen_4_value_max_size:
+          name: Value maximum text size
+          description: >-
+            Biggest text scale allowed for the value line, 1 to 4. The
+            blueprint picks the largest size in this range that still fits
+            the text on one line.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_4_value_min_size:
+          name: Value minimum text size
+          description: >-
+            Smallest text scale for the value line, 1 to 4. Text that does
+            not fit on one line even at this size wraps onto multiple lines
+            at this size instead of shrinking further or being cut.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_4_icon:
           name: Icon
           description: Optional icon drawn centred at the top of the screen.
@@ -279,18 +747,92 @@ blueprint:
                 - x
                 - arrow-up
                 - arrow-down
+        screen_4_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template that renders to an icon name, for
+            state-based icons. Example:
+            {{ 'window-open' if is_state('binary_sensor.window', 'on') else 'window-closed' }}.
+            When set it wins over the icon picker above; when it renders
+            empty, the picker value is used. An unknown name draws no icon,
+            so a bad template degrades gracefully.
+          default: ""
+          selector:
+            template:
+        screen_4_bitmap_size:
+          name: Bitmap size
+          description: >-
+            Pixel size of the custom bitmap below, drawn centred at the
+            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
+            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
+            makes the whole message oversized and the firmware ignores it.
+          default: "24"
+          selector:
+            select:
+              options:
+                - "24"
+                - "32"
+                - "48"
+        screen_4_bitmap:
+          name: Custom bitmap
+          description: >-
+            A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
+            in the repository; any Material Design Icons name converts.
+            When set, the bitmap replaces both the icon template and the
+            icon picker, drawn in the foreground colour. Clear it to fall
+            back to the icon.
+          default: ""
+          selector:
+            text:
+              multiline: true
+        screen_4_bitmap_tpl:
+          name: Custom bitmap template
+          description: >-
+            Optional Jinja template that renders to a bitmap hex string, for
+            example from tools/mdi_to_hex.py, so the bitmap can switch by
+            state:
+            {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
+            When it renders non-empty it wins over the static bitmap field
+            above; when it renders empty, the pasted bitmap is used. The
+            bitmap size still comes from the size picker, so keep the hex
+            length matched to it.
+          default: ""
+          selector:
+            template:
         screen_4_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
           default: "#FFFFFF"
           selector:
             text:
+        screen_4_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB colour, for
+            example
+            {{ '#FF0000' if states('sensor.temp') | float(0) > 28 else '#FFFFFF' }}.
+            When set it wins over the static colour; when it renders empty,
+            the static colour is used. A malformed colour makes the device
+            skip the primitive instead of breaking the screen.
+          default: ""
+          selector:
+            template:
         screen_4_bg:
           name: Background colour
           description: Screen background, as #RRGGBB.
           default: "#000000"
           selector:
             text:
+        screen_4_bg_tpl:
+          name: Background colour template
+          description: >-
+            Optional Jinja template that renders to a #RRGGBB background.
+            When set it wins over the static background; when it renders
+            empty, the static background is used. A malformed colour is
+            ignored by the device.
+          default: ""
+          selector:
+            template:
         screen_4_slot:
           name: Screen slot
           description: >-
@@ -306,32 +848,76 @@ blueprint:
 
 # Hoist !input values into variables before templating: !input is only legal
 # at the top level of trigger/condition/action keys, not inside a template.
+# The template-selector inputs hold Jinja source, and hoisting them into
+# variables renders them once per run, so below each screen_i_*_tpl variable
+# is the rendered result (empty string when the input was left empty).
 variables:
   hostname: !input hostname
   watched_entities: !input watched_entities
+  screen_ttl: !input screen_ttl
   screen_1_entity: !input screen_1_entity
   screen_1_title: !input screen_1_title
+  screen_1_title_tpl: !input screen_1_title_tpl
+  screen_1_value_tpl: !input screen_1_value_tpl
+  screen_1_value_max_size: !input screen_1_value_max_size
+  screen_1_value_min_size: !input screen_1_value_min_size
   screen_1_icon: !input screen_1_icon
+  screen_1_icon_tpl: !input screen_1_icon_tpl
+  screen_1_bitmap_size: !input screen_1_bitmap_size
+  screen_1_bitmap: !input screen_1_bitmap
+  screen_1_bitmap_tpl: !input screen_1_bitmap_tpl
   screen_1_color: !input screen_1_color
+  screen_1_color_tpl: !input screen_1_color_tpl
   screen_1_bg: !input screen_1_bg
+  screen_1_bg_tpl: !input screen_1_bg_tpl
   screen_1_slot: !input screen_1_slot
   screen_2_entity: !input screen_2_entity
   screen_2_title: !input screen_2_title
+  screen_2_title_tpl: !input screen_2_title_tpl
+  screen_2_value_tpl: !input screen_2_value_tpl
+  screen_2_value_max_size: !input screen_2_value_max_size
+  screen_2_value_min_size: !input screen_2_value_min_size
   screen_2_icon: !input screen_2_icon
+  screen_2_icon_tpl: !input screen_2_icon_tpl
+  screen_2_bitmap_size: !input screen_2_bitmap_size
+  screen_2_bitmap: !input screen_2_bitmap
+  screen_2_bitmap_tpl: !input screen_2_bitmap_tpl
   screen_2_color: !input screen_2_color
+  screen_2_color_tpl: !input screen_2_color_tpl
   screen_2_bg: !input screen_2_bg
+  screen_2_bg_tpl: !input screen_2_bg_tpl
   screen_2_slot: !input screen_2_slot
   screen_3_entity: !input screen_3_entity
   screen_3_title: !input screen_3_title
+  screen_3_title_tpl: !input screen_3_title_tpl
+  screen_3_value_tpl: !input screen_3_value_tpl
+  screen_3_value_max_size: !input screen_3_value_max_size
+  screen_3_value_min_size: !input screen_3_value_min_size
   screen_3_icon: !input screen_3_icon
+  screen_3_icon_tpl: !input screen_3_icon_tpl
+  screen_3_bitmap_size: !input screen_3_bitmap_size
+  screen_3_bitmap: !input screen_3_bitmap
+  screen_3_bitmap_tpl: !input screen_3_bitmap_tpl
   screen_3_color: !input screen_3_color
+  screen_3_color_tpl: !input screen_3_color_tpl
   screen_3_bg: !input screen_3_bg
+  screen_3_bg_tpl: !input screen_3_bg_tpl
   screen_3_slot: !input screen_3_slot
   screen_4_entity: !input screen_4_entity
   screen_4_title: !input screen_4_title
+  screen_4_title_tpl: !input screen_4_title_tpl
+  screen_4_value_tpl: !input screen_4_value_tpl
+  screen_4_value_max_size: !input screen_4_value_max_size
+  screen_4_value_min_size: !input screen_4_value_min_size
   screen_4_icon: !input screen_4_icon
+  screen_4_icon_tpl: !input screen_4_icon_tpl
+  screen_4_bitmap_size: !input screen_4_bitmap_size
+  screen_4_bitmap: !input screen_4_bitmap
+  screen_4_bitmap_tpl: !input screen_4_bitmap_tpl
   screen_4_color: !input screen_4_color
+  screen_4_color_tpl: !input screen_4_color_tpl
   screen_4_bg: !input screen_4_bg
+  screen_4_bg_tpl: !input screen_4_bg_tpl
   screen_4_slot: !input screen_4_slot
 
 mode: restart
@@ -354,83 +940,253 @@ conditions:
     value_template: "{{ hostname != '' }}"
 
 actions:
+  # A screen publishes when its entity is set and reporting, or when a value
+  # template is set (template-driven screens need no entity at all).
   - condition: template
     value_template: >-
-      {{ screen_1_entity != ''
-         and states(screen_1_entity) not in ('unknown', 'unavailable', 'none') }}
+      {{ (screen_1_entity != ''
+          and states(screen_1_entity) not in ('unknown', 'unavailable', 'none'))
+         or screen_1_value_tpl != '' }}
   - action: mqtt.publish
     data:
       topic: "smalltv/{{ hostname }}/screen/{{ screen_1_slot }}"
       retain: true
       payload: >-
         {% set e = screen_1_entity -%}
-        {% set title = screen_1_title if screen_1_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set title = screen_1_title_tpl if screen_1_title_tpl != '' else (screen_1_title if screen_1_title != '' else (state_attr(e, 'friendly_name') if e != '' else '')) -%}
+        {% set icon = screen_1_icon_tpl if screen_1_icon_tpl != '' else screen_1_icon -%}
+        {% set bm_tpl = screen_1_bitmap_tpl | trim -%}
+        {% set bm = bm_tpl if bm_tpl != '' else (screen_1_bitmap | trim) -%}
+        {% set bs = screen_1_bitmap_size | int(24) -%}
+        {% set color = screen_1_color_tpl if screen_1_color_tpl != '' else screen_1_color -%}
+        {% set bg = screen_1_bg_tpl if screen_1_bg_tpl != '' else screen_1_bg -%}
+        {% set vmin = screen_1_value_min_size | int(1) -%}
+        {% set vmax = screen_1_value_max_size | int(4) -%}
+        {% if screen_1_value_tpl != '' -%}
+        {% set v = screen_1_value_tpl -%}
+        {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
-        {"bg":{{ screen_1_bg | tojson }},"ttl":0,"draw":[
-        {%- if screen_1_icon != 'none' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ screen_1_icon | tojson }}},
+        {% endif -%}
+        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+           largest scale in [lo..hi] that fits one line. Longer text wraps at
+           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+        {% set lo = [vmin, vmax] | min -%}
+        {% set hi = [vmin, vmax] | max -%}
+        {% set v = v | truncate(150, True, '', 0) -%}
+        {% set fit = namespace(s=0) -%}
+        {% for cand in range(hi, lo - 1, -1) -%}
+        {% if fit.s == 0 and v | length * 6 * cand <= 232 -%}
+        {% set fit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% if fit.s > 0 -%}
+        {% set vs = fit.s -%}
+        {% set vlines = [v] -%}
+        {% else -%}
+        {% set vs = lo -%}
+        {% set w = 232 // (6 * lo) -%}
+        {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
+        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
+        {% endif -%}
+        {# Title stays one line: scale 2, else 1, then cut. -#}
+        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
+        {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
+        {%- if bm != '' -%}
+        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {%- elif icon != 'none' and icon != '' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ title | tojson }}},
-        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {%- for line in vlines -%}
+        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {%- endfor -%}
         ]}
   - condition: template
     value_template: >-
-      {{ screen_2_entity != ''
-         and states(screen_2_entity) not in ('unknown', 'unavailable', 'none') }}
+      {{ (screen_2_entity != ''
+          and states(screen_2_entity) not in ('unknown', 'unavailable', 'none'))
+         or screen_2_value_tpl != '' }}
   - action: mqtt.publish
     data:
       topic: "smalltv/{{ hostname }}/screen/{{ screen_2_slot }}"
       retain: true
       payload: >-
         {% set e = screen_2_entity -%}
-        {% set title = screen_2_title if screen_2_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set title = screen_2_title_tpl if screen_2_title_tpl != '' else (screen_2_title if screen_2_title != '' else (state_attr(e, 'friendly_name') if e != '' else '')) -%}
+        {% set icon = screen_2_icon_tpl if screen_2_icon_tpl != '' else screen_2_icon -%}
+        {% set bm_tpl = screen_2_bitmap_tpl | trim -%}
+        {% set bm = bm_tpl if bm_tpl != '' else (screen_2_bitmap | trim) -%}
+        {% set bs = screen_2_bitmap_size | int(24) -%}
+        {% set color = screen_2_color_tpl if screen_2_color_tpl != '' else screen_2_color -%}
+        {% set bg = screen_2_bg_tpl if screen_2_bg_tpl != '' else screen_2_bg -%}
+        {% set vmin = screen_2_value_min_size | int(1) -%}
+        {% set vmax = screen_2_value_max_size | int(4) -%}
+        {% if screen_2_value_tpl != '' -%}
+        {% set v = screen_2_value_tpl -%}
+        {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
-        {"bg":{{ screen_2_bg | tojson }},"ttl":0,"draw":[
-        {%- if screen_2_icon != 'none' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ screen_2_icon | tojson }}},
+        {% endif -%}
+        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+           largest scale in [lo..hi] that fits one line. Longer text wraps at
+           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+        {% set lo = [vmin, vmax] | min -%}
+        {% set hi = [vmin, vmax] | max -%}
+        {% set v = v | truncate(150, True, '', 0) -%}
+        {% set fit = namespace(s=0) -%}
+        {% for cand in range(hi, lo - 1, -1) -%}
+        {% if fit.s == 0 and v | length * 6 * cand <= 232 -%}
+        {% set fit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% if fit.s > 0 -%}
+        {% set vs = fit.s -%}
+        {% set vlines = [v] -%}
+        {% else -%}
+        {% set vs = lo -%}
+        {% set w = 232 // (6 * lo) -%}
+        {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
+        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
+        {% endif -%}
+        {# Title stays one line: scale 2, else 1, then cut. -#}
+        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
+        {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
+        {%- if bm != '' -%}
+        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {%- elif icon != 'none' and icon != '' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ title | tojson }}},
-        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {%- for line in vlines -%}
+        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {%- endfor -%}
         ]}
   - condition: template
     value_template: >-
-      {{ screen_3_entity != ''
-         and states(screen_3_entity) not in ('unknown', 'unavailable', 'none') }}
+      {{ (screen_3_entity != ''
+          and states(screen_3_entity) not in ('unknown', 'unavailable', 'none'))
+         or screen_3_value_tpl != '' }}
   - action: mqtt.publish
     data:
       topic: "smalltv/{{ hostname }}/screen/{{ screen_3_slot }}"
       retain: true
       payload: >-
         {% set e = screen_3_entity -%}
-        {% set title = screen_3_title if screen_3_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set title = screen_3_title_tpl if screen_3_title_tpl != '' else (screen_3_title if screen_3_title != '' else (state_attr(e, 'friendly_name') if e != '' else '')) -%}
+        {% set icon = screen_3_icon_tpl if screen_3_icon_tpl != '' else screen_3_icon -%}
+        {% set bm_tpl = screen_3_bitmap_tpl | trim -%}
+        {% set bm = bm_tpl if bm_tpl != '' else (screen_3_bitmap | trim) -%}
+        {% set bs = screen_3_bitmap_size | int(24) -%}
+        {% set color = screen_3_color_tpl if screen_3_color_tpl != '' else screen_3_color -%}
+        {% set bg = screen_3_bg_tpl if screen_3_bg_tpl != '' else screen_3_bg -%}
+        {% set vmin = screen_3_value_min_size | int(1) -%}
+        {% set vmax = screen_3_value_max_size | int(4) -%}
+        {% if screen_3_value_tpl != '' -%}
+        {% set v = screen_3_value_tpl -%}
+        {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
-        {"bg":{{ screen_3_bg | tojson }},"ttl":0,"draw":[
-        {%- if screen_3_icon != 'none' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ screen_3_icon | tojson }}},
+        {% endif -%}
+        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+           largest scale in [lo..hi] that fits one line. Longer text wraps at
+           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+        {% set lo = [vmin, vmax] | min -%}
+        {% set hi = [vmin, vmax] | max -%}
+        {% set v = v | truncate(150, True, '', 0) -%}
+        {% set fit = namespace(s=0) -%}
+        {% for cand in range(hi, lo - 1, -1) -%}
+        {% if fit.s == 0 and v | length * 6 * cand <= 232 -%}
+        {% set fit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% if fit.s > 0 -%}
+        {% set vs = fit.s -%}
+        {% set vlines = [v] -%}
+        {% else -%}
+        {% set vs = lo -%}
+        {% set w = 232 // (6 * lo) -%}
+        {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
+        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
+        {% endif -%}
+        {# Title stays one line: scale 2, else 1, then cut. -#}
+        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
+        {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
+        {%- if bm != '' -%}
+        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {%- elif icon != 'none' and icon != '' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ title | tojson }}},
-        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {%- for line in vlines -%}
+        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {%- endfor -%}
         ]}
   - condition: template
     value_template: >-
-      {{ screen_4_entity != ''
-         and states(screen_4_entity) not in ('unknown', 'unavailable', 'none') }}
+      {{ (screen_4_entity != ''
+          and states(screen_4_entity) not in ('unknown', 'unavailable', 'none'))
+         or screen_4_value_tpl != '' }}
   - action: mqtt.publish
     data:
       topic: "smalltv/{{ hostname }}/screen/{{ screen_4_slot }}"
       retain: true
       payload: >-
         {% set e = screen_4_entity -%}
-        {% set title = screen_4_title if screen_4_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set title = screen_4_title_tpl if screen_4_title_tpl != '' else (screen_4_title if screen_4_title != '' else (state_attr(e, 'friendly_name') if e != '' else '')) -%}
+        {% set icon = screen_4_icon_tpl if screen_4_icon_tpl != '' else screen_4_icon -%}
+        {% set bm_tpl = screen_4_bitmap_tpl | trim -%}
+        {% set bm = bm_tpl if bm_tpl != '' else (screen_4_bitmap | trim) -%}
+        {% set bs = screen_4_bitmap_size | int(24) -%}
+        {% set color = screen_4_color_tpl if screen_4_color_tpl != '' else screen_4_color -%}
+        {% set bg = screen_4_bg_tpl if screen_4_bg_tpl != '' else screen_4_bg -%}
+        {% set vmin = screen_4_value_min_size | int(1) -%}
+        {% set vmax = screen_4_value_max_size | int(4) -%}
+        {% if screen_4_value_tpl != '' -%}
+        {% set v = screen_4_value_tpl -%}
+        {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
-        {"bg":{{ screen_4_bg | tojson }},"ttl":0,"draw":[
-        {%- if screen_4_icon != 'none' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ screen_4_icon | tojson }}},
+        {% endif -%}
+        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+           largest scale in [lo..hi] that fits one line. Longer text wraps at
+           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+        {% set lo = [vmin, vmax] | min -%}
+        {% set hi = [vmin, vmax] | max -%}
+        {% set v = v | truncate(150, True, '', 0) -%}
+        {% set fit = namespace(s=0) -%}
+        {% for cand in range(hi, lo - 1, -1) -%}
+        {% if fit.s == 0 and v | length * 6 * cand <= 232 -%}
+        {% set fit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% if fit.s > 0 -%}
+        {% set vs = fit.s -%}
+        {% set vlines = [v] -%}
+        {% else -%}
+        {% set vs = lo -%}
+        {% set w = 232 // (6 * lo) -%}
+        {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
+        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
+        {% endif -%}
+        {# Title stays one line: scale 2, else 1, then cut. -#}
+        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
+        {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
+        {%- if bm != '' -%}
+        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {%- elif icon != 'none' and icon != '' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ title | tojson }}},
-        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {%- for line in vlines -%}
+        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {%- endfor -%}
         ]}
