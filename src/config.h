@@ -49,6 +49,26 @@
 #define TFT_WIDTH  240
 #define TFT_HEIGHT 240
 
+// Panel RAM offsets per rotation pair (Arduino_GFX: offset1 -> rotation 0/1,
+// offset2 -> rotation 2/3). The ST7789(V) is a 240x320 controller but the
+// 1.54" glass only wires RAM rows 0-239, leaving an 80-row dead band. With
+// the MADCTL MY bit set (rotation 2/3) the scan direction reverses into that
+// dead band, so the row offset must jump to 80 or the image slides 80 px off
+// the glass (content pushed to the top at 180°). #ifndef so a board header
+// can override if a variant turns up with a 240x280 panel (would need 40).
+#ifndef TFT_COL_OFFSET1
+#define TFT_COL_OFFSET1 0
+#endif
+#ifndef TFT_ROW_OFFSET1
+#define TFT_ROW_OFFSET1 0
+#endif
+#ifndef TFT_COL_OFFSET2
+#define TFT_COL_OFFSET2 0
+#endif
+#ifndef TFT_ROW_OFFSET2
+#define TFT_ROW_OFFSET2 80
+#endif
+
 // ---------------------------------------------------------------------------
 // Limits (bound RAM usage on the ESP8266)
 // ---------------------------------------------------------------------------

@@ -90,10 +90,14 @@ void gfxBegin(const Settings& s) {
 #else
   bus = new Arduino_HWSPI(TFT_DC, TFT_CS);   // ESP8266 HW-SPI (fixed SCLK/MOSI)
 #endif
-  // IPS=true so the panel colors are not inverted; full 240x240, no offsets.
+  // IPS=true so the panel colors are not inverted. The ST7789(V) has 240x320
+  // RAM against 240x240 glass, so the rotation 2/3 row offset (TFT_ROW_OFFSET2,
+  // 80) matters: without it a 180°-rotated image slides into the dead band.
   // Use the SmallTV variant so the SPI bus comes up in mode 3 (see class above).
   gfx = new Arduino_ST7789_SmallTV(bus, TFT_RST, 0 /*rotation*/, true /*IPS*/,
-                                   TFT_WIDTH, TFT_HEIGHT, 0, 0, 0, 0);
+                                   TFT_WIDTH, TFT_HEIGHT,
+                                   TFT_COL_OFFSET1, TFT_ROW_OFFSET1,
+                                   TFT_COL_OFFSET2, TFT_ROW_OFFSET2);
   gfx->begin();
   // Colour order/inversion/gain before the first pixel, so the panel comes up
   // already corrected instead of flashing an uncorrected boot screen. This also

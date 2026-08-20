@@ -4,6 +4,7 @@
 #include <Arduino_GFX_Library.h>
 #include "Gfx.h"
 #include "HaScreens.h"
+#include "HaIcons.h"
 
 HaMode g_haMode;
 
@@ -43,6 +44,15 @@ static void renderScreen(const HaScreen& sc, uint8_t pageIndex, uint8_t pageCoun
         gfx->setTextColor(c);
         gfx->setCursor(x, p.y);
         gfx->print(v);
+        break;
+      }
+      case HA_P_ICON: {
+        const char* v = sc.text + p.voff;
+        uint8_t sz = p.aux ? p.aux : 1;
+        int w = 24 * sz;   // the icon's 24x24 logical box scaled by s
+        int x = (p.align == HA_A_CENTER) ? p.x - w / 2
+              : (p.align == HA_A_RIGHT)  ? p.x - w : p.x;
+        haDrawIcon(v, x, p.y, sz, c);   // unknown names skip silently
         break;
       }
     }

@@ -22,6 +22,7 @@ enum HaPrimType : uint8_t {
   HA_P_CIRCLE,  // x y r c       (centre x/y, r in aux)
   HA_P_LINE,    // x y x2 y2 c
   HA_P_TEXT,    // x y s c a v   (s in aux, a in align, v in the text pool)
+  HA_P_ICON,    // x y s c a v   (like text, but v is an icon name from HaIcons)
 };
 
 enum HaAlign : uint8_t { HA_A_LEFT, HA_A_CENTER, HA_A_RIGHT };

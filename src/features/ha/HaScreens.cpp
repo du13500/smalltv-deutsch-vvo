@@ -92,6 +92,25 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
       if (c >= 32 && c <= 126) sc.text[sc.textUsed++] = c;
     }
     sc.text[sc.textUsed++] = 0;
+  } else if (!strcmp(t, "icon")) {
+    const char* v = p["v"];
+    if (!v) return false;
+    int s = p["s"] | 1;
+    if (s < 1) return false;                    // scale is an int >= 1
+    size_t L = strlen(v);
+    if (!L || L > 24) return false;             // icon names are <= 24 chars
+    if (sc.textUsed + L + 1 > sizeof(sc.text)) return false;  // pool full: skip
+    out.type  = HA_P_ICON;
+    out.aux   = (uint8_t)constrain(s, 1, 8);    // 24x24 grid scaled 1..8
+    const char* a = p["a"] | "l";
+    out.align = (a[0] == 'c') ? HA_A_CENTER : (a[0] == 'r') ? HA_A_RIGHT : HA_A_LEFT;
+    out.voff  = sc.textUsed;
+    // Plain ASCII only, like text; an unknown name simply draws nothing.
+    for (size_t i = 0; i < L; i++) {
+      char c = v[i];
+      if (c >= 32 && c <= 126) sc.text[sc.textUsed++] = c;
+    }
+    sc.text[sc.textUsed++] = 0;
   } else {
     return false;                               // unknown primitive type
   }
@@ -240,6 +259,12 @@ static void primToJson(const HaScreen& sc, const HaPrim& p, JsonObject o) {
       break;
     case HA_P_TEXT:
       o["t"] = "text";
+      o["x"] = p.x; o["y"] = p.y; o["s"] = p.aux;
+      o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
+      o["v"] = sc.text + p.voff;
+      break;
+    case HA_P_ICON:
+      o["t"] = "icon";
       o["x"] = p.x; o["y"] = p.y; o["s"] = p.aux;
       o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
       o["v"] = sc.text + p.voff;
