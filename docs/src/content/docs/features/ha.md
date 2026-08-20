@@ -3,7 +3,7 @@ title: Home Assistant screens
 description: Full screens pushed from Home Assistant over MQTT as small JSON draw lists, one retained message per slot, rotating in the device carousel.
 ---
 
-The other features are things the device fetches itself. This one is the opposite: you publish a small JSON document to an MQTT topic, and the device draws it as a full 240×240 screen and keeps it in the carousel. A temperature warning, a door-left-open reminder, the day's energy total — anything Home Assistant can template, the panel can show.
+The other features are things the device fetches itself. This one is the opposite: you publish a small JSON document to an MQTT topic, and the device draws it as a full 240×240 screen and keeps it in the carousel. A temperature warning, a door-left-open reminder, the day's energy total. Anything Home Assistant can template, the panel can show.
 
 Because every screen is a retained message, the broker holds the last copy. The device can reboot, Home Assistant can reboot, and the screens come back on their own.
 
@@ -11,7 +11,7 @@ Because every screen is a retained message, the broker holds the last copy. The 
 
 Open the settings page and find the MQTT card. Enter your broker's host, port (1883 by default), and an optional username and password, then save. The connection is plain TCP, not TLS, so keep the broker on your LAN.
 
-The device identifies itself by its hostname — the same name you see in the web UI and browse to as `<hostname>.local`. That name appears in every topic below; the examples use `smalltv`.
+The device identifies itself by its hostname, the same name you see in the web UI and browse to as `<hostname>.local`. That name appears in every topic below; the examples use `smalltv`.
 
 ## The MQTT contract
 
@@ -20,7 +20,7 @@ The device identifies itself by its hostname — the same name you see in the we
 | `smalltv/<hostname>/availability` | device → broker | `online`, retained, when the device connects. The broker holds a retained `offline` as the device's last will, so the topic always tells you whether the panel is really there. |
 | `smalltv/<hostname>/screen/<slot>` | broker → device | One screen, as retained JSON. `<slot>` is a name you pick, such as `window` or `energy`. |
 
-Screen messages must be published with the retain flag. That is not a nicety: it is how the screen survives a device reboot, and it is how a screen that was published while the device was off appears when it comes back.
+Screen messages must be published with the retain flag. This is not optional: retain is what lets a screen survive a device reboot, and what makes a screen published while the device was off appear when it comes back.
 
 Publishing an **empty retained payload** to a screen topic deletes that slot, from both the broker and the device.
 
@@ -49,6 +49,7 @@ A screen is a JSON object with an optional background colour, an optional time-t
     {"t":"rect","x":10,"y":10,"w":220,"h":60,"c":"#FFFFFF","r":8},
     {"t":"circle","x":120,"y":120,"r":40,"c":"#FF0000"},
     {"t":"line","x":0,"y":200,"x2":240,"y2":200,"c":"#888888"},
+    {"t":"icon","x":120,"y":130,"s":2,"c":"#FFCC00","a":"c","v":"sun"},
     {"t":"text","x":120,"y":60,"s":2,"c":"#FFFFFF","a":"c","v":"Open the window"},
     {"t":"text","x":120,"y":120,"s":3,"c":"#FFFF00","a":"c","v":"21.5 in / 18.2 out"}
   ]
@@ -71,14 +72,17 @@ The primitives:
 | `circle` | `x`, `y`, `r`, `c` | A circle at centre `x`,`y`. |
 | `line` | `x`, `y`, `x2`, `y2`, `c` | A straight line. |
 | `text` | `x`, `y`, `s`, `c`, `a`, `v` | A string in the built-in 6×8 font. |
+| `icon` | `x`, `y`, `s`, `c`, `a`, `v` | A built-in icon; `v` is the icon name. |
 
 Colours are `#RRGGBB`. Text `s` is an integer scale of the 6×8 font, and `a` aligns the string left (`l`), centre (`c`), or right (`r`) around `x`. The string is capped at 64 characters; stick to plain ASCII, as anything else disappears rather than drawing.
 
-Parsing is forgiving in a specific direction. Unknown fields are ignored, so you can add your own annotations. A malformed primitive is skipped and the rest of the list still draws. But a payload that is not valid JSON at all leaves the slot exactly as it was, so a templating mistake in Home Assistant cannot blank a working screen.
+For `icon`, `s` is a 1-8 scale and the icon occupies a 24×`s` px box; `x` is the left/centre/right edge of that box according to `a` (default `l`), and `y` is its top edge. The icon names are: `thermometer`, `humidity`, `sun`, `cloud`, `rain`, `snow`, `wind`, `home`, `door-open`, `door-closed`, `window-open`, `window-closed`, `motion`, `plug`, `battery`, `alert`, `check`, `x`, `arrow-up`, `arrow-down`. An unknown name is skipped like any other malformed primitive.
+
+Parsing is forgiving in one direction. Unknown fields are ignored, so you can add your own annotations. A malformed primitive is skipped and the rest of the list still draws. But a payload that is not valid JSON at all leaves the slot exactly as it was, so a templating mistake in Home Assistant cannot blank a working screen.
 
 ## The window screen from Home Assistant
 
-The flagship use: compare indoor and outdoor temperature and show a green or red full-screen answer to "should I open the window?". One automation, one `mqtt.publish`:
+The typical use: compare indoor and outdoor temperature and show a green or red full-screen answer to "should I open the window?". One automation, one `mqtt.publish`:
 
 ```yaml
 automation:
@@ -126,7 +130,7 @@ The same automation exists as an importable blueprint, with the sensors, delta, 
 
 ## More than one screen
 
-Slots are independent, so several automations — or one automation with several publish actions — build a carousel. These three publishes give you a weather line, the window advice above, and today's energy total, rotating at the device's dwell time:
+Slots are independent, so you can build a carousel from several automations, or from one automation with several publish actions. These three publishes give you a weather line, the window advice above, and today's energy total, rotating at the device's dwell time:
 
 ```yaml
 - action: mqtt.publish
@@ -158,7 +162,13 @@ Slots are independent, so several automations — or one automation with several
          "v":"{{ states('sensor.energy_today') }} kWh"}]}
 ```
 
-Slot order is the carousel order, so the leading `z` on `zenergy` is deliberate — it keeps that screen last. Stay under the per-board screen count: 8 slots on the ESP32 builds, 4 on the ESP8266.
+Slot order is the carousel order, so the leading `z` on `zenergy` is deliberate: it keeps that screen last. Stay under the per-board screen count: 8 slots on the ESP32 builds, 4 on the ESP8266.
+
+## A whole board from one blueprint
+
+Writing four near-identical automations gets old. The [`screen_board.yaml`](https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml) blueprint publishes up to four independent sensor screens from a single automation, one retained message per slot. Each screen is a collapsed input section with an entity (any domain), an optional title (the entity's friendly name is used when empty), an optional icon from the built-in set, foreground and background colours, and a slot name. An empty entity disables that screen and skips its publish entirely.
+
+Each rendered screen is the icon centred at the top, the title below it, and the state with its unit in big type underneath. A single `watched_entities` list drives the state triggers, so every screen refreshes the moment any of its entities moves, with a one-minute safety refresh on top. Slot names sort lexicographically and must be unique per device across every automation publishing to the same hostname. Import it like the window blueprint above; a filled-in example lives in [`examples/ha/screen_board_instance.md`](https://github.com/giovi321/smalltv-mod/blob/main/examples/ha/screen_board_instance.md).
 
 ## Deleting a screen
 
@@ -188,4 +198,4 @@ mosquitto_pub -h broker.local -t smalltv/smalltv/screen/hello -r -n
 mosquitto_sub -h broker.local -t smalltv/smalltv/availability -C 1 -W 2
 ```
 
-If the screen does not appear, check the payload size against the limits table above first — an overlong payload is the most common cause, and a JSON syntax error is silently ignored by design.
+If the screen does not appear, check the payload size against the limits table above first. An overlong payload is the most common cause, and a JSON syntax error is silently ignored by design.

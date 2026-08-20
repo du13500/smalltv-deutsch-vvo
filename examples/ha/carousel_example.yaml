@@ -2,10 +2,11 @@
 # the device's dwell time (15 s by default). Each publish is one slot; the
 # retain flag keeps the screens alive across device and HA restarts.
 #
-# These are actions — drop them into the actions: block of an automation, or
-# spread them across one automation per screen. Replace the sensor ids and
-# the hostname in the topics. The leading "z" on "zenergy" is deliberate:
-# slot order is the carousel order, so it sorts last.
+# These are actions, not a full automation. Drop them into the actions:
+# block of an automation, or spread them across one automation per screen.
+# Replace the sensor ids and the hostname in the topics. The leading "z" on
+# "zenergy" is deliberate: slot order is the carousel order, so it sorts
+# last.
 #
 # Mind the slot count: 8 screens on the ESP32 builds, 4 on the ESP8266.
 

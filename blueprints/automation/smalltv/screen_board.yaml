@@ -1,0 +1,436 @@
+blueprint:
+  name: SmallTV screen board
+  description: >-
+    Publishes up to four sensor screens to a SmallTV running smalltv-mod,
+    one retained MQTT message per slot, and the device rotates through them
+    in the carousel. Each screen shows an optional icon on top, a title, and
+    the entity's state with its unit. All four screens are generic, so any
+    entity domain works. A screen with no entity set is skipped. The
+    publishes are retained, so the device keeps the screens across reboots,
+    and a startup trigger republishes them after every Home Assistant
+    restart.
+  domain: automation
+  source_url: https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml
+  homeassistant:
+    min_version: 2024.6.0
+  input:
+    hostname:
+      name: Device hostname
+      description: >-
+        The SmallTV's hostname, as shown in its web UI. It is the device id in
+        every MQTT topic, for example "smalltv".
+      selector:
+        text:
+    watched_entities:
+      name: Watched entities
+      description: >-
+        Every entity used by the screens below. A state change on any of them
+        republishes the whole board instantly, so list them all here once
+        instead of per screen.
+      default: []
+      selector:
+        entity:
+          multiple: true
+    screen_1_section:
+      name: Screen 1
+      collapsed: true
+      input:
+        screen_1_entity:
+          name: Entity
+          description: Any entity, any domain. Leave empty to disable this screen.
+          default: ""
+          selector:
+            entity:
+        screen_1_title:
+          name: Title
+          description: Leave empty to use the entity's friendly name.
+          default: ""
+          selector:
+            text:
+        screen_1_icon:
+          name: Icon
+          description: Optional icon drawn centred at the top of the screen.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        screen_1_color:
+          name: Foreground colour
+          description: Icon and text colour, as #RRGGBB.
+          default: "#FFFFFF"
+          selector:
+            text:
+        screen_1_bg:
+          name: Background colour
+          description: Screen background, as #RRGGBB.
+          default: "#000000"
+          selector:
+            text:
+        screen_1_slot:
+          name: Screen slot
+          description: >-
+            The carousel slot this screen occupies. Slots sort
+            lexicographically, and slot order is the carousel order, so pick a
+            name that sorts where you want the screen. Slot names must be
+            unique per device across ALL automations and blueprints writing to
+            the same hostname: two publishers on one slot overwrite each
+            other.
+          default: s1
+          selector:
+            text:
+    screen_2_section:
+      name: Screen 2
+      collapsed: true
+      input:
+        screen_2_entity:
+          name: Entity
+          description: Any entity, any domain. Leave empty to disable this screen.
+          default: ""
+          selector:
+            entity:
+        screen_2_title:
+          name: Title
+          description: Leave empty to use the entity's friendly name.
+          default: ""
+          selector:
+            text:
+        screen_2_icon:
+          name: Icon
+          description: Optional icon drawn centred at the top of the screen.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        screen_2_color:
+          name: Foreground colour
+          description: Icon and text colour, as #RRGGBB.
+          default: "#FFFFFF"
+          selector:
+            text:
+        screen_2_bg:
+          name: Background colour
+          description: Screen background, as #RRGGBB.
+          default: "#000000"
+          selector:
+            text:
+        screen_2_slot:
+          name: Screen slot
+          description: >-
+            The carousel slot this screen occupies. Slots sort
+            lexicographically, and slot order is the carousel order, so pick a
+            name that sorts where you want the screen. Slot names must be
+            unique per device across ALL automations and blueprints writing to
+            the same hostname: two publishers on one slot overwrite each
+            other.
+          default: s2
+          selector:
+            text:
+    screen_3_section:
+      name: Screen 3
+      collapsed: true
+      input:
+        screen_3_entity:
+          name: Entity
+          description: Any entity, any domain. Leave empty to disable this screen.
+          default: ""
+          selector:
+            entity:
+        screen_3_title:
+          name: Title
+          description: Leave empty to use the entity's friendly name.
+          default: ""
+          selector:
+            text:
+        screen_3_icon:
+          name: Icon
+          description: Optional icon drawn centred at the top of the screen.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        screen_3_color:
+          name: Foreground colour
+          description: Icon and text colour, as #RRGGBB.
+          default: "#FFFFFF"
+          selector:
+            text:
+        screen_3_bg:
+          name: Background colour
+          description: Screen background, as #RRGGBB.
+          default: "#000000"
+          selector:
+            text:
+        screen_3_slot:
+          name: Screen slot
+          description: >-
+            The carousel slot this screen occupies. Slots sort
+            lexicographically, and slot order is the carousel order, so pick a
+            name that sorts where you want the screen. Slot names must be
+            unique per device across ALL automations and blueprints writing to
+            the same hostname: two publishers on one slot overwrite each
+            other.
+          default: s3
+          selector:
+            text:
+    screen_4_section:
+      name: Screen 4
+      collapsed: true
+      input:
+        screen_4_entity:
+          name: Entity
+          description: Any entity, any domain. Leave empty to disable this screen.
+          default: ""
+          selector:
+            entity:
+        screen_4_title:
+          name: Title
+          description: Leave empty to use the entity's friendly name.
+          default: ""
+          selector:
+            text:
+        screen_4_icon:
+          name: Icon
+          description: Optional icon drawn centred at the top of the screen.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        screen_4_color:
+          name: Foreground colour
+          description: Icon and text colour, as #RRGGBB.
+          default: "#FFFFFF"
+          selector:
+            text:
+        screen_4_bg:
+          name: Background colour
+          description: Screen background, as #RRGGBB.
+          default: "#000000"
+          selector:
+            text:
+        screen_4_slot:
+          name: Screen slot
+          description: >-
+            The carousel slot this screen occupies. Slots sort
+            lexicographically, and slot order is the carousel order, so pick a
+            name that sorts where you want the screen. Slot names must be
+            unique per device across ALL automations and blueprints writing to
+            the same hostname: two publishers on one slot overwrite each
+            other.
+          default: s4
+          selector:
+            text:
+
+# Hoist !input values into variables before templating: !input is only legal
+# at the top level of trigger/condition/action keys, not inside a template.
+variables:
+  hostname: !input hostname
+  watched_entities: !input watched_entities
+  screen_1_entity: !input screen_1_entity
+  screen_1_title: !input screen_1_title
+  screen_1_icon: !input screen_1_icon
+  screen_1_color: !input screen_1_color
+  screen_1_bg: !input screen_1_bg
+  screen_1_slot: !input screen_1_slot
+  screen_2_entity: !input screen_2_entity
+  screen_2_title: !input screen_2_title
+  screen_2_icon: !input screen_2_icon
+  screen_2_color: !input screen_2_color
+  screen_2_bg: !input screen_2_bg
+  screen_2_slot: !input screen_2_slot
+  screen_3_entity: !input screen_3_entity
+  screen_3_title: !input screen_3_title
+  screen_3_icon: !input screen_3_icon
+  screen_3_color: !input screen_3_color
+  screen_3_bg: !input screen_3_bg
+  screen_3_slot: !input screen_3_slot
+  screen_4_entity: !input screen_4_entity
+  screen_4_title: !input screen_4_title
+  screen_4_icon: !input screen_4_icon
+  screen_4_color: !input screen_4_color
+  screen_4_bg: !input screen_4_bg
+  screen_4_slot: !input screen_4_slot
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input watched_entities
+  # Safety refresh: if a state change was missed (or the broker was restarted
+  # and lost the retained messages), the screens are republished within a
+  # minute. Retained publishes are cheap.
+  - trigger: time_pattern
+    minutes: "/1"
+  # Republish the retained screens after every Home Assistant restart.
+  - trigger: homeassistant
+    event: start
+
+conditions:
+  # Do nothing at all until a hostname is configured.
+  - condition: template
+    value_template: "{{ hostname != '' }}"
+
+actions:
+  - condition: template
+    value_template: >-
+      {{ screen_1_entity != ''
+         and states(screen_1_entity) not in ('unknown', 'unavailable', 'none') }}
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ screen_1_slot }}"
+      retain: true
+      payload: >-
+        {% set e = screen_1_entity -%}
+        {% set title = screen_1_title if screen_1_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
+        {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
+        {"bg":{{ screen_1_bg | tojson }},"ttl":0,"draw":[
+        {%- if screen_1_icon != 'none' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ screen_1_icon | tojson }}},
+        {%- endif -%}
+        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_1_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        ]}
+  - condition: template
+    value_template: >-
+      {{ screen_2_entity != ''
+         and states(screen_2_entity) not in ('unknown', 'unavailable', 'none') }}
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ screen_2_slot }}"
+      retain: true
+      payload: >-
+        {% set e = screen_2_entity -%}
+        {% set title = screen_2_title if screen_2_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
+        {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
+        {"bg":{{ screen_2_bg | tojson }},"ttl":0,"draw":[
+        {%- if screen_2_icon != 'none' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ screen_2_icon | tojson }}},
+        {%- endif -%}
+        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_2_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        ]}
+  - condition: template
+    value_template: >-
+      {{ screen_3_entity != ''
+         and states(screen_3_entity) not in ('unknown', 'unavailable', 'none') }}
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ screen_3_slot }}"
+      retain: true
+      payload: >-
+        {% set e = screen_3_entity -%}
+        {% set title = screen_3_title if screen_3_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
+        {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
+        {"bg":{{ screen_3_bg | tojson }},"ttl":0,"draw":[
+        {%- if screen_3_icon != 'none' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ screen_3_icon | tojson }}},
+        {%- endif -%}
+        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_3_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        ]}
+  - condition: template
+    value_template: >-
+      {{ screen_4_entity != ''
+         and states(screen_4_entity) not in ('unknown', 'unavailable', 'none') }}
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ screen_4_slot }}"
+      retain: true
+      payload: >-
+        {% set e = screen_4_entity -%}
+        {% set title = screen_4_title if screen_4_title != '' else state_attr(e, 'friendly_name') -%}
+        {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
+        {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
+        {"bg":{{ screen_4_bg | tojson }},"ttl":0,"draw":[
+        {%- if screen_4_icon != 'none' -%}
+        {"t":"icon","x":120,"y":30,"s":2,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ screen_4_icon | tojson }}},
+        {%- endif -%}
+        {"t":"text","x":120,"y":110,"s":2,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":150,"s":4,"c":{{ screen_4_color | tojson }},"a":"c","v":{{ v | tojson }}}
+        ]}

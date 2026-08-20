@@ -2,10 +2,11 @@ blueprint:
   name: SmallTV window-open temperature compare
   description: >-
     Compares an indoor and an outdoor temperature sensor and paints a full
-    green or red screen on a SmallTV running smalltv-mod, telling you whether
-    opening the window will cool the room down. The screen is published as a
-    retained MQTT message, so the device keeps showing it across reboots, and
-    a startup trigger republishes it after every Home Assistant restart.
+    green or red screen on a SmallTV running smalltv-mod: green when opening
+    the window would cool the room down, red when it wouldn't. The screen is
+    published as a retained MQTT message, so the device keeps showing it
+    across reboots, and a startup trigger republishes it after every Home
+    Assistant restart.
   domain: automation
   source_url: https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/temp_compare.yaml
   input:
