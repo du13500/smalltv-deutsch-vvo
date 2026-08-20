@@ -1,0 +1,13 @@
+# Deleting a SmallTV screen: publish an EMPTY retained payload to the slot's
+# topic. The broker drops its retained copy and the device drops the screen
+# from the rotation. Change the hostname and slot name in the topic.
+#
+# As a one-off, Developer tools -> Actions -> mqtt.publish works too: same
+# topic, retain ticked, empty payload. From the command line instead:
+#   mosquitto_pub -h broker.local -t smalltv/smalltv/screen/window -r -n
+
+- action: mqtt.publish
+  data:
+    topic: smalltv/smalltv/screen/window   # smalltv/<hostname>/screen/<slot>
+    retain: true
+    payload: ""

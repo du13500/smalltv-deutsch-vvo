@@ -1,0 +1,38 @@
+# SmallTV carousel: three screens on three slots, rotating in slot order at
+# the device's dwell time (15 s by default). Each publish is one slot; the
+# retain flag keeps the screens alive across device and HA restarts.
+#
+# These are actions — drop them into the actions: block of an automation, or
+# spread them across one automation per screen. Replace the sensor ids and
+# the hostname in the topics. The leading "z" on "zenergy" is deliberate:
+# slot order is the carousel order, so it sorts last.
+#
+# Mind the slot count: 8 screens on the ESP32 builds, 4 on the ESP8266.
+
+- action: mqtt.publish
+  data:
+    topic: smalltv/smalltv/screen/weather
+    retain: true
+    payload: >-
+      {"bg":"#003366","draw":[
+        {"t":"text","x":120,"y":80,"s":2,"c":"#FFFFFF","a":"c","v":"Outside"},
+        {"t":"text","x":120,"y":130,"s":4,"c":"#FFFF00","a":"c",
+         "v":"{{ states('sensor.outdoor_temperature') }} C"}]}
+
+- action: mqtt.publish
+  data:
+    topic: smalltv/smalltv/screen/window
+    retain: true
+    payload: >-
+      {"bg":"#007A1F","draw":[
+        {"t":"text","x":120,"y":120,"s":2,"c":"#FFFFFF","a":"c","v":"Open the window"}]}
+
+- action: mqtt.publish
+  data:
+    topic: smalltv/smalltv/screen/zenergy
+    retain: true
+    payload: >-
+      {"bg":"#1A1A1A","draw":[
+        {"t":"text","x":120,"y":80,"s":2,"c":"#FFFFFF","a":"c","v":"Today"},
+        {"t":"text","x":120,"y":130,"s":3,"c":"#00FF88","a":"c",
+         "v":"{{ states('sensor.energy_today') }} kWh"}]}

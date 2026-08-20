@@ -8,7 +8,9 @@
 #include "OtaUpdate.h"
 #include "StockClient.h"
 #include "UsageClient.h"
+#if WITH_NOTIFY
 #include "NotifyMode.h"
+#endif
 #include "Clock.h"
 #include "WgClient.h"
 
@@ -56,7 +58,8 @@ static void sendJson(JsonDocument& doc, int code = 200) {
 static void handleRoot() {
   if (!requireAuth()) return;
   server.sendHeader("Cache-Control", "no-cache");
-  server.send_P(200, "text/html", WEBUI_HTML);
+  server.sendHeader("Content-Encoding", "gzip");   // WEBUI_HTML_GZ is gzip'd (webui.h is generated)
+  server.send_P(200, "text/html", (PGM_P)WEBUI_HTML_GZ, WEBUI_HTML_GZ_LEN);
 }
 
 static void handleGetConfig() {
@@ -69,6 +72,7 @@ static void handleGetConfig() {
   feat["ticker"] = (bool)WITH_TICKER;
   feat["usage"]  = (bool)WITH_USAGE;
   feat["radar"]  = (bool)WITH_RADAR;
+  feat["ha"]     = (bool)WITH_HA;
   // WireGuard is a per-chip decision rather than a per-feature one: it is
   // compiled only where the image has room for it (the ESP32-C2 build).
 #if defined(SMALLTV_WIREGUARD)
@@ -311,6 +315,7 @@ static void handleUsagePush() {
 // daemon's usage push, whatever fires these is a script of your own and can
 // send credentials, and taking over the whole screen is not something to leave
 // open on a device you deliberately locked.
+#if WITH_NOTIFY
 static void handleNotify() {
   if (!requireAuth()) return;
   if (!server.hasArg("plain")) { server.send(400, "text/plain", "no body"); return; }
@@ -326,6 +331,7 @@ static void handleNotify() {
   server.send(ok ? 200 : 400, "application/json",
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
+#endif
 
 // ---- OTA ------------------------------------------------------------------
 static void handleUpdateDone() {
@@ -395,7 +401,9 @@ void webPortalBegin(Settings& settings) {
   server.on("/api/checkupdate", HTTP_GET, handleCheckUpdate);
   server.on("/api/selfupdate", HTTP_POST, handleSelfUpdate);
   server.on("/api/usage", HTTP_POST, handleUsagePush);   // daemon pushes usage here
+#if WITH_NOTIFY
   server.on("/api/notify", HTTP_POST, handleNotify);     // full-screen attention overlay
+#endif
   server.on("/update", HTTP_POST, handleUpdateDone, handleUpdateUpload);
 
   // Common captive-portal probe endpoints

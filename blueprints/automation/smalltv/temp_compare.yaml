@@ -1,0 +1,117 @@
+blueprint:
+  name: SmallTV window-open temperature compare
+  description: >-
+    Compares an indoor and an outdoor temperature sensor and paints a full
+    green or red screen on a SmallTV running smalltv-mod, telling you whether
+    opening the window will cool the room down. The screen is published as a
+    retained MQTT message, so the device keeps showing it across reboots, and
+    a startup trigger republishes it after every Home Assistant restart.
+  domain: automation
+  source_url: https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/temp_compare.yaml
+  input:
+    indoor_sensor:
+      name: Indoor temperature sensor
+      description: The sensor for the room the SmallTV sits in.
+      selector:
+        entity:
+          filter:
+            - device_class: temperature
+    outdoor_sensor:
+      name: Outdoor temperature sensor
+      description: The sensor for the outside temperature.
+      selector:
+        entity:
+          filter:
+            - device_class: temperature
+    delta:
+      name: Temperature delta
+      description: >-
+        How much cooler it must be outside before the screen turns green, in
+        degrees. The window advice is "open" when outdoor <= indoor - delta.
+      default: 0.5
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.1
+          unit_of_measurement: "°C"
+          mode: slider
+    hostname:
+      name: Device hostname
+      description: >-
+        The SmallTV's hostname, as shown in its web UI. It is the device id in
+        every MQTT topic, for example "smalltv".
+      selector:
+        text:
+    slot:
+      name: Screen slot
+      description: >-
+        The carousel slot this screen occupies. Slot order is the carousel
+        order; pick a name that sorts where you want the screen to appear.
+      default: window
+      selector:
+        text:
+    label_open:
+      name: "Message when opening helps"
+      default: Open the window
+      selector:
+        text:
+    label_closed:
+      name: "Message when it does not"
+      default: Keep it closed
+      selector:
+        text:
+
+# Hoist !input values into variables before templating: !input is only legal
+# at the top level of trigger/condition/action keys, not inside a template.
+variables:
+  indoor_sensor: !input indoor_sensor
+  outdoor_sensor: !input outdoor_sensor
+  delta: !input delta
+  hostname: !input hostname
+  slot: !input slot
+  label_open: !input label_open
+  label_closed: !input label_closed
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input indoor_sensor
+  - trigger: state
+    entity_id: !input outdoor_sensor
+  # Safety refresh: if a state change was missed (or the broker was restarted
+  # and lost the retained message), the screen is republished within 5 minutes.
+  - trigger: time_pattern
+    minutes: "/5"
+  # Republish the retained screen after every Home Assistant restart.
+  - trigger: homeassistant
+    event: start
+
+conditions:
+  # Skip publishing nonsense advice while a sensor is not reporting.
+  - condition: template
+    value_template: >-
+      {{ states(indoor_sensor) not in ('unknown', 'unavailable', 'none')
+         and states(outdoor_sensor) not in ('unknown', 'unavailable', 'none') }}
+
+actions:
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ slot }}"
+      retain: true
+      payload: >-
+        {% set ind = states(indoor_sensor) | float(0) -%}
+        {% set out = states(outdoor_sensor) | float(0) -%}
+        {% set open = out <= ind - (delta | float(0.5)) -%}
+        {% set bg = '#007A1F' if open else '#B00020' -%}
+        {% set msg = label_open if open else label_closed -%}
+        {
+          "bg": "{{ bg }}",
+          "ttl": 0,
+          "draw": [
+            {"t":"text","x":120,"y":60,"s":2,"c":"#FFFFFF","a":"c","v":{{ msg | tojson }}},
+            {"t":"line","x":20,"y":110,"x2":220,"y2":110,"c":"#FFFFFF"},
+            {"t":"text","x":120,"y":150,"s":2,"c":"#FFFFFF","a":"c","v":"{{ '%.1f in / %.1f out' | format(ind, out) }}"}
+          ]
+        }

@@ -137,6 +137,22 @@ struct DisplaySettings {
   void fromJson(JsonObjectConst o);
 };
 
+// ---- Home Assistant / MQTT feature slice -----------------------------------
+// The LAN broker the device connects to for HA screens (features/ha). Plain
+// TCP, no TLS. brokerPass follows the same rule as the other secrets here: it
+// reaches the config file and the settings export, never the web API.
+struct HaSettings {
+  String   brokerHost;    // MQTT broker hostname or IP; empty = feature off
+  uint16_t brokerPort;
+  String   brokerUser;    // optional
+  String   brokerPass;    // optional secret
+  uint16_t dwellSec;      // per-screen time in the HA rotation
+
+  void setDefaults();
+  void toJson(JsonObject o, bool includeSecrets) const;
+  void fromJson(JsonObjectConst o);
+};
+
 // ---- Plane radar feature slice --------------------------------------------
 struct RadarSettings {
   float    lat;           // home latitude  (0,0 = not set yet)
@@ -173,11 +189,11 @@ struct Settings {
   String hostname;      // mDNS name => http://<hostname>.local
 
   // --- Active feature ---
-  uint8_t mode;         // MODE_STOCKS / MODE_USAGE / MODE_RADAR / MODE_CAROUSEL
+  uint8_t mode;         // MODE_STOCKS / MODE_USAGE / MODE_RADAR / MODE_CAROUSEL / MODE_HA
 
   // --- Carousel (mode == MODE_CAROUSEL): dwell + which features rotate ---
   uint16_t carouselSec;
-  bool carouselTicker, carouselUsage, carouselRadar;
+  bool carouselTicker, carouselUsage, carouselRadar, carouselHa;
 
   // --- Shared HTTP / display ---
   uint16_t httpTimeout; // ms
@@ -190,6 +206,7 @@ struct Settings {
   TickerSettings  ticker;
   UsageSettings   usage;
   RadarSettings   radar;
+  HaSettings      ha;        // MQTT broker for HA screens
   ClockSettings   clock;
   DisplaySettings display;   // panel colour correction
   WgSettings      wg;        // WireGuard tunnel (ESP32 targets)

@@ -1,0 +1,47 @@
+# SmallTV window screen: green when opening the window cools the room, red
+# when it does not. Publishes one retained JSON screen to the device's
+# `window` slot on every sensor change, plus a 5-minute safety refresh and a
+# republish on every Home Assistant restart.
+#
+# Replace the two sensor entity ids and the hostname in the topic. The
+# importable blueprint version of this automation lives at
+# blueprints/automation/smalltv/temp_compare.yaml.
+
+automation:
+  - alias: SmallTV window screen
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.living_room_temperature
+      - trigger: state
+        entity_id: sensor.outdoor_temperature
+      - trigger: time_pattern
+        minutes: "/5"   # safety refresh, in case a change was missed
+      - trigger: homeassistant
+        event: start    # republish the retained screen after an HA restart
+    conditions:
+      # Skip publishing nonsense advice while a sensor is not reporting.
+      - condition: template
+        value_template: >-
+          {{ states('sensor.living_room_temperature') not in ('unknown', 'unavailable')
+             and states('sensor.outdoor_temperature') not in ('unknown', 'unavailable') }}
+    actions:
+      - action: mqtt.publish
+        data:
+          topic: smalltv/smalltv/screen/window   # smalltv/<hostname>/screen/<slot>
+          retain: true
+          payload: >-
+            {% set ind = states('sensor.living_room_temperature') | float(0) -%}
+            {% set out = states('sensor.outdoor_temperature') | float(0) -%}
+            {% set open = out <= ind - 0.5 -%}
+            {
+              "bg": "{{ '#007A1F' if open else '#B00020' }}",
+              "ttl": 0,
+              "draw": [
+                {"t":"text","x":120,"y":60,"s":2,"c":"#FFFFFF","a":"c",
+                 "v":{{ ('Open the window' if open else 'Keep it closed') | tojson }}},
+                {"t":"line","x":20,"y":110,"x2":220,"y2":110,"c":"#FFFFFF"},
+                {"t":"text","x":120,"y":150,"s":2,"c":"#FFFFFF","a":"c",
+                 "v":"{{ '%.1f in / %.1f out' | format(ind, out) }}"}
+              ]
+            }

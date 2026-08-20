@@ -295,6 +295,41 @@ void DisplaySettings::fromJson(JsonObjectConst o) {
 }
 
 // ===========================================================================
+// Home Assistant / MQTT slice
+// ===========================================================================
+void HaSettings::setDefaults() {
+  brokerHost = "";
+  brokerPort = DEFAULT_HA_BROKER_PORT;
+  brokerUser = "";
+  brokerPass = "";
+  dwellSec   = DEFAULT_HA_DWELL_SEC;
+}
+
+void HaSettings::toJson(JsonObject o, bool includeSecrets) const {
+  o["brokerHost"] = brokerHost;
+  o["brokerPort"] = brokerPort;
+  o["brokerUser"] = brokerUser;
+  o["passSet"]    = brokerPass.length() > 0;
+  if (includeSecrets) o["brokerPass"] = brokerPass;
+  o["dwellSec"]   = dwellSec;
+}
+
+void HaSettings::fromJson(JsonObjectConst o) {
+  if (o["brokerHost"].is<const char*>()) brokerHost = o["brokerHost"].as<String>();
+  if (o["brokerPort"].is<int>())         brokerPort = constrain((int)o["brokerPort"], 1, 65535);
+  if (o["brokerUser"].is<const char*>()) brokerUser = o["brokerUser"].as<String>();
+  // Blank keeps the stored password, as everywhere else in this file.
+  if (o["brokerPass"].is<const char*>()) {
+    String p = o["brokerPass"].as<String>();
+    if (p.length()) brokerPass = p;
+  }
+  if (o["dwellSec"].is<int>()) dwellSec = constrain((int)o["dwellSec"], HA_DWELL_MIN_SEC, HA_DWELL_MAX_SEC);
+  if (brokerHost.length() >= MAX_HA_HOST_LEN) brokerHost.remove(MAX_HA_HOST_LEN - 1);
+  if (brokerUser.length() >= MAX_HA_USER_LEN) brokerUser.remove(MAX_HA_USER_LEN - 1);
+  if (brokerPass.length() >= MAX_HA_PASS_LEN) brokerPass.remove(MAX_HA_PASS_LEN - 1);
+}
+
+// ===========================================================================
 // Radar slice
 // ===========================================================================
 void RadarSettings::setDefaults() {
@@ -390,7 +425,7 @@ void Settings::setDefaults() {
 
   mode = DEFAULT_MODE;
   carouselSec = DEFAULT_CAROUSEL_SEC;
-  carouselTicker = carouselUsage = carouselRadar = true;
+  carouselTicker = carouselUsage = carouselRadar = carouselHa = true;
   httpTimeout = DEFAULT_HTTP_TIMEOUT;
 
   brightness = DEFAULT_BRIGHTNESS;
@@ -401,6 +436,7 @@ void Settings::setDefaults() {
   ticker.setDefaults();
   usage.setDefaults();
   radar.setDefaults();
+  ha.setDefaults();
   clock.setDefaults();
   display.setDefaults();
   wg.setDefaults();
@@ -472,11 +508,13 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   // Mode + shared HTTP/display
   root["mode"]              = (s.mode == MODE_RADAR)    ? "radar"
                             : (s.mode == MODE_USAGE)    ? "usage"
+                            : (s.mode == MODE_HA)       ? "ha"
                             : (s.mode == MODE_CAROUSEL) ? "carousel" : "stocks";
   root["carouselSec"]       = s.carouselSec;
   root["carouselTicker"]    = s.carouselTicker;
   root["carouselUsage"]     = s.carouselUsage;
   root["carouselRadar"]     = s.carouselRadar;
+  root["carouselHa"]        = s.carouselHa;
   root["httpTimeout"]       = s.httpTimeout;
   root["brightness"]        = s.brightness;
   root["autoBrightness"]    = s.autoBrightness;
@@ -487,6 +525,7 @@ void settingsToJson(const Settings& s, JsonObject root, bool includeSecrets) {
   s.ticker.toJson(root["ticker"].to<JsonObject>());
   s.usage.toJson(root["usage"].to<JsonObject>());
   s.radar.toJson(root["radar"].to<JsonObject>());
+  s.ha.toJson(root["ha"].to<JsonObject>(), includeSecrets);
   s.clock.toJson(root["clock"].to<JsonObject>());
   s.display.toJson(root["display"].to<JsonObject>());
   s.wg.toJson(root["wg"].to<JsonObject>(), includeSecrets);
@@ -541,12 +580,14 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
     String m = root["mode"].as<String>();
     s.mode = m.equalsIgnoreCase("radar")    ? MODE_RADAR
            : m.equalsIgnoreCase("usage")    ? MODE_USAGE
+           : m.equalsIgnoreCase("ha")       ? MODE_HA
            : m.equalsIgnoreCase("carousel") ? MODE_CAROUSEL : MODE_STOCKS;
   }
   if (root["carouselSec"].is<int>())      s.carouselSec = constrain((int)root["carouselSec"], 5, 3600);
   if (root["carouselTicker"].is<bool>())  s.carouselTicker = root["carouselTicker"];
   if (root["carouselUsage"].is<bool>())   s.carouselUsage = root["carouselUsage"];
   if (root["carouselRadar"].is<bool>())   s.carouselRadar = root["carouselRadar"];
+  if (root["carouselHa"].is<bool>())      s.carouselHa = root["carouselHa"];
 
   if (root["httpTimeout"].is<int>())        s.httpTimeout = constrain((int)root["httpTimeout"], 1000, 20000);
   if (root["brightness"].is<int>())         s.brightness = constrain((int)root["brightness"], 0, 100);
@@ -563,6 +604,8 @@ void settingsApplyJson(Settings& s, JsonObjectConst root) {
   s.usage.fromJson(u);
   // Radar has no legacy flat layout; only apply when its nested object is present.
   if (root["radar"].is<JsonObjectConst>()) s.radar.fromJson(root["radar"].as<JsonObjectConst>());
+  // HA has no legacy flat layout either; only apply when its object is present.
+  if (root["ha"].is<JsonObjectConst>()) s.ha.fromJson(root["ha"].as<JsonObjectConst>());
   if (root["clock"].is<JsonObjectConst>()) s.clock.fromJson(root["clock"].as<JsonObjectConst>());
   if (root["display"].is<JsonObjectConst>()) s.display.fromJson(root["display"].as<JsonObjectConst>());
   if (root["wg"].is<JsonObjectConst>()) s.wg.fromJson(root["wg"].as<JsonObjectConst>());

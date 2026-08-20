@@ -19,7 +19,9 @@
 #include "Mode.h"
 #include "Clock.h"
 #include "WgClient.h"
+#if WITH_NOTIFY
 #include "NotifyMode.h"
+#endif
 
 #if WITH_TICKER
 #include "TickerMode.h"
@@ -29,6 +31,10 @@
 #endif
 #if WITH_RADAR
 #include "RadarMode.h"
+#endif
+#if WITH_HA
+#include "HaMode.h"
+#include "MqttClient.h"
 #endif
 
 // ---- mode registry --------------------------------------------------------
@@ -44,6 +50,9 @@ static DisplayMode* kModes[] = {
 #if WITH_RADAR
   &g_radarMode,
 #endif
+#if WITH_HA
+  &g_haMode,
+#endif
 };
 static const size_t kModeCount = sizeof(kModes) / sizeof(kModes[0]);
 
@@ -58,6 +67,9 @@ static bool carouselHas(const Settings& s, const DisplayMode* m) {
     case MODE_STOCKS: return s.carouselTicker;
     case MODE_USAGE:  return s.carouselUsage;
     case MODE_RADAR:  return s.carouselRadar;
+#if WITH_HA
+    case MODE_HA:     return s.carouselHa;
+#endif
     default:          return true;
   }
 }
@@ -203,6 +215,10 @@ void setup() {
   Serial.println("[boot] web");
   webPortalBegin(g_settings);
 
+#if WITH_HA
+  mqttBegin(g_settings);   // arms the client; the connect itself runs from loop()
+#endif
+
   Serial.println("[boot] modes");
   for (size_t i = 0; i < kModeCount; i++) kModes[i]->begin(g_settings);
   Serial.println("[boot] done");
@@ -239,6 +255,13 @@ void loop() {
     return;  // crashed last boot: web UI stays up for OTA recovery, no rendering
   }
 
+#if WITH_HA
+  // After the safe-mode return on purpose: a fault in here (e.g. a malformed
+  // retained screen that re-arrives on every connect) must not boot-loop the
+  // device past its own recovery page. Self-gates on WiFi STA + broker config.
+  mqttLoop();
+#endif
+
   if (netMode() == NET_AP) {
     delay(5);
     return;  // setup mode: AP info stays on screen
@@ -253,6 +276,7 @@ void loop() {
 
   // On expiry the carousel dwell is credited back the time it was hidden, so it
   // resumes on the same feature with the same remaining slice.
+#if WITH_NOTIFY
   static bool wasNotifying = false;
   if (g_notifyMode.active()) {
     wasNotifying = true;
@@ -265,6 +289,9 @@ void loop() {
     wasNotifying = false;
     if (g_carSwitch) g_carSwitch += g_notifyMode.heldMs();
   }
+#else
+  const bool restore = false;
+#endif
 
   DisplayMode* m = activeMode(g_settings);
   if (m) {

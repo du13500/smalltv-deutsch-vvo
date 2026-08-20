@@ -94,6 +94,7 @@
 #define MODE_RADAR     2
 #define MODE_CAROUSEL  3
 #define MODE_NOTIFY    4             // transient overlay: armed over HTTP, never persisted
+#define MODE_HA        5             // Home Assistant screens pushed over MQTT
 #define DEFAULT_MODE MODE_STOCKS
 #define DEFAULT_CAROUSEL_SEC 30      // per-mode dwell in carousel
 
@@ -101,6 +102,38 @@
 #define NOTIFY_TTL_DEFAULT_SEC  20
 #define NOTIFY_TTL_MIN_SEC       2
 #define NOTIFY_TTL_MAX_SEC     120
+
+// ---------------------------------------------------------------------------
+// Home Assistant screens (MODE_HA, features/ha): full screens pushed over MQTT
+// as retained JSON draw lists, one per slot, on smalltv/<hostname>/screen/<slot>.
+// The C2 counts as an ESP32 here (the docs group them); the ESP8266 column of
+// the limits table is for the original GeekMagic unit only, where heap is the
+// binding constraint. MQTT_MAX_PACKET_SIZE is NOT set here: it has to reach
+// PubSubClient's own translation units, so it is a -D in each env's
+// build_flags in platformio.ini (2048 on the ESP32 family, 768 on ESP8266).
+// ---------------------------------------------------------------------------
+#if defined(SMALLTV_ESP32) || defined(SMALLTV_ESP32C2) || defined(SMALLTV_ESP32_PRO)
+  #define HA_MAX_SCREENS   8      // slots kept; carousel order = slot name order
+  #define HA_MAX_PRIMS     48     // draw primitives kept per screen
+  #define HA_TEXT_POOL     2048   // per-screen pool backing the text primitives
+#else
+  #define HA_MAX_SCREENS   4
+  #define HA_MAX_PRIMS     24
+  #define HA_TEXT_POOL     512    // the 768 B MQTT payload bounds text anyway
+#endif
+#define HA_MAX_TEXT        65     // one text value: 64 chars + NUL
+#define HA_SLOT_LEN        25     // slot (topic suffix) cap: 24 chars + NUL
+#define HA_TTL_MAX_SEC     604800UL  // ttl clamp: 7 days (keeps millis() math sane)
+#define HA_PERSIST_DEBOUNCE_MS 2000UL  // /ha_screens.json write delay after a change
+
+// Broker settings slice (Settings.h): field caps + defaults.
+#define MAX_HA_HOST_LEN        64
+#define MAX_HA_USER_LEN        32
+#define MAX_HA_PASS_LEN        32
+#define DEFAULT_HA_BROKER_PORT 1883
+#define DEFAULT_HA_DWELL_SEC   15
+#define HA_DWELL_MIN_SEC        3
+#define HA_DWELL_MAX_SEC      300
 
 // ---------------------------------------------------------------------------
 // Compile-time feature toggles. All shipping features are on by default; a lean
@@ -116,6 +149,12 @@
 #endif
 #ifndef WITH_RADAR
 #define WITH_RADAR 1
+#endif
+#ifndef WITH_NOTIFY
+#define WITH_NOTIFY 1
+#endif
+#ifndef WITH_HA
+#define WITH_HA 1
 #endif
 
 // Claude usage mode: once data stops arriving for this long (PC asleep, daemon
