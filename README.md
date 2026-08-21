@@ -106,6 +106,10 @@ Full docs live at **[giovi321.github.io/smalltv-mod](https://giovi321.github.io/
 - [WireGuard VPN](https://giovi321.github.io/smalltv-mod/features/wireguard/) for reaching the device from outside your network, and [Notifications](https://giovi321.github.io/smalltv-mod/features/notify/) for pushing an alert to the screen
 - [Data sources](https://giovi321.github.io/smalltv-mod/reference/data-sources/), [building from source](https://giovi321.github.io/smalltv-mod/reference/building/), and [recovery](https://giovi321.github.io/smalltv-mod/reference/recovery/)
 
+## 3D-printed case
+
+A flat desk case with a stand lives in [case/](case/) — STL ready to slice, plus a preview render.
+
 ## Building from source
 
 Requires [PlatformIO](https://platformio.org/). Pick the env for your board:

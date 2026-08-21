@@ -7,6 +7,8 @@ The other features are things the device fetches itself. This one is the opposit
 
 Because every screen is a retained message, the broker holds the last copy. The device can reboot, Home Assistant can reboot, and the screens come back on their own.
 
+Brightness is on MQTT too, with its own topics and Home Assistant auto-discovery; see [Brightness over MQTT](#brightness-over-mqtt).
+
 ## Pointing the device at your broker
 
 Open the settings page and find the MQTT card. Enter your broker's host, port (1883 by default), and an optional username and password, then save. The connection is plain TCP, not TLS, so keep the broker on your LAN.
@@ -19,6 +21,8 @@ The device identifies itself by its hostname, the same name you see in the web U
 |---|---|---|
 | `smalltv/<hostname>/availability` | device → broker | `online`, retained, when the device connects. The broker holds a retained `offline` as the device's last will, so the topic always tells you whether the panel is really there. |
 | `smalltv/<hostname>/screen/<slot>` | broker → device | One screen, as retained JSON. `<slot>` is a name you pick, such as `window` or `energy`. |
+| `smalltv/<hostname>/brightness` | device → broker | Panel brightness 0-100 as a plain integer, retained. Published on connect and on every change, including changes made in the web UI. |
+| `smalltv/<hostname>/brightness/set` | broker → device | Set brightness. Plain integer 0-100, not JSON. Values are clamped, and anything that is not a number is ignored. Publish without retain. |
 
 Screen messages must be published with the retain flag. This is not optional: retain is what lets a screen survive a device reboot, and what makes a screen published while the device was off appear when it comes back.
 
@@ -36,6 +40,37 @@ Keep payloads small. The numbers that matter:
 | Screens (slots) | 8 | 4 |
 | Draw primitives per screen | 48 | 24 |
 | Bitmap width and height | 48 px | 32 px |
+
+The limits above apply to screens. Brightness messages are a few bytes and always fit.
+
+## Brightness over MQTT
+
+The panel's brightness is on the wire too. The device publishes it as a plain integer from 0 to 100 on `smalltv/<hostname>/brightness`, retained, on connect and on every change, including changes you make in the device's web UI. Home Assistant and the web UI read the same topic, so they stay in sync.
+
+With discovery enabled in Home Assistant's MQTT integration (the default), a Brightness number entity appears on its own, no YAML needed. The device publishes the discovery config as a retained message under the `homeassistant` prefix, and it re-publishes the config and the state on its own after a Home Assistant restart.
+
+To set brightness, publish a plain integer to the command topic. It is not JSON: send `70`, not `{"value":70}`. Out-of-range values are clamped to 0-100, and a payload that is not a number is ignored. Do not set the retain flag on the command; only the state topic is retained.
+
+```bash
+mosquitto_pub -h broker.local -t smalltv/smalltv/brightness/set -m 70
+
+# watch the state topic
+mosquitto_sub -h broker.local -t smalltv/smalltv/brightness
+```
+
+The change shows on the panel at once. Saving to flash is debounced by a few seconds, so rapid changes do not wear out the flash. If the web UI is open in a browser while brightness changes over MQTT, the open page does not live-refresh; reload it to see the new value.
+
+With discovery disabled, declare the number by hand:
+
+```yaml
+mqtt:
+  number:
+    - name: SmallTV brightness
+      command_topic: smalltv/<hostname>/brightness/set
+      state_topic: smalltv/<hostname>/brightness
+      min: 0
+      max: 100
+```
 
 ## Drawing on the screen
 

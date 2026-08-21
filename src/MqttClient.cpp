@@ -7,12 +7,20 @@
 #include "Net.h"
 #include "HaScreens.h"
 
+// Defined in main.cpp — re-resolve effective brightness now (the same call the
+// web UI's /api/config handler makes after a save).
+extern void appApplyBrightness();
+
 // Reconnect backoff: 5 s after a failure, doubling up to a 60 s cap; reset on
 // a successful connect.
 #define MQTT_RETRY_MIN_MS  5000UL
 #define MQTT_RETRY_MAX_MS 60000UL
 
-static const Settings* S = nullptr;
+// Delay between the last brightness/set command and the saveSettings() write:
+// a dragged slider can flap, so the flash write waits for quiet.
+#define MQTT_SAVE_DEBOUNCE_MS 5000UL
+
+static Settings*    S = nullptr;
 static WiFiClient   g_tcp;
 static PubSubClient g_mqtt(g_tcp);
 
@@ -26,6 +34,19 @@ static uint16_t g_connPort = 0;
 static char     g_connUser[MAX_HA_USER_LEN] = "";
 static char     g_connPass[MAX_HA_PASS_LEN] = "";
 
+// Topics built once from the hostname at mqttBegin(): a hostname change comes
+// with a WiFi change, which reboots, so they can't go stale within a boot.
+static char g_availTopic[96];    // smalltv/<hostname>/availability (also the LWT)
+static char g_screenSub[104];    // smalltv/<hostname>/screen/+
+static char g_stateTopic[104];   // smalltv/<hostname>/brightness
+static char g_setTopic[112];     // smalltv/<hostname>/brightness/set
+static char g_discTopic[128];    // homeassistant/number/smalltv_<hostname>_brightness/config
+
+static int      g_pubBrightness = -1;   // last value sent to the state topic
+static bool     g_haOnline = false;     // HA announced a restart: re-announce
+static bool     g_saveDue = false;      // brightness/set waiting out the debounce
+static uint32_t g_saveAt = 0;
+
 static bool brokerChanged() {
   return g_connPort != S->ha.brokerPort
       || strncmp(g_connHost, S->ha.brokerHost.c_str(), MAX_HA_HOST_LEN)
@@ -33,17 +54,81 @@ static bool brokerChanged() {
       || strncmp(g_connPass, S->ha.brokerPass.c_str(), MAX_HA_PASS_LEN);
 }
 
-// smalltv/<hostname>/screen/<slot> — the slot is everything after the last
-// '/', used as-is (no case folding; the docs' examples are all lowercase).
+// Retained plain-integer state publish. g_pubBrightness is only updated on a
+// successful publish, so a failed one is retried by the loop's compare.
+static void publishState() {
+  char buf[4];
+  snprintf(buf, sizeof(buf), "%u", (unsigned)S->brightness);
+  if (g_mqtt.publish(g_stateTopic, buf, /*retained=*/true))
+    g_pubBrightness = (int)S->brightness;
+}
+
+// Home Assistant MQTT discovery: one `number` entity bound to the set/state
+// topics, availability via the existing LWT topic. A pathological hostname
+// that would truncate the JSON simply skips the publish (state/command topics
+// still work; only auto-discovery is lost).
+static void publishDiscovery() {
+  char payload[512];
+  int n = snprintf(payload, sizeof(payload),
+    "{\"name\":\"Brightness\",\"uniq_id\":\"smalltv_%s_brightness\","
+    "\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
+    "\"min\":0,\"max\":100,\"step\":1,\"mode\":\"auto\","
+    "\"avty_t\":\"%s\",\"pl_avail\":\"online\",\"pl_not_avail\":\"offline\","
+    "\"dev\":{\"ids\":\"smalltv_%s\",\"name\":\"SmallTV %s\",\"mf\":\"SmallTV\"}}",
+    S->hostname.c_str(), g_setTopic, g_stateTopic, g_availTopic,
+    S->hostname.c_str(), S->hostname.c_str());
+  if (n < 0 || (size_t)n >= sizeof(payload)) return;
+  g_mqtt.publish(g_discTopic, payload, /*retained=*/true);
+}
+
+// Brightness command: a plain integer 0..100 (NOT JSON). Non-numeric payloads
+// and trailing garbage are ignored; out-of-range values are clamped. Applied
+// through the same resolver the web UI uses and persisted on the debounce
+// timer, so a flapping slider costs at most one flash write per quiet spell.
+static void onBrightnessSet(const uint8_t* payload, unsigned int len) {
+  char buf[8];
+  if (!len || len >= sizeof(buf)) return;
+  memcpy(buf, payload, len);
+  buf[len] = 0;
+  char* end;
+  long v = strtol(buf, &end, 10);
+  if (end == buf) return;                       // not a number at all
+  while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n') end++;
+  if (*end) return;                             // trailing garbage
+  uint8_t val = (uint8_t)constrain((int)v, 0, 100);
+  if (S->brightness == val) return;             // no change, nothing to do
+  S->brightness = val;
+  appApplyBrightness();                         // respects night/auto/manual
+  g_saveAt = millis() + MQTT_SAVE_DEBOUNCE_MS;  // persist once the flap stops
+  g_saveDue = true;
+  // The state publish happens from mqttLoop()'s poll-and-compare, same as a
+  // web UI change — one code path covers both sources.
+}
+
 static void onMessage(char* topic, uint8_t* payload, unsigned int len) {
+  if (!strcmp(topic, g_setTopic)) { onBrightnessSet(payload, len); return; }
+  // HA announces its restart as "online" on homeassistant/status: the config
+  // and state re-send runs from the loop, not from inside this callback.
+  if (!strcmp(topic, "homeassistant/status")) {
+    if (len == 6 && !memcmp(payload, "online", 6)) g_haOnline = true;
+    return;
+  }
+  // smalltv/<hostname>/screen/<slot> — the slot is everything after the last
+  // '/', used as-is (no case folding; the docs' examples are all lowercase).
   const char* slash = strrchr(topic, '/');
   if (!slash || !slash[1]) return;
   haScreensApply(slash + 1, payload, len);
 }
 
-void mqttBegin(const Settings& s) {
+void mqttBegin(Settings& s) {
   S = &s;
   g_mqtt.setCallback(onMessage);
+  snprintf(g_availTopic, sizeof(g_availTopic), "smalltv/%s/availability", S->hostname.c_str());
+  snprintf(g_screenSub, sizeof(g_screenSub), "smalltv/%s/screen/+", S->hostname.c_str());
+  snprintf(g_stateTopic, sizeof(g_stateTopic), "smalltv/%s/brightness", S->hostname.c_str());
+  snprintf(g_setTopic, sizeof(g_setTopic), "smalltv/%s/brightness/set", S->hostname.c_str());
+  snprintf(g_discTopic, sizeof(g_discTopic),
+           "homeassistant/number/smalltv_%s_brightness/config", S->hostname.c_str());
 }
 
 bool mqttConnected() { return g_mqtt.connected(); }
@@ -55,6 +140,15 @@ bool mqttPublish(const char* topic, const char* payload, bool retained) {
 
 void mqttLoop() {
   haScreensService();   // debounced persist, even with no broker configured
+
+  // Debounced brightness persist, also with no broker configured: a command
+  // that arrived just before the broker was cleared still lands. The other
+  // save paths (web UI) write immediately and don't touch this timer — a
+  // later debounced write then simply rewrites the same current settings.
+  if (g_saveDue && (int32_t)(millis() - g_saveAt) >= 0) {
+    g_saveDue = false;
+    if (S) saveSettings(*S);
+  }
   if (!S) return;
 
   // No broker configured: the feature is off. Dropping an existing connection
@@ -73,7 +167,21 @@ void mqttLoop() {
 
   if (g_mqtt.connected()) {
     if (brokerChanged()) g_mqtt.disconnect();   // reconnect below, next tick
-    else { g_mqtt.loop(); return; }
+    else {
+      g_mqtt.loop();
+      // An HA restart ("online" on homeassistant/status) re-sends the
+      // discovery config and forces a state republish.
+      if (g_haOnline) {
+        g_haOnline = false;
+        publishDiscovery();
+        g_pubBrightness = -1;
+      }
+      // Poll-and-compare: any settings.brightness change (web UI, MQTT
+      // command, config import) is announced exactly once; an unchanged value
+      // is never republished.
+      if ((int)S->brightness != g_pubBrightness) publishState();
+      return;
+    }
   }
 
   // Disconnected. A settings change retries immediately; failures back off.
@@ -91,10 +199,6 @@ void mqttLoop() {
   strlcpy(g_connUser, S->ha.brokerUser.c_str(), sizeof(g_connUser));
   strlcpy(g_connPass, S->ha.brokerPass.c_str(), sizeof(g_connPass));
 
-  char avail[96], sub[104];
-  snprintf(avail, sizeof(avail), "smalltv/%s/availability", S->hostname.c_str());
-  snprintf(sub, sizeof(sub), "smalltv/%s/screen/+", S->hostname.c_str());
-
   g_mqtt.setServer(g_connHost, g_connPort);
   // PubSubClient::connect() registers the LWT (retained "offline") and does a
   // synchronous TCP connect — a dead broker IP can stall the loop for the
@@ -102,15 +206,19 @@ void mqttLoop() {
   if (!g_mqtt.connect(S->hostname.c_str(),
                       g_connUser[0] ? g_connUser : nullptr,
                       g_connPass[0] ? g_connPass : nullptr,
-                      avail, 0, true, "offline")) {
+                      g_availTopic, 0, true, "offline")) {
     return;
   }
 
   g_backoffMs = MQTT_RETRY_MIN_MS;
   // Both availability messages are retained, so a `mosquitto_sub -C 1` always
   // gets the current state immediately (docs verify it that way).
-  g_mqtt.publish(avail, "online", /*retained=*/true);
-  g_mqtt.subscribe(sub);
+  g_mqtt.publish(g_availTopic, "online", /*retained=*/true);
+  // Brightness entity: discovery config + current state, both retained.
+  publishDiscovery();
+  publishState();
+  g_mqtt.subscribe(g_screenSub);
+  g_mqtt.subscribe("homeassistant/status");
   g_mqtt.loop();
 }
 
