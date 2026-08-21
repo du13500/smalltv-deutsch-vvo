@@ -3,6 +3,7 @@
 #if WITH_HA
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <pgmspace.h>
 
 static const char* HA_PATH = "/ha_screens.json";
 
@@ -14,6 +15,43 @@ static bool     g_loaded = false;
 static bool     g_dirty = false;        // renderer flag
 static bool     g_persistDue = false;   // a change is waiting out the debounce
 static uint32_t g_lastChange = 0;
+
+// ---------------------------------------------------------------------------
+// UTF-8 -> font byte. The built-in 6x8 font (GFX Library glcdfont) is plain
+// ASCII below 0x80 and CP437 above it, so the useful Latin-1 characters land
+// on single bytes. Table covers U+00A0..U+00FF (index = codepoint - 0xA0);
+// 0 means "no glyph" and the character is dropped, the previous behavior for
+// all non-ASCII. 3/4-byte UTF-8 characters never have a glyph.
+// ---------------------------------------------------------------------------
+static const uint8_t latin1ToFont[96] PROGMEM = {
+  0x20, 0xAD, 0x9B, 0x9C, 0x00, 0x9D, 0x00, 0x00,  // A0-A7: NBSP ¡ ¢ £ . ¥ . .
+  0x00, 0x00, 0xA6, 0xAE, 0xAA, 0x00, 0x00, 0x00,  // A8-AF: . . ª « ¬ . . .
+  0xF8, 0xF1, 0xFD, 0x00, 0x00, 0xE6, 0x00, 0xFA,  // B0-B7: ° ± ² . . µ . ·
+  0x00, 0x00, 0xA7, 0xAF, 0xAC, 0xAB, 0x00, 0xA8,  // B8-BF: . . º » ¼ ½ . ¿
+  0x00, 0x00, 0x00, 0x00, 0x8E, 0x8F, 0x92, 0x80,  // C0-C7: . . . . Ä Å Æ Ç
+  0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // C8-CF: . É . . . . . .
+  0x00, 0xA5, 0x00, 0x00, 0x00, 0x00, 0x99, 0x00,  // D0-D7: . Ñ . . . . Ö .
+  0x00, 0x00, 0x00, 0x00, 0x9A, 0x00, 0x00, 0xE1,  // D8-DF: . . . . Ü . . ß
+  0x85, 0xA0, 0x83, 0x00, 0x84, 0x86, 0x91, 0x87,  // E0-E7: à á â . ä å æ ç
+  0x8A, 0x82, 0x88, 0x89, 0x8D, 0xA1, 0x8C, 0x8B,  // E8-EF: è é ê ë ì í î ï
+  0x00, 0xA4, 0x95, 0xA2, 0x93, 0x00, 0x94, 0xF6,  // F0-F7: . ñ ò ó ô . ö ÷
+  0x00, 0x97, 0xA3, 0x96, 0x81, 0x00, 0x00, 0x98,  // F8-FF: . ù ú û ü . . ÿ
+};
+
+// Codepoint -> font byte, 0 if the font has no glyph for it.
+static uint8_t utf8FontByte(uint16_t cp) {
+  if (cp < 0xA0 || cp > 0xFF) return 0;
+  return pgm_read_byte(&latin1ToFont[cp - 0xA0]);
+}
+
+// Inverse: font byte -> codepoint, 0 if it came from no mapped character.
+// Used to re-encode stored text as UTF-8 when persisting screens.
+static uint16_t fontByteCp(uint8_t b) {
+  if (b < 0x80) return b;
+  for (uint16_t cp = 0xA0; cp <= 0xFF; cp++)
+    if (pgm_read_byte(&latin1ToFont[cp - 0xA0]) == b) return cp;
+  return 0;
+}
 
 // ---------------------------------------------------------------------------
 // Colors: "#RRGGBB" -> RGB565. Anything that is not exactly that shape is a
@@ -86,20 +124,36 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
     if (!v) return false;
     int s = p["s"] | 1;
     if (s < 1) return false;                    // scale is an int >= 1
-    size_t L = strlen(v);
-    if (L > HA_MAX_TEXT - 1) L = HA_MAX_TEXT - 1;   // 64-char cap from the docs
-    if (sc.textUsed + L + 1 > sizeof(sc.text)) return false;  // pool full: skip
+    // UTF-8 in, font bytes out: printable ASCII passes through, Latin-1 maps
+    // to single CP437 bytes via latin1ToFont[], and anything without a glyph
+    // is dropped (the old behavior for all non-ASCII). The 64-char cap counts
+    // the bytes stored AFTER translation, so "18.4°C" uses 6, not 7.
+    char buf[HA_MAX_TEXT];
+    size_t n = 0;
+    for (size_t i = 0; v[i] && n < HA_MAX_TEXT - 1; ) {
+      uint8_t c = (uint8_t)v[i++];
+      if (c < 0x80) {
+        if (c >= 32 && c <= 126) buf[n++] = (char)c;
+      } else if ((c & 0xE0) == 0xC0 && (v[i] & 0xC0) == 0x80) {
+        uint16_t cp = ((uint16_t)(c & 0x1F) << 6) | ((uint8_t)v[i++] & 0x3F);
+        uint8_t b = utf8FontByte(cp);
+        if (b) buf[n++] = (char)b;
+      } else if ((c & 0xF0) == 0xE0 && (v[i] & 0xC0) == 0x80 && (v[i + 1] & 0xC0) == 0x80) {
+        i += 2;                                 // 3-byte char: no font glyph
+      } else if ((c & 0xF8) == 0xF0 && (v[i] & 0xC0) == 0x80 &&
+                 (v[i + 1] & 0xC0) == 0x80 && (v[i + 2] & 0xC0) == 0x80) {
+        i += 3;                                 // 4-byte char: no font glyph
+      }
+      // Anything else (lone continuation, truncated sequence) is dropped.
+    }
+    if (sc.textUsed + n + 1 > sizeof(sc.text)) return false;  // pool full: skip
     out.type  = HA_P_TEXT;
     out.aux   = (uint8_t)constrain(s, 1, 10);
     const char* a = p["a"] | "l";
     out.align = (a[0] == 'c') ? HA_A_CENTER : (a[0] == 'r') ? HA_A_RIGHT : HA_A_LEFT;
     out.voff  = sc.textUsed;
-    // Plain ASCII only, per the docs: anything else disappears rather than
-    // drawing (the built-in 6x8 font has no glyphs for it anyway).
-    for (size_t i = 0; i < L; i++) {
-      char c = v[i];
-      if (c >= 32 && c <= 126) sc.text[sc.textUsed++] = c;
-    }
+    memcpy(sc.text + sc.textUsed, buf, n);
+    sc.textUsed += n;
     sc.text[sc.textUsed++] = 0;
   } else if (!strcmp(t, "icon")) {
     const char* v = p["v"];
@@ -114,7 +168,7 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
     const char* a = p["a"] | "l";
     out.align = (a[0] == 'c') ? HA_A_CENTER : (a[0] == 'r') ? HA_A_RIGHT : HA_A_LEFT;
     out.voff  = sc.textUsed;
-    // Plain ASCII only, like text; an unknown name simply draws nothing.
+    // Plain ASCII only (unlike text): an unknown name simply draws nothing.
     for (size_t i = 0; i < L; i++) {
       char c = v[i];
       if (c >= 32 && c <= 126) sc.text[sc.textUsed++] = c;
@@ -129,6 +183,10 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
     if (!d) return false;
     int w = p["w"] | 0, h = p["h"] | 0;
     if (w < 1 || h < 1 || w > HA_BITMAP_MAX_DIM || h > HA_BITMAP_MAX_DIM) return false;
+    // s: on-device upscale, each source pixel drawn as an sxs block; the
+    // rendered box is w*s x h*s and must still fit the panel.
+    int s = constrain(p["s"] | 1, 1, 4);
+    if (w * s > TFT_WIDTH || h * s > TFT_HEIGHT) return false;
     size_t need = ((size_t)w * h + 7) / 8;          // decoded bytes
     if (strlen(d) != need * 2) return false;        // exact hex length required
     if (sc.bitmapUsed + need > sizeof(sc.bitmap)) return false;  // pool full: skip
@@ -137,6 +195,7 @@ static bool parsePrim(JsonObjectConst p, HaScreen& sc, HaPrim& out) {
     out.type  = HA_P_BITMAP;
     out.x2    = (int16_t)w;
     out.y2    = (int16_t)h;
+    out.aux   = (uint8_t)s;
     const char* a = p["a"] | "l";
     out.align = (a[0] == 'c') ? HA_A_CENTER : (a[0] == 'r') ? HA_A_RIGHT : HA_A_LEFT;
     out.voff  = sc.bitmapUsed;
@@ -303,12 +362,26 @@ static void primToJson(const HaScreen& sc, const HaPrim& p, JsonObject o) {
       o["t"] = "line";
       o["x"] = p.x; o["y"] = p.y; o["x2"] = p.x2; o["y2"] = p.y2;
       break;
-    case HA_P_TEXT:
+    case HA_P_TEXT: {
       o["t"] = "text";
       o["x"] = p.x; o["y"] = p.y; o["s"] = p.aux;
       o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
-      o["v"] = sc.text + p.voff;
+      // Re-encode the stored font bytes as UTF-8 (inverse of the parser's
+      // translation) so the persisted file stays valid JSON text and a reload
+      // through parseScreen() reproduces the same pool bytes.
+      const uint8_t* t = (const uint8_t*)(sc.text + p.voff);
+      char buf[2 * HA_MAX_TEXT - 1];
+      size_t n = 0;
+      for (size_t i = 0; t[i]; i++) {
+        uint16_t cp = fontByteCp(t[i]);
+        if (!cp) continue;
+        if (cp < 0x80) buf[n++] = (char)cp;
+        else { buf[n++] = (char)(0xC0 | (cp >> 6)); buf[n++] = (char)(0x80 | (cp & 0x3F)); }
+      }
+      buf[n] = 0;
+      o["v"] = buf;
       break;
+    }
     case HA_P_ICON:
       o["t"] = "icon";
       o["x"] = p.x; o["y"] = p.y; o["s"] = p.aux;
@@ -318,6 +391,7 @@ static void primToJson(const HaScreen& sc, const HaPrim& p, JsonObject o) {
     case HA_P_BITMAP: {
       o["t"] = "bitmap";
       o["x"] = p.x; o["y"] = p.y; o["w"] = p.x2; o["h"] = p.y2;
+      o["s"] = p.aux;   // upscale (text/icon write their s unconditionally too)
       o["a"] = (p.align == HA_A_CENTER) ? "c" : (p.align == HA_A_RIGHT) ? "r" : "l";
       // Re-encode the decoded bytes as the same hex string shape that came in,
       // so a load through parseScreen() reproduces the primitive exactly.

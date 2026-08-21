@@ -91,6 +91,45 @@ blueprint:
           default: ""
           selector:
             template:
+        screen_1_title_y:
+          name: Title vertical position
+          description: >-
+            Top edge of the title line, in pixels from the top. The default
+            110 recreates the classic layout.
+          default: 110
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
+              mode: slider
+        screen_1_title_min_size:
+          name: Title minimum text size
+          description: >-
+            Smallest text scale for the title, 1 to 4. A title that does
+            not fit even at this size is cut to fit instead of shrinking
+            further. The defaults 1 to 2 recreate the classic layout.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_1_title_max_size:
+          name: Title maximum text size
+          description: >-
+            Biggest text scale allowed for the title, 1 to 4. The title
+            stays on one line: it uses the largest size in this range that
+            fits, and longer text is cut. The default 2 recreates the
+            classic layout.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_1_value_tpl:
           name: Value template
           description: >-
@@ -130,6 +169,19 @@ blueprint:
               min: 1
               max: 4
               step: 1
+              mode: slider
+        screen_1_value_y:
+          name: Value vertical position
+          description: >-
+            Top edge of the value block, in pixels from the top. Wrapped
+            value lines flow down from here, so the lower the start, the
+            fewer lines fit. The default 150 recreates the classic layout.
+          default: 150
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
               mode: slider
         screen_1_icon:
           name: Icon
@@ -175,9 +227,14 @@ blueprint:
           name: Bitmap size
           description: >-
             Pixel size of the custom bitmap below, drawn centred at the
-            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
-            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
-            makes the whole message oversized and the firmware ignores it.
+            icon spot. The hex string must match this size exactly: 24 px
+            is 144 hex chars, 32 px is 256, and 48 px is 576. A mismatch
+            makes the firmware silently skip the bitmap, so regenerate the
+            hex with tools/mdi_to_hex.py at the same size you pick here.
+            24 and 32 fit the ESP8266 payload limit; 48 only fits
+            ESP32-family payloads, so on an ESP8266 a 48 px bitmap makes
+            the whole message oversized and the firmware ignores it. For
+            most cases pick 24 and use the scale below to draw it bigger.
           default: "24"
           selector:
             select:
@@ -185,14 +242,34 @@ blueprint:
                 - "24"
                 - "32"
                 - "48"
+        screen_1_bitmap_scale:
+          name: Bitmap scale
+          description: >-
+            On-device upscale factor for the custom bitmap. The source
+            bitmap stays small, so the payload stays under the ESP8266
+            limit, and the device scales it up when drawing. Rendered size
+            is bitmap size times scale: 24 px at scale 2 draws 48 px, the
+            same footprint as the built-in icons. Keep size times scale at
+            240 or less; the firmware skips anything bigger.
+          default: "2"
+          selector:
+            select:
+              options:
+                - "1"
+                - "2"
+                - "3"
+                - "4"
         screen_1_bitmap:
           name: Custom bitmap
           description: >-
             A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
             in the repository; any Material Design Icons name converts.
-            When set, the bitmap replaces both the icon template and the
-            icon picker, drawn in the foreground colour. Clear it to fall
-            back to the icon.
+            The hex length must match the bitmap size above: 144 chars for
+            24 px, 256 for 32 px, 576 for 48 px. A mismatch makes the
+            firmware silently skip the bitmap, so if you change the size,
+            regenerate the hex at that same size. When set, the bitmap
+            replaces both the icon template and the icon picker, drawn in
+            the foreground colour. Clear it to fall back to the icon.
           default: ""
           selector:
             text:
@@ -206,11 +283,41 @@ blueprint:
             {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
             When it renders non-empty it wins over the static bitmap field
             above; when it renders empty, the pasted bitmap is used. The
-            bitmap size still comes from the size picker, so keep the hex
-            length matched to it.
+            bitmap size still comes from the size picker, and the rendered
+            hex length must match it exactly (144 chars for 24 px, 256 for
+            32 px, 576 for 48 px) or the firmware silently skips the
+            bitmap.
           default: ""
           selector:
             template:
+        screen_1_icon_y:
+          name: Icon vertical position
+          description: >-
+            Top edge of the icon or custom bitmap, in pixels from the top.
+            The drawn height below this line is 24 times the icon size, or
+            bitmap size times bitmap scale: 24 px at scale 2 draws 48 px.
+            The default 30 recreates the classic layout.
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 200
+              step: 2
+              mode: slider
+        screen_1_icon_size:
+          name: Icon size
+          description: >-
+            Scale of the built-in vector icon, 1 to 4. The icon occupies a
+            box of 24 times this size in pixels, so the default 2 draws 48
+            px. Custom bitmaps ignore this and use their own size times
+            scale.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_1_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
@@ -287,6 +394,45 @@ blueprint:
           default: ""
           selector:
             template:
+        screen_2_title_y:
+          name: Title vertical position
+          description: >-
+            Top edge of the title line, in pixels from the top. The default
+            110 recreates the classic layout.
+          default: 110
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
+              mode: slider
+        screen_2_title_min_size:
+          name: Title minimum text size
+          description: >-
+            Smallest text scale for the title, 1 to 4. A title that does
+            not fit even at this size is cut to fit instead of shrinking
+            further. The defaults 1 to 2 recreate the classic layout.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_2_title_max_size:
+          name: Title maximum text size
+          description: >-
+            Biggest text scale allowed for the title, 1 to 4. The title
+            stays on one line: it uses the largest size in this range that
+            fits, and longer text is cut. The default 2 recreates the
+            classic layout.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_2_value_tpl:
           name: Value template
           description: >-
@@ -326,6 +472,19 @@ blueprint:
               min: 1
               max: 4
               step: 1
+              mode: slider
+        screen_2_value_y:
+          name: Value vertical position
+          description: >-
+            Top edge of the value block, in pixels from the top. Wrapped
+            value lines flow down from here, so the lower the start, the
+            fewer lines fit. The default 150 recreates the classic layout.
+          default: 150
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
               mode: slider
         screen_2_icon:
           name: Icon
@@ -371,9 +530,14 @@ blueprint:
           name: Bitmap size
           description: >-
             Pixel size of the custom bitmap below, drawn centred at the
-            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
-            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
-            makes the whole message oversized and the firmware ignores it.
+            icon spot. The hex string must match this size exactly: 24 px
+            is 144 hex chars, 32 px is 256, and 48 px is 576. A mismatch
+            makes the firmware silently skip the bitmap, so regenerate the
+            hex with tools/mdi_to_hex.py at the same size you pick here.
+            24 and 32 fit the ESP8266 payload limit; 48 only fits
+            ESP32-family payloads, so on an ESP8266 a 48 px bitmap makes
+            the whole message oversized and the firmware ignores it. For
+            most cases pick 24 and use the scale below to draw it bigger.
           default: "24"
           selector:
             select:
@@ -381,14 +545,34 @@ blueprint:
                 - "24"
                 - "32"
                 - "48"
+        screen_2_bitmap_scale:
+          name: Bitmap scale
+          description: >-
+            On-device upscale factor for the custom bitmap. The source
+            bitmap stays small, so the payload stays under the ESP8266
+            limit, and the device scales it up when drawing. Rendered size
+            is bitmap size times scale: 24 px at scale 2 draws 48 px, the
+            same footprint as the built-in icons. Keep size times scale at
+            240 or less; the firmware skips anything bigger.
+          default: "2"
+          selector:
+            select:
+              options:
+                - "1"
+                - "2"
+                - "3"
+                - "4"
         screen_2_bitmap:
           name: Custom bitmap
           description: >-
             A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
             in the repository; any Material Design Icons name converts.
-            When set, the bitmap replaces both the icon template and the
-            icon picker, drawn in the foreground colour. Clear it to fall
-            back to the icon.
+            The hex length must match the bitmap size above: 144 chars for
+            24 px, 256 for 32 px, 576 for 48 px. A mismatch makes the
+            firmware silently skip the bitmap, so if you change the size,
+            regenerate the hex at that same size. When set, the bitmap
+            replaces both the icon template and the icon picker, drawn in
+            the foreground colour. Clear it to fall back to the icon.
           default: ""
           selector:
             text:
@@ -402,11 +586,41 @@ blueprint:
             {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
             When it renders non-empty it wins over the static bitmap field
             above; when it renders empty, the pasted bitmap is used. The
-            bitmap size still comes from the size picker, so keep the hex
-            length matched to it.
+            bitmap size still comes from the size picker, and the rendered
+            hex length must match it exactly (144 chars for 24 px, 256 for
+            32 px, 576 for 48 px) or the firmware silently skips the
+            bitmap.
           default: ""
           selector:
             template:
+        screen_2_icon_y:
+          name: Icon vertical position
+          description: >-
+            Top edge of the icon or custom bitmap, in pixels from the top.
+            The drawn height below this line is 24 times the icon size, or
+            bitmap size times bitmap scale: 24 px at scale 2 draws 48 px.
+            The default 30 recreates the classic layout.
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 200
+              step: 2
+              mode: slider
+        screen_2_icon_size:
+          name: Icon size
+          description: >-
+            Scale of the built-in vector icon, 1 to 4. The icon occupies a
+            box of 24 times this size in pixels, so the default 2 draws 48
+            px. Custom bitmaps ignore this and use their own size times
+            scale.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_2_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
@@ -483,6 +697,45 @@ blueprint:
           default: ""
           selector:
             template:
+        screen_3_title_y:
+          name: Title vertical position
+          description: >-
+            Top edge of the title line, in pixels from the top. The default
+            110 recreates the classic layout.
+          default: 110
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
+              mode: slider
+        screen_3_title_min_size:
+          name: Title minimum text size
+          description: >-
+            Smallest text scale for the title, 1 to 4. A title that does
+            not fit even at this size is cut to fit instead of shrinking
+            further. The defaults 1 to 2 recreate the classic layout.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_3_title_max_size:
+          name: Title maximum text size
+          description: >-
+            Biggest text scale allowed for the title, 1 to 4. The title
+            stays on one line: it uses the largest size in this range that
+            fits, and longer text is cut. The default 2 recreates the
+            classic layout.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_3_value_tpl:
           name: Value template
           description: >-
@@ -522,6 +775,19 @@ blueprint:
               min: 1
               max: 4
               step: 1
+              mode: slider
+        screen_3_value_y:
+          name: Value vertical position
+          description: >-
+            Top edge of the value block, in pixels from the top. Wrapped
+            value lines flow down from here, so the lower the start, the
+            fewer lines fit. The default 150 recreates the classic layout.
+          default: 150
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
               mode: slider
         screen_3_icon:
           name: Icon
@@ -567,9 +833,14 @@ blueprint:
           name: Bitmap size
           description: >-
             Pixel size of the custom bitmap below, drawn centred at the
-            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
-            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
-            makes the whole message oversized and the firmware ignores it.
+            icon spot. The hex string must match this size exactly: 24 px
+            is 144 hex chars, 32 px is 256, and 48 px is 576. A mismatch
+            makes the firmware silently skip the bitmap, so regenerate the
+            hex with tools/mdi_to_hex.py at the same size you pick here.
+            24 and 32 fit the ESP8266 payload limit; 48 only fits
+            ESP32-family payloads, so on an ESP8266 a 48 px bitmap makes
+            the whole message oversized and the firmware ignores it. For
+            most cases pick 24 and use the scale below to draw it bigger.
           default: "24"
           selector:
             select:
@@ -577,14 +848,34 @@ blueprint:
                 - "24"
                 - "32"
                 - "48"
+        screen_3_bitmap_scale:
+          name: Bitmap scale
+          description: >-
+            On-device upscale factor for the custom bitmap. The source
+            bitmap stays small, so the payload stays under the ESP8266
+            limit, and the device scales it up when drawing. Rendered size
+            is bitmap size times scale: 24 px at scale 2 draws 48 px, the
+            same footprint as the built-in icons. Keep size times scale at
+            240 or less; the firmware skips anything bigger.
+          default: "2"
+          selector:
+            select:
+              options:
+                - "1"
+                - "2"
+                - "3"
+                - "4"
         screen_3_bitmap:
           name: Custom bitmap
           description: >-
             A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
             in the repository; any Material Design Icons name converts.
-            When set, the bitmap replaces both the icon template and the
-            icon picker, drawn in the foreground colour. Clear it to fall
-            back to the icon.
+            The hex length must match the bitmap size above: 144 chars for
+            24 px, 256 for 32 px, 576 for 48 px. A mismatch makes the
+            firmware silently skip the bitmap, so if you change the size,
+            regenerate the hex at that same size. When set, the bitmap
+            replaces both the icon template and the icon picker, drawn in
+            the foreground colour. Clear it to fall back to the icon.
           default: ""
           selector:
             text:
@@ -598,11 +889,41 @@ blueprint:
             {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
             When it renders non-empty it wins over the static bitmap field
             above; when it renders empty, the pasted bitmap is used. The
-            bitmap size still comes from the size picker, so keep the hex
-            length matched to it.
+            bitmap size still comes from the size picker, and the rendered
+            hex length must match it exactly (144 chars for 24 px, 256 for
+            32 px, 576 for 48 px) or the firmware silently skips the
+            bitmap.
           default: ""
           selector:
             template:
+        screen_3_icon_y:
+          name: Icon vertical position
+          description: >-
+            Top edge of the icon or custom bitmap, in pixels from the top.
+            The drawn height below this line is 24 times the icon size, or
+            bitmap size times bitmap scale: 24 px at scale 2 draws 48 px.
+            The default 30 recreates the classic layout.
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 200
+              step: 2
+              mode: slider
+        screen_3_icon_size:
+          name: Icon size
+          description: >-
+            Scale of the built-in vector icon, 1 to 4. The icon occupies a
+            box of 24 times this size in pixels, so the default 2 draws 48
+            px. Custom bitmaps ignore this and use their own size times
+            scale.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_3_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
@@ -679,6 +1000,45 @@ blueprint:
           default: ""
           selector:
             template:
+        screen_4_title_y:
+          name: Title vertical position
+          description: >-
+            Top edge of the title line, in pixels from the top. The default
+            110 recreates the classic layout.
+          default: 110
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
+              mode: slider
+        screen_4_title_min_size:
+          name: Title minimum text size
+          description: >-
+            Smallest text scale for the title, 1 to 4. A title that does
+            not fit even at this size is cut to fit instead of shrinking
+            further. The defaults 1 to 2 recreate the classic layout.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        screen_4_title_max_size:
+          name: Title maximum text size
+          description: >-
+            Biggest text scale allowed for the title, 1 to 4. The title
+            stays on one line: it uses the largest size in this range that
+            fits, and longer text is cut. The default 2 recreates the
+            classic layout.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_4_value_tpl:
           name: Value template
           description: >-
@@ -718,6 +1078,19 @@ blueprint:
               min: 1
               max: 4
               step: 1
+              mode: slider
+        screen_4_value_y:
+          name: Value vertical position
+          description: >-
+            Top edge of the value block, in pixels from the top. Wrapped
+            value lines flow down from here, so the lower the start, the
+            fewer lines fit. The default 150 recreates the classic layout.
+          default: 150
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 2
               mode: slider
         screen_4_icon:
           name: Icon
@@ -763,9 +1136,14 @@ blueprint:
           name: Bitmap size
           description: >-
             Pixel size of the custom bitmap below, drawn centred at the
-            icon spot. 24 and 32 fit the ESP8266 payload limit; 48 only
-            fits ESP32-family payloads, so on an ESP8266 a 48 px bitmap
-            makes the whole message oversized and the firmware ignores it.
+            icon spot. The hex string must match this size exactly: 24 px
+            is 144 hex chars, 32 px is 256, and 48 px is 576. A mismatch
+            makes the firmware silently skip the bitmap, so regenerate the
+            hex with tools/mdi_to_hex.py at the same size you pick here.
+            24 and 32 fit the ESP8266 payload limit; 48 only fits
+            ESP32-family payloads, so on an ESP8266 a 48 px bitmap makes
+            the whole message oversized and the firmware ignores it. For
+            most cases pick 24 and use the scale below to draw it bigger.
           default: "24"
           selector:
             select:
@@ -773,14 +1151,34 @@ blueprint:
                 - "24"
                 - "32"
                 - "48"
+        screen_4_bitmap_scale:
+          name: Bitmap scale
+          description: >-
+            On-device upscale factor for the custom bitmap. The source
+            bitmap stays small, so the payload stays under the ESP8266
+            limit, and the device scales it up when drawing. Rendered size
+            is bitmap size times scale: 24 px at scale 2 draws 48 px, the
+            same footprint as the built-in icons. Keep size times scale at
+            240 or less; the firmware skips anything bigger.
+          default: "2"
+          selector:
+            select:
+              options:
+                - "1"
+                - "2"
+                - "3"
+                - "4"
         screen_4_bitmap:
           name: Custom bitmap
           description: >-
             A 1-bit bitmap as a hex string, pasted from tools/mdi_to_hex.py
             in the repository; any Material Design Icons name converts.
-            When set, the bitmap replaces both the icon template and the
-            icon picker, drawn in the foreground colour. Clear it to fall
-            back to the icon.
+            The hex length must match the bitmap size above: 144 chars for
+            24 px, 256 for 32 px, 576 for 48 px. A mismatch makes the
+            firmware silently skip the bitmap, so if you change the size,
+            regenerate the hex at that same size. When set, the bitmap
+            replaces both the icon template and the icon picker, drawn in
+            the foreground colour. Clear it to fall back to the icon.
           default: ""
           selector:
             text:
@@ -794,11 +1192,41 @@ blueprint:
             {{ '<hex A>' if is_state('binary_sensor.window','on') else '<hex B>' }}.
             When it renders non-empty it wins over the static bitmap field
             above; when it renders empty, the pasted bitmap is used. The
-            bitmap size still comes from the size picker, so keep the hex
-            length matched to it.
+            bitmap size still comes from the size picker, and the rendered
+            hex length must match it exactly (144 chars for 24 px, 256 for
+            32 px, 576 for 48 px) or the firmware silently skips the
+            bitmap.
           default: ""
           selector:
             template:
+        screen_4_icon_y:
+          name: Icon vertical position
+          description: >-
+            Top edge of the icon or custom bitmap, in pixels from the top.
+            The drawn height below this line is 24 times the icon size, or
+            bitmap size times bitmap scale: 24 px at scale 2 draws 48 px.
+            The default 30 recreates the classic layout.
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 200
+              step: 2
+              mode: slider
+        screen_4_icon_size:
+          name: Icon size
+          description: >-
+            Scale of the built-in vector icon, 1 to 4. The icon occupies a
+            box of 24 times this size in pixels, so the default 2 draws 48
+            px. Custom bitmaps ignore this and use their own size times
+            scale.
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
         screen_4_color:
           name: Foreground colour
           description: Icon and text colour, as #RRGGBB.
@@ -864,6 +1292,7 @@ variables:
   screen_1_icon: !input screen_1_icon
   screen_1_icon_tpl: !input screen_1_icon_tpl
   screen_1_bitmap_size: !input screen_1_bitmap_size
+  screen_1_bitmap_scale: !input screen_1_bitmap_scale
   screen_1_bitmap: !input screen_1_bitmap
   screen_1_bitmap_tpl: !input screen_1_bitmap_tpl
   screen_1_color: !input screen_1_color
@@ -871,6 +1300,12 @@ variables:
   screen_1_bg: !input screen_1_bg
   screen_1_bg_tpl: !input screen_1_bg_tpl
   screen_1_slot: !input screen_1_slot
+  screen_1_icon_y: !input screen_1_icon_y
+  screen_1_icon_size: !input screen_1_icon_size
+  screen_1_title_y: !input screen_1_title_y
+  screen_1_title_min_size: !input screen_1_title_min_size
+  screen_1_title_max_size: !input screen_1_title_max_size
+  screen_1_value_y: !input screen_1_value_y
   screen_2_entity: !input screen_2_entity
   screen_2_title: !input screen_2_title
   screen_2_title_tpl: !input screen_2_title_tpl
@@ -880,6 +1315,7 @@ variables:
   screen_2_icon: !input screen_2_icon
   screen_2_icon_tpl: !input screen_2_icon_tpl
   screen_2_bitmap_size: !input screen_2_bitmap_size
+  screen_2_bitmap_scale: !input screen_2_bitmap_scale
   screen_2_bitmap: !input screen_2_bitmap
   screen_2_bitmap_tpl: !input screen_2_bitmap_tpl
   screen_2_color: !input screen_2_color
@@ -887,6 +1323,12 @@ variables:
   screen_2_bg: !input screen_2_bg
   screen_2_bg_tpl: !input screen_2_bg_tpl
   screen_2_slot: !input screen_2_slot
+  screen_2_icon_y: !input screen_2_icon_y
+  screen_2_icon_size: !input screen_2_icon_size
+  screen_2_title_y: !input screen_2_title_y
+  screen_2_title_min_size: !input screen_2_title_min_size
+  screen_2_title_max_size: !input screen_2_title_max_size
+  screen_2_value_y: !input screen_2_value_y
   screen_3_entity: !input screen_3_entity
   screen_3_title: !input screen_3_title
   screen_3_title_tpl: !input screen_3_title_tpl
@@ -896,6 +1338,7 @@ variables:
   screen_3_icon: !input screen_3_icon
   screen_3_icon_tpl: !input screen_3_icon_tpl
   screen_3_bitmap_size: !input screen_3_bitmap_size
+  screen_3_bitmap_scale: !input screen_3_bitmap_scale
   screen_3_bitmap: !input screen_3_bitmap
   screen_3_bitmap_tpl: !input screen_3_bitmap_tpl
   screen_3_color: !input screen_3_color
@@ -903,6 +1346,12 @@ variables:
   screen_3_bg: !input screen_3_bg
   screen_3_bg_tpl: !input screen_3_bg_tpl
   screen_3_slot: !input screen_3_slot
+  screen_3_icon_y: !input screen_3_icon_y
+  screen_3_icon_size: !input screen_3_icon_size
+  screen_3_title_y: !input screen_3_title_y
+  screen_3_title_min_size: !input screen_3_title_min_size
+  screen_3_title_max_size: !input screen_3_title_max_size
+  screen_3_value_y: !input screen_3_value_y
   screen_4_entity: !input screen_4_entity
   screen_4_title: !input screen_4_title
   screen_4_title_tpl: !input screen_4_title_tpl
@@ -912,6 +1361,7 @@ variables:
   screen_4_icon: !input screen_4_icon
   screen_4_icon_tpl: !input screen_4_icon_tpl
   screen_4_bitmap_size: !input screen_4_bitmap_size
+  screen_4_bitmap_scale: !input screen_4_bitmap_scale
   screen_4_bitmap: !input screen_4_bitmap
   screen_4_bitmap_tpl: !input screen_4_bitmap_tpl
   screen_4_color: !input screen_4_color
@@ -919,6 +1369,12 @@ variables:
   screen_4_bg: !input screen_4_bg
   screen_4_bg_tpl: !input screen_4_bg_tpl
   screen_4_slot: !input screen_4_slot
+  screen_4_icon_y: !input screen_4_icon_y
+  screen_4_icon_size: !input screen_4_icon_size
+  screen_4_title_y: !input screen_4_title_y
+  screen_4_title_min_size: !input screen_4_title_min_size
+  screen_4_title_max_size: !input screen_4_title_max_size
+  screen_4_value_y: !input screen_4_value_y
 
 mode: restart
 
@@ -958,21 +1414,30 @@ actions:
         {% set bm_tpl = screen_1_bitmap_tpl | trim -%}
         {% set bm = bm_tpl if bm_tpl != '' else (screen_1_bitmap | trim) -%}
         {% set bs = screen_1_bitmap_size | int(24) -%}
+        {% set bsc = screen_1_bitmap_scale | int(1) -%}
         {% set color = screen_1_color_tpl if screen_1_color_tpl != '' else screen_1_color -%}
         {% set bg = screen_1_bg_tpl if screen_1_bg_tpl != '' else screen_1_bg -%}
         {% set vmin = screen_1_value_min_size | int(1) -%}
         {% set vmax = screen_1_value_max_size | int(4) -%}
+        {% set iy = screen_1_icon_y | int(30) -%}
+        {% set isz = screen_1_icon_size | int(2) -%}
+        {% set ty = screen_1_title_y | int(110) -%}
+        {% set tmin = screen_1_title_min_size | int(1) -%}
+        {% set tmax = screen_1_title_max_size | int(2) -%}
+        {% set vy = screen_1_value_y | int(150) -%}
         {% if screen_1_value_tpl != '' -%}
         {% set v = screen_1_value_tpl -%}
         {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
         {% endif -%}
-        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+        {# Value block: 232 px budget (width is length * 6 * scale). Pick the
            largest scale in [lo..hi] that fits one line. Longer text wraps at
-           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+           lo, lines start at value_y with pitch 8*lo + 2, at most 4 lines and
+           never past the last pixel row. -#}
         {% set lo = [vmin, vmax] | min -%}
         {% set hi = [vmin, vmax] | max -%}
+        {% set vy0 = [vy, 232] | min -%}
         {% set v = v | truncate(150, True, '', 0) -%}
         {% set fit = namespace(s=0) -%}
         {% for cand in range(hi, lo - 1, -1) -%}
@@ -986,22 +1451,36 @@ actions:
         {% else -%}
         {% set vs = lo -%}
         {% set w = 232 // (6 * lo) -%}
+        {% set maxl = [4, (236 - vy) // (8 * lo + 2)] | min -%}
+        {% if maxl < 1 -%}
+        {% set vlines = [v | truncate(w, True, '', 0)] -%}
+        {% else -%}
         {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
-        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:maxl] -%}
         {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
         {% endif -%}
-        {# Title stays one line: scale 2, else 1, then cut. -#}
-        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% endif -%}
+        {# Title stays one line: largest scale in [tlo..thi] that fits,
+           else tlo, then cut. -#}
+        {% set tlo = [tmin, tmax] | min -%}
+        {% set thi = [tmin, tmax] | max -%}
+        {% set tfit = namespace(s=0) -%}
+        {% for cand in range(thi, tlo - 1, -1) -%}
+        {% if tfit.s == 0 and title | length * 6 * cand <= 232 -%}
+        {% set tfit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% set ts = tfit.s if tfit.s > 0 else tlo -%}
         {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
         {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
         {%- if bm != '' -%}
-        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {"t":"bitmap","x":120,"y":{{ iy }},"w":{{ bs }},"h":{{ bs }},{%- if bsc != 1 %}"s":{{ bsc }},{% endif -%}"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
         {%- elif icon != 'none' and icon != '' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
+        {"t":"icon","x":120,"y":{{ iy }},"s":{{ isz }},"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":{{ ty }},"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
         {%- for line in vlines -%}
-        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {"t":"text","x":120,"y":{{ vy0 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
         {%- endfor -%}
         ]}
   - condition: template
@@ -1020,21 +1499,30 @@ actions:
         {% set bm_tpl = screen_2_bitmap_tpl | trim -%}
         {% set bm = bm_tpl if bm_tpl != '' else (screen_2_bitmap | trim) -%}
         {% set bs = screen_2_bitmap_size | int(24) -%}
+        {% set bsc = screen_2_bitmap_scale | int(1) -%}
         {% set color = screen_2_color_tpl if screen_2_color_tpl != '' else screen_2_color -%}
         {% set bg = screen_2_bg_tpl if screen_2_bg_tpl != '' else screen_2_bg -%}
         {% set vmin = screen_2_value_min_size | int(1) -%}
         {% set vmax = screen_2_value_max_size | int(4) -%}
+        {% set iy = screen_2_icon_y | int(30) -%}
+        {% set isz = screen_2_icon_size | int(2) -%}
+        {% set ty = screen_2_title_y | int(110) -%}
+        {% set tmin = screen_2_title_min_size | int(1) -%}
+        {% set tmax = screen_2_title_max_size | int(2) -%}
+        {% set vy = screen_2_value_y | int(150) -%}
         {% if screen_2_value_tpl != '' -%}
         {% set v = screen_2_value_tpl -%}
         {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
         {% endif -%}
-        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+        {# Value block: 232 px budget (width is length * 6 * scale). Pick the
            largest scale in [lo..hi] that fits one line. Longer text wraps at
-           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+           lo, lines start at value_y with pitch 8*lo + 2, at most 4 lines and
+           never past the last pixel row. -#}
         {% set lo = [vmin, vmax] | min -%}
         {% set hi = [vmin, vmax] | max -%}
+        {% set vy0 = [vy, 232] | min -%}
         {% set v = v | truncate(150, True, '', 0) -%}
         {% set fit = namespace(s=0) -%}
         {% for cand in range(hi, lo - 1, -1) -%}
@@ -1048,22 +1536,36 @@ actions:
         {% else -%}
         {% set vs = lo -%}
         {% set w = 232 // (6 * lo) -%}
+        {% set maxl = [4, (236 - vy) // (8 * lo + 2)] | min -%}
+        {% if maxl < 1 -%}
+        {% set vlines = [v | truncate(w, True, '', 0)] -%}
+        {% else -%}
         {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
-        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:maxl] -%}
         {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
         {% endif -%}
-        {# Title stays one line: scale 2, else 1, then cut. -#}
-        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% endif -%}
+        {# Title stays one line: largest scale in [tlo..thi] that fits,
+           else tlo, then cut. -#}
+        {% set tlo = [tmin, tmax] | min -%}
+        {% set thi = [tmin, tmax] | max -%}
+        {% set tfit = namespace(s=0) -%}
+        {% for cand in range(thi, tlo - 1, -1) -%}
+        {% if tfit.s == 0 and title | length * 6 * cand <= 232 -%}
+        {% set tfit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% set ts = tfit.s if tfit.s > 0 else tlo -%}
         {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
         {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
         {%- if bm != '' -%}
-        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {"t":"bitmap","x":120,"y":{{ iy }},"w":{{ bs }},"h":{{ bs }},{%- if bsc != 1 %}"s":{{ bsc }},{% endif -%}"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
         {%- elif icon != 'none' and icon != '' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
+        {"t":"icon","x":120,"y":{{ iy }},"s":{{ isz }},"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":{{ ty }},"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
         {%- for line in vlines -%}
-        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {"t":"text","x":120,"y":{{ vy0 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
         {%- endfor -%}
         ]}
   - condition: template
@@ -1082,21 +1584,30 @@ actions:
         {% set bm_tpl = screen_3_bitmap_tpl | trim -%}
         {% set bm = bm_tpl if bm_tpl != '' else (screen_3_bitmap | trim) -%}
         {% set bs = screen_3_bitmap_size | int(24) -%}
+        {% set bsc = screen_3_bitmap_scale | int(1) -%}
         {% set color = screen_3_color_tpl if screen_3_color_tpl != '' else screen_3_color -%}
         {% set bg = screen_3_bg_tpl if screen_3_bg_tpl != '' else screen_3_bg -%}
         {% set vmin = screen_3_value_min_size | int(1) -%}
         {% set vmax = screen_3_value_max_size | int(4) -%}
+        {% set iy = screen_3_icon_y | int(30) -%}
+        {% set isz = screen_3_icon_size | int(2) -%}
+        {% set ty = screen_3_title_y | int(110) -%}
+        {% set tmin = screen_3_title_min_size | int(1) -%}
+        {% set tmax = screen_3_title_max_size | int(2) -%}
+        {% set vy = screen_3_value_y | int(150) -%}
         {% if screen_3_value_tpl != '' -%}
         {% set v = screen_3_value_tpl -%}
         {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
         {% endif -%}
-        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+        {# Value block: 232 px budget (width is length * 6 * scale). Pick the
            largest scale in [lo..hi] that fits one line. Longer text wraps at
-           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+           lo, lines start at value_y with pitch 8*lo + 2, at most 4 lines and
+           never past the last pixel row. -#}
         {% set lo = [vmin, vmax] | min -%}
         {% set hi = [vmin, vmax] | max -%}
+        {% set vy0 = [vy, 232] | min -%}
         {% set v = v | truncate(150, True, '', 0) -%}
         {% set fit = namespace(s=0) -%}
         {% for cand in range(hi, lo - 1, -1) -%}
@@ -1110,22 +1621,36 @@ actions:
         {% else -%}
         {% set vs = lo -%}
         {% set w = 232 // (6 * lo) -%}
+        {% set maxl = [4, (236 - vy) // (8 * lo + 2)] | min -%}
+        {% if maxl < 1 -%}
+        {% set vlines = [v | truncate(w, True, '', 0)] -%}
+        {% else -%}
         {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
-        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:maxl] -%}
         {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
         {% endif -%}
-        {# Title stays one line: scale 2, else 1, then cut. -#}
-        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% endif -%}
+        {# Title stays one line: largest scale in [tlo..thi] that fits,
+           else tlo, then cut. -#}
+        {% set tlo = [tmin, tmax] | min -%}
+        {% set thi = [tmin, tmax] | max -%}
+        {% set tfit = namespace(s=0) -%}
+        {% for cand in range(thi, tlo - 1, -1) -%}
+        {% if tfit.s == 0 and title | length * 6 * cand <= 232 -%}
+        {% set tfit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% set ts = tfit.s if tfit.s > 0 else tlo -%}
         {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
         {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
         {%- if bm != '' -%}
-        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {"t":"bitmap","x":120,"y":{{ iy }},"w":{{ bs }},"h":{{ bs }},{%- if bsc != 1 %}"s":{{ bsc }},{% endif -%}"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
         {%- elif icon != 'none' and icon != '' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
+        {"t":"icon","x":120,"y":{{ iy }},"s":{{ isz }},"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":{{ ty }},"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
         {%- for line in vlines -%}
-        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {"t":"text","x":120,"y":{{ vy0 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
         {%- endfor -%}
         ]}
   - condition: template
@@ -1144,21 +1669,30 @@ actions:
         {% set bm_tpl = screen_4_bitmap_tpl | trim -%}
         {% set bm = bm_tpl if bm_tpl != '' else (screen_4_bitmap | trim) -%}
         {% set bs = screen_4_bitmap_size | int(24) -%}
+        {% set bsc = screen_4_bitmap_scale | int(1) -%}
         {% set color = screen_4_color_tpl if screen_4_color_tpl != '' else screen_4_color -%}
         {% set bg = screen_4_bg_tpl if screen_4_bg_tpl != '' else screen_4_bg -%}
         {% set vmin = screen_4_value_min_size | int(1) -%}
         {% set vmax = screen_4_value_max_size | int(4) -%}
+        {% set iy = screen_4_icon_y | int(30) -%}
+        {% set isz = screen_4_icon_size | int(2) -%}
+        {% set ty = screen_4_title_y | int(110) -%}
+        {% set tmin = screen_4_title_min_size | int(1) -%}
+        {% set tmax = screen_4_title_max_size | int(2) -%}
+        {% set vy = screen_4_value_y | int(150) -%}
         {% if screen_4_value_tpl != '' -%}
         {% set v = screen_4_value_tpl -%}
         {% else -%}
         {% set u = state_attr(e, 'unit_of_measurement') or '' -%}
         {% set v = states(e) ~ (' ' ~ u if u != '' else '') -%}
         {% endif -%}
-        {# Value line: 232 px budget (width is length * 6 * scale). Pick the
+        {# Value block: 232 px budget (width is length * 6 * scale). Pick the
            largest scale in [lo..hi] that fits one line. Longer text wraps at
-           lo onto at most 4 lines, pitch 8*lo + 2, starting at y=150. -#}
+           lo, lines start at value_y with pitch 8*lo + 2, at most 4 lines and
+           never past the last pixel row. -#}
         {% set lo = [vmin, vmax] | min -%}
         {% set hi = [vmin, vmax] | max -%}
+        {% set vy0 = [vy, 232] | min -%}
         {% set v = v | truncate(150, True, '', 0) -%}
         {% set fit = namespace(s=0) -%}
         {% for cand in range(hi, lo - 1, -1) -%}
@@ -1172,21 +1706,35 @@ actions:
         {% else -%}
         {% set vs = lo -%}
         {% set w = 232 // (6 * lo) -%}
+        {% set maxl = [4, (236 - vy) // (8 * lo + 2)] | min -%}
+        {% if maxl < 1 -%}
+        {% set vlines = [v | truncate(w, True, '', 0)] -%}
+        {% else -%}
         {% set vlines = (v | wordwrap(w, true, '\n')).split('\n') -%}
-        {% set vlines = vlines[:[4, 86 // (8 * lo + 2)] | min] -%}
+        {% set vlines = vlines[:maxl] -%}
         {% set vlines = vlines[:-1] + [vlines | last | truncate(w, True, '', 0)] -%}
         {% endif -%}
-        {# Title stays one line: scale 2, else 1, then cut. -#}
-        {% set ts = 2 if title | length <= 19 else 1 -%}
+        {% endif -%}
+        {# Title stays one line: largest scale in [tlo..thi] that fits,
+           else tlo, then cut. -#}
+        {% set tlo = [tmin, tmax] | min -%}
+        {% set thi = [tmin, tmax] | max -%}
+        {% set tfit = namespace(s=0) -%}
+        {% for cand in range(thi, tlo - 1, -1) -%}
+        {% if tfit.s == 0 and title | length * 6 * cand <= 232 -%}
+        {% set tfit.s = cand -%}
+        {% endif -%}
+        {% endfor -%}
+        {% set ts = tfit.s if tfit.s > 0 else tlo -%}
         {% set title = title | truncate(232 // (6 * ts), True, '', 0) -%}
         {"bg":{{ bg | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[
         {%- if bm != '' -%}
-        {"t":"bitmap","x":120,"y":30,"w":{{ bs }},"h":{{ bs }},"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
+        {"t":"bitmap","x":120,"y":{{ iy }},"w":{{ bs }},"h":{{ bs }},{%- if bsc != 1 %}"s":{{ bsc }},{% endif -%}"c":{{ color | tojson }},"a":"c","d":{{ bm | tojson }}},
         {%- elif icon != 'none' and icon != '' -%}
-        {"t":"icon","x":120,"y":30,"s":2,"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
+        {"t":"icon","x":120,"y":{{ iy }},"s":{{ isz }},"c":{{ color | tojson }},"a":"c","v":{{ icon | tojson }}},
         {%- endif -%}
-        {"t":"text","x":120,"y":110,"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
+        {"t":"text","x":120,"y":{{ ty }},"s":{{ ts }},"c":{{ color | tojson }},"a":"c","v":{{ title | tojson }}},
         {%- for line in vlines -%}
-        {"t":"text","x":120,"y":{{ 150 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
+        {"t":"text","x":120,"y":{{ vy0 + loop.index0 * (8 * vs + 2) }},"s":{{ vs }},"c":{{ color | tojson }},"a":"c","v":{{ line | tojson }}}{{ ',' if not loop.last else '' }}
         {%- endfor -%}
         ]}

@@ -23,7 +23,7 @@ enum HaPrimType : uint8_t {
   HA_P_LINE,    // x y x2 y2 c
   HA_P_TEXT,    // x y s c a v   (s in aux, a in align, v in the text pool)
   HA_P_ICON,    // x y s c a v   (like text, but v is an icon name from HaIcons)
-  HA_P_BITMAP,  // x y w h c a d (w/h in x2/y2, d decoded into the bitmap pool at voff)
+  HA_P_BITMAP,  // x y w h c a s d (w/h in x2/y2, s in aux, d in the bitmap pool at voff)
 };
 
 enum HaAlign : uint8_t { HA_A_LEFT, HA_A_CENTER, HA_A_RIGHT };
@@ -32,10 +32,11 @@ enum HaAlign : uint8_t { HA_A_LEFT, HA_A_CENTER, HA_A_RIGHT };
 // text pool and decoded bitmap data in its bitmap pool (voff indexes the
 // matching pool); a screen's pools are bounded by HA_TEXT_POOL /
 // HA_BITMAP_POOL and in practice by the MQTT payload cap, which is smaller
-// than an all-text screen at the 64-char string limit.
+// than an all-text screen at the 64-byte string limit (bytes stored, counted
+// after the text primitive's UTF-8 translation).
 struct HaPrim {
   uint8_t  type;        // HaPrimType
-  uint8_t  aux;         // text: font scale (>=1); circle/rrect: radius
+  uint8_t  aux;         // text: font scale (>=1); circle/rrect: radius; bitmap: upscale s (1..4)
   uint8_t  align;       // text/icon/bitmap only: HaAlign
   uint8_t  _pad;
   int16_t  x, y;        // rect/rrect: top-left; circle: centre; text: anchor

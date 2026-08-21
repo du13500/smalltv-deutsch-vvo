@@ -56,18 +56,24 @@ static void renderScreen(const HaScreen& sc, uint8_t pageIndex, uint8_t pageCoun
         break;
       }
       case HA_P_BITMAP: {
-        // Same anchor math as the icon, with the bitmap's own w as the box
-        // width; y is always the top edge. Set bits draw in c, clear bits
-        // leave the background untouched (transparent).
+        // Same anchor math as the icon, but on the RENDERED box: s upscales
+        // each source pixel to an sxs block, so the box is w*s x h*s; y is
+        // always the top edge. Set bits draw in c, clear bits leave the
+        // background untouched (transparent). Parse already rejects boxes
+        // that would exceed the panel.
         int w = p.x2, h = p.y2;
-        int x = (p.align == HA_A_CENTER) ? p.x - w / 2
-              : (p.align == HA_A_RIGHT)  ? p.x - w : p.x;
+        int s = p.aux ? p.aux : 1;
+        int rw = w * s;
+        int x = (p.align == HA_A_CENTER) ? p.x - rw / 2
+              : (p.align == HA_A_RIGHT)  ? p.x - rw : p.x;
         const uint8_t* bits = sc.bitmap + p.voff;
         for (int py = 0; py < h; py++)
           for (int px = 0; px < w; px++) {
             int i = py * w + px;
-            if (bits[i >> 3] & (0x80 >> (i & 7)))
-              gfx->drawPixel(x + px, p.y + py, c);
+            if (bits[i >> 3] & (0x80 >> (i & 7))) {
+              if (s == 1) gfx->drawPixel(x + px, p.y + py, c);
+              else        gfx->fillRect(x + px * s, p.y + py * s, s, s, c);
+            }
           }
         break;
       }
