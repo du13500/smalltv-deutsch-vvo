@@ -133,6 +133,26 @@ It prints the raw hex plus a ready-made JSON fragment for a screen payload. Past
 
 Sizes 24 and 32 stay under the 700 B ESP8266 payload limit. A 48 px bitmap pushes a screen payload past it and only works on the ESP32 builds; on an ESP8266 the firmware ignores the oversized message. Prefer a 24 px source with `"s":2` over generating a large bitmap: you get the same 48 px result at a quarter of the payload size. Whatever size you pick, the hex length must match it (144 chars for 24 px, 256 for 32 px, 576 for 48 px); a size and hex mismatch makes the firmware silently skip the bitmap, so regenerate the hex at the same size you put in `w` and `h`.
 
+## Installing a blueprint
+
+The two blueprints below live in the repository and install the same way.
+
+The easy route, straight from the Home Assistant UI:
+
+1. Open **Settings → Automations & scenes → Blueprints → Import blueprint**.
+2. Paste the blueprint's GitHub URL, for example `https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/screen_board.yaml`. Home Assistant downloads and validates it, and tells you if anything is wrong.
+3. Open the blueprint and pick **Create automation**, fill in the inputs, save.
+
+The manual route, if you prefer files or run an older Home Assistant:
+
+1. Copy the YAML file from [`blueprints/automation/smalltv/`](https://github.com/giovi321/smalltv-mod/tree/main/blueprints/automation/smalltv/) to `config/blueprints/automation/smalltv/` on your Home Assistant host. The `automation` folder in that path is required; without it the blueprint is ignored.
+2. Go to **Developer tools → YAML → Reload automations**. The blueprint shows up under **Settings → Blueprints**.
+
+Two things to know when updating to a newer version of a blueprint:
+
+- Replacing the file is not enough on its own. Reload automations afterwards, and hard-refresh your browser (Ctrl+F5); the frontend caches the blueprint's fields, so new inputs stay invisible until you do.
+- Automations you already created keep working. New inputs appear with their defaults the next time you edit and save the automation.
+
 ## The window screen from Home Assistant
 
 The typical use: compare indoor and outdoor temperature and show a green or red full-screen answer to "should I open the window?". One automation, one `mqtt.publish`:
