@@ -218,6 +218,7 @@ void mqttLoop() {
   publishDiscovery();
   publishState();
   g_mqtt.subscribe(g_screenSub);
+  g_mqtt.subscribe(g_setTopic);
   g_mqtt.subscribe("homeassistant/status");
   g_mqtt.loop();
 }
