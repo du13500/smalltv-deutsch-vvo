@@ -29,6 +29,8 @@ input[type=range]{width:100%}
 .chk{display:flex;align-items:center;gap:8px;margin:8px 0}
 .chk input{width:18px;height:18px}
 .chk label{margin:0;color:var(--fg);font-size:14px}
+.req{border:1px solid var(--bd);background:#0b0e13;border-radius:8px;padding:10px 12px;margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--mut)}
+.req b{color:var(--fg);font-weight:600}
 button.btn{background:var(--acc);color:#04130a;border:0;padding:10px 16px;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer}
 button.btn.sec{background:#222b36;color:var(--fg)}
 button.btn.danger{background:var(--red);color:#1a0606}
@@ -234,10 +236,11 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
  <!-- USAGE (feature) -->
  <section id="usage" class="tab">
   <div class="card"><h2>Claude usage</h2>
+   <p class="req"><b>This screen needs a companion program on your computer.</b> The device has no way to read your Claude usage on its own: <a href="https://github.com/giovi321/clawdmeter-daemon" target="_blank" rel="noopener">clawdmeter-daemon</a> reads it on the PC and sends it here. Install it from <a href="https://github.com/giovi321/clawdmeter-daemon" target="_blank" rel="noopener">github.com/giovi321/clawdmeter-daemon</a> first — without it this screen only ever shows the idle animation.</p>
    <label>Usage daemon URL</label>
    <input id="usageUrl" type="url" placeholder="http://192.168.1.10:8787/">
    <label>Refresh data (s)</label><input id="usagePollSec" type="number" min="10" max="3600">
-   <small class="hint">Runs on the PC-side <a href="https://github.com/giovi321/clawdmeter-daemon" target="_blank">clawdmeter-daemon</a>, which reads your Claude usage and sends it here. <b>Pull:</b> set the Usage URL to the daemon. <b>Push:</b> leave it blank and run the daemon with <code>--push-to &lt;hostname&gt;.local</code> (for networks where the device cannot reach the PC). Running several SmallTVs? Give each a unique hostname in the WiFi tab so every PC pushes to its own device. Idle animation plays until data arrives.</small>
+   <small class="hint"><b>Pull:</b> set the Usage URL to the daemon. <b>Push:</b> leave it blank and run the daemon with <code>--push-to &lt;hostname&gt;.local</code> (for networks where the device cannot reach the PC). Running several SmallTVs? Give each a unique hostname in the WiFi tab so every PC pushes to its own device.</small>
   </div>
  </section>
 
@@ -262,7 +265,8 @@ small.hint{display:block;color:var(--mut);margin-top:4px;font-size:12px}
    </div>
    <label>Data source</label>
    <select id="radarSource" onchange="radarSrcChanged()">
-    <option value="direct">adsb.fi (direct, no server)</option>
+    <option value="adsblol">adsb.lol (direct, no server)</option>
+    <option value="adsbfi">adsb.fi (direct, no server)</option>
     <option value="webhook">Custom webhook (LAN proxy)</option>
    </select>
    <div id="radarWebhookRow"><label>Webhook URL</label>
@@ -486,7 +490,7 @@ function loadConfig(){return j('/api/config').then(function(c){C=c;
  sv('rangeKm',_rk);
  sv('unitsMi',r.unitsMi?'true':'false');
  sv('radarPollSec',r.pollSec);
- sv('radarSource',r.source||'direct'); radarSrcChanged();
+ sv('radarSource',r.source||'adsblol'); radarSrcChanged();
  sv('radarWebhookUrl',r.webhookUrl);
  sc('showLabels',r.showLabels); sc('showVectors',r.showVectors); sc('showRimDots',r.showRimDots);
  sv('radarUiScale',r.uiScale!=null?r.uiScale:1);
@@ -537,11 +541,12 @@ function cashPick(k){var rows=document.querySelectorAll('#symTable tr');var tr=n
  if(!tr){if(rows.length>=8){toast('Max 8');return}addRow({});tr=$('symTable').lastChild}
  tr.querySelector('.s').value=k;tr.querySelector('.src').value='cash';symHintFor('cash');
  toast('Added '+k+'. Set a name, then Save.');}
-function radarSrcChanged(){if(!$('radarSource'))return;var d=$('radarSource').value!=='webhook';
- $('radarWebhookRow').style.display=d?'none':'block';
- $('radarSrcHint').innerHTML=d
-  ?'The device fetches <b>adsb.fi</b> directly over HTTPS (no key, ~1 req/s). Tight on RAM in busy airspace — use the webhook if it drops.'
-  :'The device requests <code>?lat=..&amp;lon=..&amp;dist=..</code> from your LAN proxy, which pre-filters adsb.fi to a small JSON. Most reliable on the ESP8266.';}
+function radarSrcChanged(){if(!$('radarSource'))return;var v=$('radarSource').value;
+ $('radarWebhookRow').style.display=(v==='webhook')?'block':'none';
+ $('radarSrcHint').innerHTML=
+  (v==='adsblol')?'The device fetches <b>adsb.lol</b> directly over HTTPS (no key, ~1 req/s). Recommended on the ESP8266: adsb.lol negotiates a small TLS record size, so the handshake fits in RAM.'
+ :(v==='adsbfi') ?'The device fetches <b>adsb.fi</b> directly over HTTPS (no key, ~1 req/s). Fine on the ESP32, but adsb.fi now sits behind Cloudflare and sends TLS records too large for the ESP8266 — pick adsb.lol or the webhook there.'
+ :'The device requests <code>?lat=..&amp;lon=..&amp;dist=..</code> from your LAN proxy, which pre-filters the feed to a small JSON. Most reliable on the ESP8266.';}
 
 function collect(){
  var o={mode:gv('mode'),
