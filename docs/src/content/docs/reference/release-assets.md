@@ -59,7 +59,7 @@ One thing does not survive. The lean image has no Home Assistant module, so scre
 
 ## Why the ESP8266 gets two images and the other boards get one
 
-The ESP8266 shares a single 80 KB DRAM arena between static allocations and the heap, so anything compiled in costs heap that TLS then cannot have. Two fetch paths refuse to start a handshake when memory runs short: the plane radar wants 18,000 bytes of free heap, and a cash.ch quote wants a 16,000-byte contiguous block. Below those thresholds the affected screen goes quiet with nothing on it to explain why.
+The ESP8266 shares a single 80 KB DRAM arena between static allocations and the heap, so anything compiled in costs heap that TLS then cannot have. Two fetch paths refuse to start a handshake when memory runs short: the plane radar and a cash.ch quote each want a 16,000-byte contiguous block. Below that the affected screen goes quiet, and since 2.12.1 the Status tab's Radar line says so explicitly.
 
 The lean image gives that back. Measured on the 2.12.0 build, static RAM drops from 55,536 bytes to 46,804, so the heap starts 8,732 bytes larger. Almost all of it is Home Assistant: 7,668 bytes, of which the four-screen store (`g_screens`, 5,792 bytes) and the icon cache (`g_ic`, 1,704 bytes) are the bulk, plus the 768-byte PubSubClient receive buffer that no longer gets allocated at runtime. The usage meter contributes 1,080 bytes.
 

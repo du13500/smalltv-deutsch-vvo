@@ -35,7 +35,7 @@ The ESP8266 shares one 80 KB DRAM arena between static allocations and the heap,
 
 Home Assistant is the bulk of that at 7,668 bytes, and two objects are almost all of Home Assistant: `g_screens`, the four-screen store, at 5,792 bytes, and `g_ic`, the icon cache, at 1,704 bytes. The 768-byte PubSubClient receive buffer also stops being allocated at runtime. The usage meter contributes 1,080 bytes. The two do not sum exactly to 8,732 because they share a little code and string data.
 
-That headroom decides whether two fetch paths run at all. `features/radar/RadarClient.cpp` skips the poll unless 18,000 bytes of heap are free, and `features/ticker/StockClient.cpp` skips a cash.ch quote unless a 16,000-byte contiguous block is available. Both refuse quietly rather than crash, so a device below the threshold shows an empty scope or a blank ticker with no error. On a busy LAN, or over a weak link where retransmissions keep the WiFi queues full, the standard build can sit under both.
+That headroom decides whether two fetch paths run at all. `features/radar/RadarClient.cpp` and `features/ticker/StockClient.cpp` both skip their fetch unless a 16,000-byte contiguous block is available, which is what the BearSSL handshake actually allocates. Both refuse quietly rather than crash, so a device below the threshold shows an empty scope or a blank ticker with no error. On a busy LAN, or over a weak link where retransmissions keep the WiFi queues full, the standard build can sit under both.
 
 Read the current figures from `/api/status`: `heap` is free bytes and `maxblk` is the largest contiguous block.
 

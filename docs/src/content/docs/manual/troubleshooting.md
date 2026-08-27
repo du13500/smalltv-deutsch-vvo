@@ -43,9 +43,9 @@ The device gets the time from the internet, and it only checks it when something
 
 ## The radar scope is empty, or a ticker is blank, with no error shown
 
-This is the original ESP8266 model running short of memory. Both features check that enough is free before opening an HTTPS connection, and when there is not they skip the attempt rather than crash, so nothing appears on screen to explain it. The radar wants 18,000 bytes of free heap; a cash.ch quote wants a 16,000-byte contiguous block.
+This is the original ESP8266 model running short of memory. Both features check that enough is free before opening an HTTPS connection, and when there is not they skip the attempt rather than crash, so nothing appears on screen to explain it. Both want a 16,000-byte contiguous block for the TLS handshake.
 
-Open the Status tab and read `heap` and `maxblk`. If either sits under its threshold, memory is the cause and no amount of changing the data source will help, because the device never gets as far as sending a request.
+Since 2.12.1 the Status tab has a **Radar** line naming the last poll's outcome; `skipped, low heap` is this case, spelled out. The largest free block is shown next to Free heap on the same page. When the block sits under 16,000, memory is the cause and no amount of changing the data source will help, because the device never gets as far as sending a request.
 
 Three things bring it back, in the order worth trying:
 

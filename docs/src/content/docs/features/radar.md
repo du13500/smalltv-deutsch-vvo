@@ -51,9 +51,12 @@ If your chosen feed ever goes behind a CDN too, switch to the other one or to th
 
 ### When the scope stays empty on an ESP8266
 
-Before it opens an HTTPS connection the radar checks that 18,000 bytes of heap are free, and skips the poll if they are not. It fails silently rather than crash, so an empty scope can mean the device never sent a request at all. Read `heap` in the Status tab to tell the two apart.
+Start at the **Radar** line in the Status tab. Since 2.12.1 it reports what the last poll actually did: `ok` with an aircraft count, `skipped, low heap`, `connect failed`, `http error` with the code, `parse failed`, `no aircraft in feed`, or `all filtered out` when traffic was there but your minimum-altitude setting dropped it. The same detail is in `/api/status` under `radar`.
 
-Two ways out. Install `smalltv-mod-firmware-lean.bin`, which compiles out Home Assistant screens and the usage meter and leaves the heap 8,732 bytes larger, or use the webhook below, since the check only guards the HTTPS path. [Which release file to download](/smalltv-mod/reference/release-assets/) and the [troubleshooting entry](/smalltv-mod/manual/troubleshooting/#the-radar-scope-is-empty-or-a-ticker-is-blank-with-no-error-shown) go into more detail.
+Two of those stages have known causes on the ESP8266:
+
+- `skipped, low heap`: the radar refuses to start a TLS handshake unless a 16,000-byte contiguous block is free (shown in the Status tab next to Free heap). Install `smalltv-mod-firmware-lean.bin`, which compiles out Home Assistant screens and the usage meter, or use the webhook below, which is plain HTTP and skips the check. See [Which release file to download](/smalltv-mod/reference/release-assets/).
+- `no aircraft in feed` on every poll while flightradar shows a full sky: before 2.12.1 this is what a device pointed at adsb.fi showed after Cloudflare fronted that feed, because Cloudflare's chunked responses misparsed as empty. 2.12.1 requests HTTP/1.0, which cannot be chunked; on older firmware, switch the source to adsb.lol.
 
 ### Custom webhook, a LAN proxy
 
