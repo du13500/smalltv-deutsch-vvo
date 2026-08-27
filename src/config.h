@@ -12,7 +12,7 @@
 // Firmware identity
 // ---------------------------------------------------------------------------
 #define FW_NAME     "smalltv-mod"
-#define FW_VERSION  "2.10.1"
+#define FW_VERSION  "2.11.0"
 
 // Project / update references (shown in the web UI; used by the GitHub self-update)
 #define REPO_URL      "https://github.com/giovi321/smalltv-mod"
@@ -244,16 +244,33 @@
 //   Data source (radar's own selector, independent of the stock one):
 //     0 = adsb.fi opendata, fetched directly by the device over HTTPS (no key)
 //     1 = custom webhook (a LAN proxy that pre-filters — robust on the ESP8266)
+//     2 = adsb.lol opendata, same JSON shape, also direct over HTTPS (no key)
 // ---------------------------------------------------------------------------
-#define RADAR_SRC_DIRECT   0
+#define RADAR_SRC_ADSBFI   0
 #define RADAR_SRC_WEBHOOK  1
-#define DEFAULT_RADAR_SRC  RADAR_SRC_DIRECT
+#define RADAR_SRC_ADSBLOL  2
 
-// adsb.fi free open-data endpoint (no API key; public rate limit ~1 req/s).
-// Full path: /api/v3/lat/{lat}/lon/{lon}/dist/{nm}
-#define ADSB_HOST        "opendata.adsb.fi"
-#define ADSB_PATH        "/api/v3/lat/"
+// Both free open-data feeds return the same {"ac":[...]} shape and take the
+// same lat/lon/dist-in-nautical-miles path; only host and prefix differ.
+//   adsb.fi:  /api/v3/lat/{lat}/lon/{lon}/dist/{nm}
+//   adsb.lol: /v2/lat/{lat}/lon/{lon}/dist/{nm}
+// Public rate limit is ~1 req/s on both; neither needs an API key.
+#define ADSB_FI_HOST     "opendata.adsb.fi"
+#define ADSB_FI_PATH     "/api/v3/lat/"
+#define ADSB_LOL_HOST    "api.adsb.lol"
+#define ADSB_LOL_PATH    "/v2/lat/"
 #define ADSB_USER_AGENT  "Mozilla/5.0 (SmallTV)"
+
+// Default direct provider. adsb.fi sits behind Cloudflare, which does not
+// negotiate the TLS max_fragment_length extension and sends records larger
+// than BearSSL's fallback 4 KB buffer, so the ESP8266 cannot read a busy
+// response; adsb.lol still honours MFLN and keeps the TLS footprint tiny.
+// The ESP32 uses mbedTLS with dynamic buffers and is not affected either way.
+#if defined(SMALLTV_ESP8266)
+  #define DEFAULT_RADAR_SRC  RADAR_SRC_ADSBLOL
+#else
+  #define DEFAULT_RADAR_SRC  RADAR_SRC_ADSBFI
+#endif
 
 // Bound RAM: nearest N aircraft kept/drawn, and a few home-area airports.
 #define MAX_AIRCRAFT     24

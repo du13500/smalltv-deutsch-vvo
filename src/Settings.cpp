@@ -355,7 +355,8 @@ void RadarSettings::setDefaults() {
 void RadarSettings::toJson(JsonObject o) const {
   o["lat"]         = lat;
   o["lon"]         = lon;
-  o["source"]      = (source == RADAR_SRC_WEBHOOK) ? "webhook" : "direct";
+  o["source"]      = (source == RADAR_SRC_WEBHOOK) ? "webhook"
+                   : (source == RADAR_SRC_ADSBLOL) ? "adsblol" : "adsbfi";
   o["webhookUrl"]  = webhookUrl;
   o["rangeKm"]     = rangeKm;
   o["pollSec"]     = pollSec;
@@ -380,7 +381,13 @@ void RadarSettings::fromJson(JsonObjectConst o) {
   if (o["lon"].is<float>() || o["lon"].is<int>()) lon = o["lon"].as<float>();
   if (o["source"].is<const char*>()) {
     String src = o["source"].as<String>();
-    source = src.equalsIgnoreCase("webhook") ? RADAR_SRC_WEBHOOK : RADAR_SRC_DIRECT;
+    // "direct" is the pre-2.11 name for "whichever direct feed we default to".
+    // Configs written back then predate the adsb.fi Cloudflare move, so they
+    // resolve to the platform default rather than pinning adsb.fi.
+    if      (src.equalsIgnoreCase("webhook")) source = RADAR_SRC_WEBHOOK;
+    else if (src.equalsIgnoreCase("adsblol")) source = RADAR_SRC_ADSBLOL;
+    else if (src.equalsIgnoreCase("adsbfi"))  source = RADAR_SRC_ADSBFI;
+    else                                      source = DEFAULT_RADAR_SRC;
   }
   if (o["webhookUrl"].is<const char*>()) webhookUrl = o["webhookUrl"].as<String>();
   if (o["rangeKm"].is<int>())    rangeKm = constrain((int)o["rangeKm"], 1, 500);

@@ -9,12 +9,15 @@ static uint32_t g_lastOkMs = 0;
 static bool     g_error = false;
 static uint32_t g_nextPollMs = 0;
 
-// TLS receive-buffer size for the adsb.fi handshake, chosen once by probing the
+// TLS receive-buffer size for the direct-feed handshake, chosen by probing the
 // server's Maximum Fragment Length support. MFLN at 512/1024 lets BearSSL use a
 // tiny buffer (a big heap win on the ESP8266); otherwise we fall back to 4 KB and
-// hope the records fit — if they don't in busy airspace, the webhook path is the
-// reliable alternative.
-static uint16_t g_tlsRx = 0;
+// hope the records fit. Cloudflare-fronted hosts offer neither, which is what
+// took direct adsb.fi off the ESP8266 — adsb.lol or the webhook path instead.
+static uint16_t    g_tlsRx = 0;
+// Host g_tlsRx was probed against, compared by pointer: both candidates are the
+// same two string literals every time, so identity is enough.
+static const char* g_tlsProbedHost = nullptr;
 
 uint8_t         radarCount()      { return g_count; }
 const Aircraft& aircraftAt(uint8_t i) { return g_ac[i]; }
@@ -55,13 +58,27 @@ static void trimTail(char* s) {
   while (n > 0 && (s[n - 1] == ' ' || s[n - 1] == '\t')) s[--n] = 0;
 }
 
+// ---- which open-data feed the "direct" sources point at --------------------
+static const char* directHost(const Settings& s) {
+  return (s.radar.source == RADAR_SRC_ADSBLOL) ? ADSB_LOL_HOST : ADSB_FI_HOST;
+}
+static const char* directPath(const Settings& s) {
+  return (s.radar.source == RADAR_SRC_ADSBLOL) ? ADSB_LOL_PATH : ADSB_FI_PATH;
+}
+
 // ---- probe MFLN once so TLS can use the smallest safe buffer ---------------
-static void probeTls() {
+// Re-probed when the provider changes: the two hosts answer differently
+// (adsb.lol negotiates MFLN, adsb.fi behind Cloudflare does not).
+static void probeTls(const Settings& s) {
 #if defined(SMALLTV_ESP8266)
-  if (g_tlsRx) return;
-  if (BearSSL::WiFiClientSecure::probeMaxFragmentLength(ADSB_HOST, 443, 512))       g_tlsRx = 512;
-  else if (BearSSL::WiFiClientSecure::probeMaxFragmentLength(ADSB_HOST, 443, 1024)) g_tlsRx = 1024;
-  else                                                                              g_tlsRx = 4096;
+  const char* host = directHost(s);
+  if (g_tlsRx && g_tlsProbedHost == host) return;
+  g_tlsProbedHost = host;
+  if (BearSSL::WiFiClientSecure::probeMaxFragmentLength(host, 443, 512))       g_tlsRx = 512;
+  else if (BearSSL::WiFiClientSecure::probeMaxFragmentLength(host, 443, 1024)) g_tlsRx = 1024;
+  else                                                                         g_tlsRx = 4096;
+#else
+  (void)s;
 #endif
 }
 
@@ -73,8 +90,8 @@ static uint16_t rangeNm(uint16_t km) {
 
 static String buildDirectUrl(const Settings& s) {
   String u = F("https://");
-  u += F(ADSB_HOST);
-  u += F(ADSB_PATH);
+  u += directHost(s);
+  u += directPath(s);
   u += String(s.radar.lat, 4);
   u += F("/lon/");
   u += String(s.radar.lon, 4);
@@ -93,7 +110,7 @@ static String buildWebhookUrl(const Settings& s) {
   return u;
 }
 
-// ---- parse the adsb.fi / webhook "ac" array --------------------------------
+// ---- parse the open-data / webhook "ac" array ------------------------------
 static bool parseAdsb(const Settings& s, Stream& stream) {
   // Filter to just the fields we plot; applied to every element of "ac".
   JsonDocument filter;
@@ -150,7 +167,7 @@ static bool fetchUrl(const Settings& s, const String& url) {
   if (https) {
     // TLS needs a big contiguous chunk of heap; skip rather than reset-loop if low.
     if (ESP.getFreeHeap() < 18000) return false;
-    probeTls();
+    probeTls(s);
     client.reset(platformMakeSecureClient(g_tlsRx));   // no cert validation (public read-only API)
   } else {
     client.reset(new WiFiClient());

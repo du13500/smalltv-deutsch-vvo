@@ -1,4 +1,4 @@
-// RadarClient.h — fetches nearby aircraft (adsb.fi direct, or a LAN webhook).
+// RadarClient.h — fetches nearby aircraft (adsb.lol / adsb.fi direct, or a LAN webhook).
 #pragma once
 #include <Arduino.h>
 #include "Settings.h"
