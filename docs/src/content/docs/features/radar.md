@@ -43,11 +43,17 @@ GET https://opendata.adsb.fi/api/v3/lat/<lat>/lon/<lon>/dist/<nm>
 
 On the ESP8266, HTTPS is tight on RAM, and the deciding factor is the TLS record size the server uses. The device probes the server's Maximum Fragment Length support so its buffer can stay at 512 bytes; without MFLN it has to fall back to 4 KB, and if the server then sends a record larger than that, the read fails part-way through and the scope stays empty.
 
-adsb.fi moved behind Cloudflare in August 2026. Cloudflare does not negotiate MFLN and ramps its record size up on large responses, so **direct adsb.fi no longer works on the ESP8266** — a 50 nm response is around 50 KB and the connection breaks mid-stream. adsb.lol still honours MFLN, which is why it is the ESP8266 default.
+adsb.fi moved behind Cloudflare in August 2026. Cloudflare does not negotiate MFLN and ramps its record size up on large responses, so **direct adsb.fi no longer works on the ESP8266**. A 50 nm response is around 50 KB and the connection breaks mid-stream. adsb.lol still honours MFLN, which is why it is the ESP8266 default.
 
 The ESP32 boards use mbedTLS with dynamically sized buffers and are unaffected, so either feed works there.
 
 If your chosen feed ever goes behind a CDN too, switch to the other one or to the webhook below.
+
+### When the scope stays empty on an ESP8266
+
+Before it opens an HTTPS connection the radar checks that 18,000 bytes of heap are free, and skips the poll if they are not. It fails silently rather than crash, so an empty scope can mean the device never sent a request at all. Read `heap` in the Status tab to tell the two apart.
+
+Two ways out. Install `smalltv-mod-firmware-lean.bin`, which compiles out Home Assistant screens and the usage meter and leaves the heap 8,732 bytes larger, or use the webhook below, since the check only guards the HTTPS path. [Which release file to download](/smalltv-mod/reference/release-assets/) and the [troubleshooting entry](/smalltv-mod/manual/troubleshooting/#the-radar-scope-is-empty-or-a-ticker-is-blank-with-no-error-shown) go into more detail.
 
 ### Custom webhook, a LAN proxy
 

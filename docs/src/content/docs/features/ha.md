@@ -5,6 +5,8 @@ description: Full screens pushed from Home Assistant over MQTT as small JSON dra
 
 The other features are things the device fetches itself. This one is the opposite: you publish a small JSON document to an MQTT topic, and the device draws it as a full 240×240 screen and keeps it in the carousel. A temperature warning, a door-left-open reminder, the day's energy total. Anything Home Assistant can template, the panel can show.
 
+This feature is not in `smalltv-mod-firmware-lean.bin`. That ESP8266 image compiles it out to free 7,668 bytes of heap, and the web UI hides the tab when it is missing. Use `smalltv-mod-firmware.bin` on an ESP8266 that needs HA screens, or any of the ESP32 images.
+
 Because every screen is a retained message, the broker holds the last copy. The device can reboot, Home Assistant can reboot, and the screens come back on their own.
 
 Brightness is on MQTT too, with its own topics and Home Assistant auto-discovery; see [Brightness over MQTT](#brightness-over-mqtt).

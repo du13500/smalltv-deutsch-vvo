@@ -41,11 +41,27 @@ The device gets the time from the internet, and it only checks it when something
 - If the device cannot reach the internet at all, it leaves the screen on rather than guess, and keeps retrying until it succeeds or the night window ends for the day. This is intentional: it never gets stuck dark.
 - Right after a restart, the screen may show full brightness for a few seconds inside the night window, until the next time check lands.
 
+## The radar scope is empty, or a ticker is blank, with no error shown
+
+This is the original ESP8266 model running short of memory. Both features check that enough is free before opening an HTTPS connection, and when there is not they skip the attempt rather than crash, so nothing appears on screen to explain it. The radar wants 18,000 bytes of free heap; a cash.ch quote wants a 16,000-byte contiguous block.
+
+Open the Status tab and read `heap` and `maxblk`. If either sits under its threshold, memory is the cause and no amount of changing the data source will help, because the device never gets as far as sending a request.
+
+Three things bring it back, in the order worth trying:
+
+1. Install `smalltv-mod-firmware-lean.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases). Same code, with Home Assistant screens and the usage meter compiled out, which leaves the heap 8,732 bytes larger. Upload it in the System tab like any other update; your settings carry over. See [Which release file to download](/smalltv-mod/reference/release-assets/)
+2. Improve the WiFi signal. A weak link means constant retransmissions, and the queues holding them come out of the same memory. A device sitting at -75 dBm has noticeably less heap free than the same device close to the access point
+3. Switch the radar to a **Custom webhook** over plain HTTP. The memory check only guards the HTTPS path, so a LAN proxy sidesteps it entirely. [Plane radar](/smalltv-mod/features/radar/) has the setup
+
+A busy office or lab network makes this worse than a quiet home one. Broadcast and multicast traffic all gets buffered by the device, so the same firmware on the same hardware can work on one network and go quiet on another.
+
+The ESP32 models have several times the RAM and manage their TLS buffers dynamically, so none of this applies to them.
+
 ## A ticker stopped working after I turned on night mode
 
 This is specific to the original ESP8266 model with cash.ch tickers. Night mode's clock check and a cash.ch fetch both need a chunk of the device's limited memory at the same time, and on this older chip that can be too much at once, so the cash.ch ticker starts failing. Two fixes, either one works:
 
-- switch that ticker's source from **cash.ch** to **GitHub** in the Ticker tab; it fetches the same instrument through a route that costs less memory (you publish the quote files yourself from a fork — see [Data sources](/smalltv-mod/reference/data-sources/)), or
+- switch that ticker's source from **cash.ch** to **GitHub** in the Ticker tab; it fetches the same instrument through a route that costs less memory (you publish the quote files yourself from a fork, see [Data sources](/smalltv-mod/reference/data-sources/)), or
 - turn night mode off on that particular device
 
 The newer ESP32-based models have more memory and are not affected by this.

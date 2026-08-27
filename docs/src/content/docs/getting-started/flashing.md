@@ -17,6 +17,8 @@ The stock GeekMagic firmware exposes an OTA updater at `/update` that accepts an
 2. Browse to `http://<device-ip>/update`.
 3. Upload `smalltv-mod-firmware.bin`. It reboots into this firmware.
 
+Upload `smalltv-mod-firmware-lean.bin` instead if you want the build without Home Assistant screens and the usage meter, which leaves more heap for the radar and the cash.ch tickers. Both files install the same way and you can swap between them later. See [Which release file to download](/smalltv-mod/reference/release-assets/).
+
 Back up the stock firmware first if you want the option to return to it. The stock image is not redistributed here, so read it off your own device over the UART header before you overwrite it.
 
 ### UART header, for recovery or a direct install
@@ -118,7 +120,7 @@ With a source checkout, `pio run -e smalltv_esp32 -t upload` does the same thing
 
 ## SmallTV Pro (classic ESP32, 8 MB)
 
-The SmallTV Pro has **no USB-serial chip** — its USB-C port is power only. There are two ways in: over the air from the stock web UI (no tools, no soldering), or over an internal UART header (needs opening the case and a 3.3 V USB-UART adapter).
+The SmallTV Pro has **no USB-serial chip**: its USB-C port is power only. There are two ways in: over the air from the stock web UI (no tools, no soldering), or over an internal UART header (needs opening the case and a 3.3 V USB-UART adapter).
 
 ### Over the air, from the stock web UI
 
@@ -128,7 +130,7 @@ The stock firmware exposes an OTA updater, the same way the ESP8266 SmallTV does
 2. Browse to `http://<device-ip>/update`.
 3. Upload `smalltv-mod-firmware-esp32-pro.bin` (the plain app image, **not** the `.factory.bin`) from the [Releases page](https://github.com/giovi321/smalltv-mod/releases). It reboots into this firmware.
 
-This path keeps the stock bootloader and partition table in place and cannot be undone without a backup — the stock image is not redistributed anywhere official. If you want the option to return to stock, take the UART backup below **before** flashing OTA.
+This path keeps the stock bootloader and partition table in place and cannot be undone without a backup, and the stock image is not redistributed anywhere official. If you want the option to return to stock, take the UART backup below **before** flashing OTA.
 
 ### UART header, for backup, recovery, or a direct install
 

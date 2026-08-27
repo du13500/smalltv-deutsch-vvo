@@ -1,12 +1,13 @@
 ---
 title: Building from source
-description: Build any of the four board targets with PlatformIO, and the ESP32 toolchain notes.
+description: Build any of the four board targets with PlatformIO, the lean ESP8266 variant, and the ESP32 toolchain notes.
 ---
 
 The four board targets share one codebase and build from [PlatformIO](https://platformio.org/). Pick the env that matches your board.
 
 ```bash
 pio run -e smalltv                 # ESP8266
+pio run -e smalltv_lean            # ESP8266, without HA screens or the usage meter
 pio run -e smalltv_c2              # ESP32-C2
 pio run -e smalltv_esp32           # NM-TV-154 (classic ESP32)
 pio run -e smalltv_esp32_8mb       # SmallTV Pro (classic ESP32, 8 MB flash)
@@ -14,6 +15,48 @@ pio run -e smalltv_c2 -t upload    # build + flash the C2 over USB-C
 pio device monitor -e smalltv_c2   # serial logs @ 115200
 pio run -e smalltv_loader          # ESP8266 loader for the SmallTV-ultra
 ```
+
+Six envs, five published images plus the loader. Which file each env becomes is in [Which release file to download](/smalltv-mod/reference/release-assets/).
+
+## The smalltv_lean env
+
+`smalltv_lean` builds the same ESP8266 code as `smalltv` with Home Assistant screens and the Claude usage meter compiled out. It exists to buy heap, and it is published as `smalltv-mod-firmware-lean.bin`.
+
+```bash
+pio run -e smalltv_lean
+```
+
+The ESP8266 shares one 80 KB DRAM arena between static allocations and the heap, so a byte of static dropped is a byte the heap gains. On the 2.12.0 build:
+
+| Build | Static RAM | Heap gained |
+|-------|-----------|-------------|
+| `smalltv` | 55,536 B | baseline |
+| `smalltv_lean` | 46,804 B | 8,732 B |
+
+Home Assistant is the bulk of that at 7,668 bytes, and two objects are almost all of Home Assistant: `g_screens`, the four-screen store, at 5,792 bytes, and `g_ic`, the icon cache, at 1,704 bytes. The 768-byte PubSubClient receive buffer also stops being allocated at runtime. The usage meter contributes 1,080 bytes. The two do not sum exactly to 8,732 because they share a little code and string data.
+
+That headroom decides whether two fetch paths run at all. `features/radar/RadarClient.cpp` skips the poll unless 18,000 bytes of heap are free, and `features/ticker/StockClient.cpp` skips a cash.ch quote unless a 16,000-byte contiguous block is available. Both refuse quietly rather than crash, so a device below the threshold shows an empty scope or a blank ticker with no error. On a busy LAN, or over a weak link where retransmissions keep the WiFi queues full, the standard build can sit under both.
+
+Read the current figures from `/api/status`: `heap` is free bytes and `maxblk` is the largest contiguous block.
+
+The env inherits `smalltv` through `extends` and replaces its `build_flags`, so the board, flash layout, and libraries stay identical. Three flags do the work: `-D WITH_HA=0` and `-D WITH_USAGE=0` drop the features, and `-D SMALLTV_LEAN` selects the matching `UPDATE_ASSET` in `src/config.h` so a lean device self-updates to the lean image rather than the standard one.
+
+### Rolling your own combination
+
+The four `WITH_*` flags in `src/config.h` each default to 1 and can be set to 0 in any env, or passed through `PLATFORMIO_BUILD_FLAGS`:
+
+| Flag | Drops | Static RAM saved on the ESP8266 |
+|------|-------|--------------------------------|
+| `WITH_HA=0` | Home Assistant screens over MQTT | 7,668 B |
+| `WITH_TICKER=0` | The stock and crypto ticker | 3,328 B |
+| `WITH_RADAR=0` | The plane radar | 2,180 B |
+| `WITH_USAGE=0` | The Claude usage meter and its mascot | 1,080 B |
+
+Each figure is that one flag measured on its own against the 55,536-byte standard build of 2.12.0. Combining flags saves slightly less than the sum, because the features share some code and string data.
+
+Every feature is guarded at the module level, so dropping one takes its code, its settings handling, and its web UI tab with it. The tab disappears because `/api/config` reports the compiled-in features and the UI hides what is missing, which means a slim build needs no separate web UI.
+
+Two caveats if you publish your own combination. `UPDATE_ASSET` still points at whichever variant your flags select, so a build that is neither standard nor lean will self-update into one of the published images and pick up the features you removed. And the mascot frame data lives in flash rather than RAM, so `WITH_USAGE=0` saves far more flash than heap.
 
 ## The smalltv_loader env
 

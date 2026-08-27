@@ -37,7 +37,9 @@ Product photos show each unit running its stock firmware, not this one, and the 
 | Body | 45 × 35 × 40 mm, USB-C power |
 | Light sensor | optional LDR on `A0` (not populated on all units) |
 | WireGuard VPN | not available on this chip |
-| Build env | `smalltv` |
+| Build env | `smalltv`, or `smalltv_lean` |
+
+Two images are published for this board. `smalltv-mod-firmware.bin` carries every feature. `smalltv-mod-firmware-lean.bin` is the same code with Home Assistant screens and the usage meter compiled out, which leaves the heap 8,732 bytes larger. That matters here and on no other board, because the ESP8266 shares one 80 KB arena between static allocations and the heap, and the radar and cash.ch fetches both refuse to start a TLS handshake when it runs short. [Which release file to download](/smalltv-mod/reference/release-assets/) covers when to pick which.
 
 ### Pin map
 

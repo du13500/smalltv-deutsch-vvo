@@ -5,6 +5,8 @@ description: Show your Claude 5-hour and 7-day usage with an animated mascot, fe
 
 Switch **Display → Mode** to **Clawdmeter** and the device stops showing tickers and shows your Claude consumption instead. It is the idea of a desk usage meter, on the SmallTV, over WiFi. The device's USB is power only, so nothing is wired between it and your PC.
 
+This feature is not in `smalltv-mod-firmware-lean.bin`. That ESP8266 image compiles it out to free 1,080 bytes of heap, and the web UI hides the tab when it is missing. Use `smalltv-mod-firmware.bin` on an ESP8266 that needs the usage meter, or any of the ESP32 images.
+
 ## What it shows
 
 The screen has two states.
