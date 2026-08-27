@@ -101,6 +101,7 @@ static void handleStatus() {
   JsonObject o = doc.to<JsonObject>();
   o["fw"] = FW_NAME;
   o["version"] = FW_VERSION;
+  o["variant"] = FW_VARIANT;   // which release image this is, e.g. "esp8266-lean"
   o["repo"] = REPO_URL;
   if (g_updateMsg.length()) o["updateMsg"] = g_updateMsg;
   o["mode"] = (netMode() == NET_AP) ? "ap" : "sta";

@@ -12,21 +12,31 @@
 // Firmware identity
 // ---------------------------------------------------------------------------
 #define FW_NAME     "smalltv-mod"
-#define FW_VERSION  "2.11.0"
+#define FW_VERSION  "2.12.0"
 
 // Project / update references (shown in the web UI; used by the GitHub self-update)
 #define REPO_URL      "https://github.com/giovi321/smalltv-mod"
 #define REPO_OWNER    "giovi321"
 #define REPO_NAME     "smalltv-mod"
-// Release asset the GitHub self-updater pulls — one app image per target.
+// Release asset the GitHub self-updater pulls, and the short variant name shown
+// in the web UI. One app image per target; the ESP8266 has two, standard and
+// lean, so a device keeps its own variant across a self-update instead of
+// silently gaining or losing features.
 #if defined(SMALLTV_ESP32C2)
   #define UPDATE_ASSET "smalltv-mod-firmware-c2.bin"
+  #define FW_VARIANT   "c2"
 #elif defined(SMALLTV_ESP32_PRO)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32-pro.bin"
+  #define FW_VARIANT   "esp32-pro"
 #elif defined(SMALLTV_ESP32)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32.bin"
+  #define FW_VARIANT   "esp32"
+#elif defined(SMALLTV_LEAN)
+  #define UPDATE_ASSET "smalltv-mod-firmware-lean.bin"
+  #define FW_VARIANT   "esp8266-lean"
 #else
   #define UPDATE_ASSET "smalltv-mod-firmware.bin"
+  #define FW_VARIANT   "esp8266"
 #endif
 #define GH_API_HOST   "api.github.com"
 #define DAEMON_URL    "https://github.com/giovi321/clawdmeter-daemon"

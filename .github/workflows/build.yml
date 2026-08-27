@@ -34,15 +34,19 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build firmware (all targets)
-        run: pio run -e smalltv -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_8mb -e smalltv_loader
+        run: pio run -e smalltv -e smalltv_lean -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_8mb -e smalltv_loader
 
       # One app image per target (web-UI OTA + GitHub self-update), the merged
       # factory images for first-time USB flashing of the ESP32 boards, and the
-      # minimal loader used to install onto a SmallTV-ultra.
+      # minimal loader used to install onto a SmallTV-ultra. The ESP8266 gets a
+      # second app image, -lean, with Home Assistant and the usage meter
+      # compiled out; UPDATE_ASSET in src/config.h maps each build back to its
+      # own file name so self-update keeps a device on the variant it runs.
       - name: Stage artifacts
         run: |
           mkdir -p dist
           cp .pio/build/smalltv/firmware.bin               dist/smalltv-mod-firmware.bin
+          cp .pio/build/smalltv_lean/firmware.bin          dist/smalltv-mod-firmware-lean.bin
           cp .pio/build/smalltv_c2/firmware.bin            dist/smalltv-mod-firmware-c2.bin
           cp .pio/build/smalltv_c2/firmware.factory.bin    dist/smalltv-mod-firmware-c2.factory.bin
           cp .pio/build/smalltv_esp32/firmware.bin         dist/smalltv-mod-firmware-esp32.bin
