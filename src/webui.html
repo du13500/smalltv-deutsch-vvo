@@ -695,8 +695,10 @@ function loadStatus(){j('/api/status').then(function(s){
   kv('Firmware',s.fw+' '+s.version+(s.variant?' ('+s.variant+')':''))+kv('Mode',s.mode.toUpperCase())+
   kv('Network',s.ssid||'-')+kv('IP',s.ip||'-')+kv('mDNS','http://'+(C.hostname||'smalltv')+'.local')+
   kv('Signal',s.rssi?s.rssi+' dBm':'-')+
-  kv('Free heap',s.heap+' B')+kv('Uptime',fmtUp(s.uptime))+kv('Last reset',s.reset||'-')+
-  ((s.wg&&s.wg.compiledIn)?kv('VPN',s.wg.held?'held':(s.wg.up?'up':(s.wg.enabled?'connecting':'off'))):'');
+  kv('Free heap',s.heap+' B'+(s.maxblk?' ('+s.maxblk+' B largest block)':''))+
+  kv('Uptime',fmtUp(s.uptime))+kv('Last reset',s.reset||'-')+
+  ((s.wg&&s.wg.compiledIn)?kv('VPN',s.wg.held?'held':(s.wg.up?'up':(s.wg.enabled?'connecting':'off'))):'')+
+  (s.radar?kv('Radar',radarLine(s.radar)):'');
  var wgs=$('wgStatus'); if(wgs)wgs.textContent=wgLine(s.wg);
  var tb=$('tickBox');
  if(tb){var h='';(s.tickers||[]).forEach(function(t){
@@ -713,6 +715,22 @@ function kv(k,v){return '<div class="kv"><span class="muted">'+k+'</span><b>'+v+
 // WireGuard: one line that names the failure rather than just saying "down".
 // The handshake age is measured against the browser's clock, which is the one
 // we can trust to be right.
+// One line saying what the last radar poll actually did. An empty scope looks
+// the same whether the device was refused, got no answer, or filtered every
+// aircraft out, so name the stage and carry the numbers that separate them.
+function radarLine(r){
+ if(!r)return '';
+ var t=r.stage||'idle';
+ if(r.count)t=r.count+' aircraft';
+ else if(r.stage==='ok'||r.stage==='all filtered out')t=r.stage+' ('+(r.seenAc||0)+' in feed)';
+ if(r.http)t+=', HTTP '+r.http;
+ if(r.tlsRx)t+=', TLS rx '+r.tlsRx+' B';
+ if(r.triedAgo!=null)t+=', tried '+r.triedAgo+'s ago';
+ if(r.okAgo!=null)t+=', last ok '+r.okAgo+'s ago';
+ else if(r.stage!=='idle')t+=', never succeeded';
+ return t;
+}
+
 function wgLine(w){
  if(!w)return '';
  if(!w.compiledIn)return 'WireGuard is not part of this build.';

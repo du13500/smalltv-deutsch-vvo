@@ -8,6 +8,9 @@
 #include "OtaUpdate.h"
 #include "StockClient.h"
 #include "UsageClient.h"
+#if WITH_RADAR
+#include "RadarClient.h"
+#endif
 #if WITH_NOTIFY
 #include "NotifyMode.h"
 #endif
@@ -142,6 +145,24 @@ static void handleStatus() {
     }
   }
 #endif
+
+#if WITH_RADAR
+  // An empty scope has several possible causes and the screen shows the same
+  // thing for all of them, so report the last poll's actual outcome.
+  {
+    JsonObject r = o["radar"].to<JsonObject>();
+    r["count"] = radarCount();          // aircraft currently plotted
+    r["error"] = radarError();
+    r["stage"] = radarStageName();      // why the last poll produced what it did
+    r["seenAc"] = radarSeenAc();        // aircraft in the last parsed response
+    if (radarLastHttp()) r["http"] = radarLastHttp();   // <0 = HTTPClient internal error
+    if (radarTlsRx())    r["tlsRx"] = radarTlsRx();     // negotiated BearSSL rx buffer
+    if (radarLastTryMs()) r["triedAgo"] = (millis() - radarLastTryMs()) / 1000;
+    if (radarLastOkMs())  r["okAgo"]    = (millis() - radarLastOkMs()) / 1000;
+    if (radarLastUrl().length()) r["url"] = radarLastUrl();
+  }
+#endif
+
   sendJson(doc);
 }
 
