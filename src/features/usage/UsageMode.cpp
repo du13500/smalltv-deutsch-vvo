@@ -94,15 +94,12 @@ static void drawMeter(Arduino_GFX* gfx, int top, const char* label,
   gfx->print(line);
 }
 
-// Whether the small accent flag (non-"allowed" status) was drawn last time, so a
-// routine update can erase/redraw just that dot instead of the whole screen.
+// Last-drawn state of the accent flag, so a routine update can toggle just the
+// dot instead of a full-screen clear.
 static bool s_flagShown = false;
 
-// Stats screen: mascot header + 5h/7d meters. `fullRepaint` is only true on a real
-// layout transition (first paint, or arriving from the mascot/invalid screen) —
-// everything below it (fillRoundRect cards, the flag dot) already repaints its own
-// full area each call, so a routine value update (new %, ticking reset countdown)
-// never needs to touch pixels outside what actually changed.
+// `fullRepaint` clears the static layout only on a real transition — cards and
+// the flag dot always repaint their own area, so routine updates skip it.
 static void drawUsage(const UsageData& u, bool fullRepaint) {
   Arduino_GFX* gfx = gfxDev();
   if (!gfx) return;
@@ -125,10 +122,8 @@ static void drawUsage(const UsageData& u, bool fullRepaint) {
     return;
   }
 
-  // A non-"allowed" status (warning / rejected) gets a small accent flag; only
-  // touch it when that state actually flips, and erase it cleanly when it doesn't
-  // apply any more (the background here is always plain black, nothing else
-  // reaches x=228).
+  // A non-"allowed" status gets a small accent flag; erasing with black is safe
+  // here since nothing else ever draws at x=228.
   bool showFlag = u.status[0] && strncmp(u.status, "allowed", 7) != 0;
   if (showFlag != s_flagShown || fullRepaint) {
     gfx->fillCircle(228, 18, 5, showFlag ? C_ACCENT : C_BLACK);
@@ -166,10 +161,8 @@ static void drawMascot(const uint8_t* cells, const uint16_t* palette, bool resta
   s_mascotPalette = palette;
 }
 
-// True when the daemon's payload actually differs from what's on screen right
-// now. The daemon re-POSTs on a fixed timer regardless of whether the numbers
-// moved, and drawUsage() always does a full fillScreen — without this check
-// every push would flash the display even when nothing changed.
+// The daemon re-POSTs on a fixed timer even when nothing changed, and
+// drawUsage() does a full fillScreen — without this check every push flashes.
 bool UsageMode::contentChanged(const UsageData& u) const {
   if (!contentPrimed_) return true;
   return u.valid != lastValid_

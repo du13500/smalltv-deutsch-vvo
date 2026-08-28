@@ -29,14 +29,12 @@ class UsageMode : public DisplayMode {
   bool     showingMascot_ = false;
   bool     needRender_ = true;
 
-  // Last content actually painted to the screen. The daemon re-POSTs on a fixed
-  // interval even when nothing changed (it doesn't know the device's redraw
-  // cost), so a full-screen redraw is only warranted when one of these differs
-  // from what's currently on screen — not on every fresh lastOkMs.
+  // Last content actually painted — compared in contentChanged() instead of
+  // lastOkMs, since the daemon re-POSTs unchanged data too.
   bool     contentPrimed_ = false;
 
-  // Whether the static screen layout (black bg + header) is currently painted, so
-  // a routine value update can skip the full-screen clear that causes the flash.
+  // Whether the static layout (black bg + header) is currently painted, so a
+  // routine update can skip the full-screen clear.
   bool     layoutPrimed_ = false;
   float    lastSessionPct_ = -1;
   float    lastWeeklyPct_ = -1;
