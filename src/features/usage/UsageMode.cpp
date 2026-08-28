@@ -94,28 +94,45 @@ static void drawMeter(Arduino_GFX* gfx, int top, const char* label,
   gfx->print(line);
 }
 
-// Stats screen: mascot header + 5h/7d meters.
-static void drawUsage(const UsageData& u) {
+// Whether the small accent flag (non-"allowed" status) was drawn last time, so a
+// routine update can erase/redraw just that dot instead of the whole screen.
+static bool s_flagShown = false;
+
+// Stats screen: mascot header + 5h/7d meters. `fullRepaint` is only true on a real
+// layout transition (first paint, or arriving from the mascot/invalid screen) —
+// everything below it (fillRoundRect cards, the flag dot) already repaints its own
+// full area each call, so a routine value update (new %, ticking reset countdown)
+// never needs to touch pixels outside what actually changed.
+static void drawUsage(const UsageData& u, bool fullRepaint) {
   Arduino_GFX* gfx = gfxDev();
   if (!gfx) return;
-  s_mascotPrimed = false;   // force a full redraw next time the idle animation shows
-  gfx->fillScreen(C_BLACK);
 
-  // Header: a small calm mascot pose + title.
-  blitMascot(gfx, mascotIdleCells(), mascotIdlePalette(), 6, 4, 2);
-  gfx->setTextSize(3);
-  gfx->setTextColor(C_WHITE);
-  gfx->setCursor(56, 12);
-  gfx->print("CLAUDE");
+  if (fullRepaint) {
+    s_mascotPrimed = false;   // force a full redraw next time the idle animation shows
+    gfx->fillScreen(C_BLACK);
+
+    // Header: a small calm mascot pose + title.
+    blitMascot(gfx, mascotIdleCells(), mascotIdlePalette(), 6, 4, 2);
+    gfx->setTextSize(3);
+    gfx->setTextColor(C_WHITE);
+    gfx->setCursor(56, 12);
+    gfx->print("CLAUDE");
+    s_flagShown = false;
+  }
 
   if (!u.valid) {
-    gfxDrawCentered(u.error ? "daemon error" : "waiting...", 120, 2, C_DIM);
+    if (fullRepaint) gfxDrawCentered(u.error ? "daemon error" : "waiting...", 120, 2, C_DIM);
     return;
   }
 
-  // A non-"allowed" status (warning / rejected) gets a small accent flag.
-  if (u.status[0] && strncmp(u.status, "allowed", 7) != 0) {
-    gfx->fillCircle(228, 18, 5, C_ACCENT);
+  // A non-"allowed" status (warning / rejected) gets a small accent flag; only
+  // touch it when that state actually flips, and erase it cleanly when it doesn't
+  // apply any more (the background here is always plain black, nothing else
+  // reaches x=228).
+  bool showFlag = u.status[0] && strncmp(u.status, "allowed", 7) != 0;
+  if (showFlag != s_flagShown || fullRepaint) {
+    gfx->fillCircle(228, 18, 5, showFlag ? C_ACCENT : C_BLACK);
+    s_flagShown = showFlag;
   }
 
   drawMeter(gfx, 50,  "5h", u.sessionPct, u.sessionResetMin);
@@ -149,6 +166,32 @@ static void drawMascot(const uint8_t* cells, const uint16_t* palette, bool resta
   s_mascotPalette = palette;
 }
 
+// True when the daemon's payload actually differs from what's on screen right
+// now. The daemon re-POSTs on a fixed timer regardless of whether the numbers
+// moved, and drawUsage() always does a full fillScreen — without this check
+// every push would flash the display even when nothing changed.
+bool UsageMode::contentChanged(const UsageData& u) const {
+  if (!contentPrimed_) return true;
+  return u.valid != lastValid_
+      || u.error != lastError_
+      || u.sessionPct != lastSessionPct_
+      || u.weeklyPct != lastWeeklyPct_
+      || u.sessionResetMin != lastSessionResetMin_
+      || u.weeklyResetMin != lastWeeklyResetMin_
+      || strncmp(u.status, lastStatus_, sizeof(lastStatus_)) != 0;
+}
+
+void UsageMode::rememberContent(const UsageData& u) {
+  contentPrimed_ = true;
+  lastValid_ = u.valid;
+  lastError_ = u.error;
+  lastSessionPct_ = u.sessionPct;
+  lastWeeklyPct_ = u.weeklyPct;
+  lastSessionResetMin_ = u.sessionResetMin;
+  lastWeeklyResetMin_ = u.weeklyResetMin;
+  strlcpy(lastStatus_, u.status, sizeof(lastStatus_));
+}
+
 // ---- DisplayMode ----------------------------------------------------------
 void UsageMode::begin(const Settings& s) {
   usageInit(s);
@@ -157,12 +200,16 @@ void UsageMode::begin(const Settings& s) {
   usageRenderedOk_ = 0xFFFFFFFF;
   showingMascot_ = false;
   needRender_ = true;
+  contentPrimed_ = false;
+  layoutPrimed_ = false;
 }
 
 void UsageMode::invalidate(const Settings& s) {
   needRender_ = true;
   showingMascot_ = false;
   usageRenderedOk_ = 0xFFFFFFFF;
+  contentPrimed_ = false;
+  layoutPrimed_ = false;
   usageInit(s);
   usageForceRefresh();
 }
@@ -185,9 +232,21 @@ void UsageMode::service(const Settings& s) {
   uint32_t staleMs = (uint32_t)s.usage.pollSec * 1000UL * 2UL + USAGE_STALE_GRACE_MS;
 
   if (usageFresh(staleMs)) {
-    if (showingMascot_) { showingMascot_ = false; needRender_ = true; }
-    if (u.lastOkMs != usageRenderedOk_) { usageRenderedOk_ = u.lastOkMs; needRender_ = true; }
-    if (needRender_) { drawUsage(u); needRender_ = false; }
+    bool fullRepaint = !layoutPrimed_;
+    if (showingMascot_) { showingMascot_ = false; needRender_ = true; fullRepaint = true; }
+    if (u.lastOkMs != usageRenderedOk_) {
+      usageRenderedOk_ = u.lastOkMs;
+      if (contentChanged(u)) {
+        if (u.valid != lastValid_) fullRepaint = true;   // layout itself changes shape
+        rememberContent(u);
+        needRender_ = true;
+      }
+    }
+    if (needRender_) {
+      drawUsage(u, fullRepaint);
+      layoutPrimed_ = true;
+      needRender_ = false;
+    }
   } else {
     if (!showingMascot_) {
       showingMascot_ = true;
