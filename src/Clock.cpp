@@ -115,7 +115,7 @@ bool clockNightHeld()   { return s_nightHeld; }
 String clockTimeStr() {
   struct tm t;
   if (!clockNow(t)) return String();
-  char b[20];
+  char b[60];
   snprintf(b, sizeof(b), "%04d-%02d-%02d %02d:%02d",
            t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
   return String(b);
