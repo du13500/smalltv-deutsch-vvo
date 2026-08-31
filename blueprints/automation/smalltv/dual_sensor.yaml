@@ -1,0 +1,764 @@
+blueprint:
+  name: SmallTV two-sensor screen
+  description: >-
+    Puts two sensors side by side on one SmallTV screen: the panel is split
+    into a left and a right column, each with an optional icon, a label, the
+    value in big type, and the unit on its own line underneath, with a
+    vertical divider down the middle. Use it when two readings belong
+    together and you want to see both at a glance instead of waiting for the
+    carousel, for example an outdoor and an indoor temperature. Every text
+    and colour can also be driven by a Jinja template, so a column can
+    combine sensors or turn red above a threshold. The screen is published
+    as one retained MQTT message, so the device keeps it across reboots, and
+    a startup trigger republishes it after every Home Assistant restart. The
+    screen carries a time-to-live, so deleting this automation makes it
+    expire on its own instead of staying on the broker forever.
+
+    Each column is narrow: 112 px, which is 4 characters at text scale 4 and
+    18 at scale 1. Values are sized to fit automatically and cut if they
+    still do not, and a per-column decimal cap keeps a sensor that reports
+    ten decimal places from shrinking to the smallest size. Every element is
+    optional: each column picks which of its icon, label, value, and unit to
+    draw, and the title and divider go away by clearing their own inputs. For
+    a single reading in the full panel width use the screen board blueprint
+    instead.
+  domain: automation
+  source_url: https://github.com/giovi321/smalltv-mod/blob/main/blueprints/automation/smalltv/dual_sensor.yaml
+  homeassistant:
+    min_version: 2024.6.0
+  input:
+    hostname:
+      name: Device hostname
+      description: >-
+        The SmallTV's hostname, as shown in its web UI. It is the device id in
+        every MQTT topic, for example "smalltv".
+      selector:
+        text:
+    slot:
+      name: Screen slot
+      description: >-
+        The carousel slot this screen occupies. Slot order is the carousel
+        order; pick a name that sorts where you want the screen to appear.
+        Slot names must be unique per device across every automation
+        publishing to the same hostname.
+      default: duo
+      selector:
+        text:
+    watched_entities:
+      name: Watched entities
+      description: >-
+        Extra entities used inside the templates below. The two column
+        entities already trigger on their own; anything that only appears in
+        a template needs listing here, or the screen refreshes on the
+        one-minute timer only.
+      default: []
+      selector:
+        entity:
+          multiple: true
+    title:
+      name: Title
+      description: >-
+        Optional heading drawn centred across the full width, above both
+        columns. Leave empty to drop it and free up the payload bytes it
+        costs, which matters on the ESP8266.
+      default: ""
+      selector:
+        text:
+    title_tpl:
+      name: Title template
+      description: >-
+        Optional Jinja template for the title. When it renders non-empty it
+        wins over the static title above.
+      default: ""
+      selector:
+        template:
+    bg:
+      name: Background colour
+      default: "#000000"
+      selector:
+        text:
+    bg_tpl:
+      name: Background colour template
+      description: >-
+        Optional Jinja template for the background, as #RRGGBB. When it
+        renders non-empty it wins over the static colour above.
+      default: ""
+      selector:
+        template:
+    title_color:
+      name: Title colour
+      default: "#FFFFFF"
+      selector:
+        text:
+    divider_color:
+      name: Divider colour
+      description: >-
+        Colour of the vertical line between the two columns. Leave empty to
+        draw no divider.
+      default: "#444444"
+      selector:
+        text:
+    screen_ttl:
+      name: Screen time-to-live
+      description: >-
+        Seconds the screen stays in the rotation after its last publish. The
+        one-minute refresh keeps it alive while this automation exists, so
+        while you change nothing the TTL never runs out. Delete the
+        automation and the screen vanishes from the device within this time.
+        A stale copy can briefly reappear after a device reboot because the
+        broker still holds the retained message; the device then expires it
+        again on the same clock. Set 0 to show forever, until you publish an
+        empty payload or press the device's Clear screens button.
+      default: 900
+      selector:
+        number:
+          min: 0
+          max: 86400
+          step: 60
+          unit_of_measurement: s
+          mode: slider
+    left_section:
+      name: Left column
+      collapsed: true
+      input:
+        left_elements:
+          name: Elements to draw
+          description: >-
+            Which parts of this column are drawn. Unticking one removes it
+            and frees the payload bytes it cost, which is how you get a
+            screen with icons but no labels, or bare numbers with no
+            captions at all. Nothing reflows: the remaining elements stay
+            on the rows the Layout section gives them, so close the gap by
+            moving them there. Unticking the value leaves a column with
+            nothing but its caption, and unticking everything in both
+            columns leaves a blank screen in the background colour.
+          default:
+            - icon
+            - label
+            - value
+            - unit
+          selector:
+            select:
+              multiple: true
+              options:
+                - icon
+                - label
+                - value
+                - unit
+        left_entity:
+          name: Entity
+          description: >-
+            The sensor drawn in the left half. Leave empty only if you set a
+            value template; a column with neither is not drawn and the
+            screen is not published.
+          default: ""
+          selector:
+            entity:
+        left_label:
+          name: Label
+          description: >-
+            Short caption above the value. Empty falls back to the entity's
+            friendly name, which is often too long for a 112 px column, so a
+            hand-written short label is usually better. To draw no caption at
+            all, untick "label" in the elements above.
+          default: ""
+          selector:
+            text:
+        left_label_tpl:
+          name: Label template
+          description: >-
+            Optional Jinja template for the label. When it renders non-empty
+            it wins over the static label above.
+          default: ""
+          selector:
+            template:
+        left_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When it renders
+            non-empty it wins over the entity's state, and with it set the
+            entity can be left empty. Keep it short: 4 characters fit at
+            text scale 4, 5 at scale 3.
+          default: ""
+          selector:
+            template:
+        left_decimals:
+          name: Decimals
+          description: >-
+            Most decimal places to show. This is a cap, not a format: extra
+            digits are rounded away and trailing zeros are dropped, so a
+            sensor reporting 21.71875123 draws as "21.7" at one decimal while
+            1234 stays "1234" and not "1234.0". It applies to the value
+            template's output too, and a value that is not a number is left
+            alone. Long strings render small, so this is what keeps a chatty
+            sensor at text scale 4 instead of dropping it to 1. Pick "off" to
+            print whatever the sensor reports.
+          default: "1"
+          selector:
+            select:
+              options:
+                - "off"
+                - "0"
+                - "1"
+                - "2"
+                - "3"
+                - "4"
+        left_unit:
+          name: Unit
+          description: >-
+            Text drawn on its own line under the value. Empty falls back to
+            the entity's unit_of_measurement; untick "unit" in the elements
+            above to draw none at all.
+          default: ""
+          selector:
+            text:
+        left_icon:
+          name: Icon
+          description: >-
+            Optional icon from the built-in set, drawn centred above the
+            label.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        left_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template rendering to an icon name. When it
+            renders non-empty it wins over the icon picker above; an unknown
+            name simply draws nothing.
+          default: ""
+          selector:
+            template:
+        left_color:
+          name: Foreground colour
+          description: Colour of the icon, label, value, and unit in this column.
+          default: "#FFFFFF"
+          selector:
+            text:
+        left_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template for this column's colour, as #RRGGBB.
+            When it renders non-empty it wins over the static colour above,
+            which is how you turn a reading red past a threshold.
+          default: ""
+          selector:
+            template:
+    right_section:
+      name: Right column
+      collapsed: true
+      input:
+        right_elements:
+          name: Elements to draw
+          description: >-
+            Which parts of this column are drawn. Unticking one removes it
+            and frees the payload bytes it cost, which is how you get a
+            screen with icons but no labels, or bare numbers with no
+            captions at all. Nothing reflows: the remaining elements stay
+            on the rows the Layout section gives them, so close the gap by
+            moving them there. Unticking the value leaves a column with
+            nothing but its caption, and unticking everything in both
+            columns leaves a blank screen in the background colour.
+          default:
+            - icon
+            - label
+            - value
+            - unit
+          selector:
+            select:
+              multiple: true
+              options:
+                - icon
+                - label
+                - value
+                - unit
+        right_entity:
+          name: Entity
+          description: >-
+            The sensor drawn in the right half. Leave empty only if you set a
+            value template; a column with neither is not drawn and the
+            screen is not published.
+          default: ""
+          selector:
+            entity:
+        right_label:
+          name: Label
+          description: >-
+            Short caption above the value. Empty falls back to the entity's
+            friendly name, which is often too long for a 112 px column, so a
+            hand-written short label is usually better. To draw no caption at
+            all, untick "label" in the elements above.
+          default: ""
+          selector:
+            text:
+        right_label_tpl:
+          name: Label template
+          description: >-
+            Optional Jinja template for the label. When it renders non-empty
+            it wins over the static label above.
+          default: ""
+          selector:
+            template:
+        right_value_tpl:
+          name: Value template
+          description: >-
+            Optional Jinja template for the big value line. When it renders
+            non-empty it wins over the entity's state, and with it set the
+            entity can be left empty. Keep it short: 4 characters fit at
+            text scale 4, 5 at scale 3.
+          default: ""
+          selector:
+            template:
+        right_decimals:
+          name: Decimals
+          description: >-
+            Most decimal places to show. This is a cap, not a format: extra
+            digits are rounded away and trailing zeros are dropped, so a
+            sensor reporting 21.71875123 draws as "21.7" at one decimal while
+            1234 stays "1234" and not "1234.0". It applies to the value
+            template's output too, and a value that is not a number is left
+            alone. Long strings render small, so this is what keeps a chatty
+            sensor at text scale 4 instead of dropping it to 1. Pick "off" to
+            print whatever the sensor reports.
+          default: "1"
+          selector:
+            select:
+              options:
+                - "off"
+                - "0"
+                - "1"
+                - "2"
+                - "3"
+                - "4"
+        right_unit:
+          name: Unit
+          description: >-
+            Text drawn on its own line under the value. Empty falls back to
+            the entity's unit_of_measurement; untick "unit" in the elements
+            above to draw none at all.
+          default: ""
+          selector:
+            text:
+        right_icon:
+          name: Icon
+          description: >-
+            Optional icon from the built-in set, drawn centred above the
+            label.
+          default: none
+          selector:
+            select:
+              options:
+                - none
+                - thermometer
+                - humidity
+                - sun
+                - cloud
+                - rain
+                - snow
+                - wind
+                - home
+                - door-open
+                - door-closed
+                - window-open
+                - window-closed
+                - motion
+                - plug
+                - battery
+                - alert
+                - check
+                - x
+                - arrow-up
+                - arrow-down
+        right_icon_tpl:
+          name: Icon template
+          description: >-
+            Optional Jinja template rendering to an icon name. When it
+            renders non-empty it wins over the icon picker above; an unknown
+            name simply draws nothing.
+          default: ""
+          selector:
+            template:
+        right_color:
+          name: Foreground colour
+          description: Colour of the icon, label, value, and unit in this column.
+          default: "#FFFFFF"
+          selector:
+            text:
+        right_color_tpl:
+          name: Foreground colour template
+          description: >-
+            Optional Jinja template for this column's colour, as #RRGGBB.
+            When it renders non-empty it wins over the static colour above,
+            which is how you turn a reading red past a threshold.
+          default: ""
+          selector:
+            template:
+    layout_section:
+      name: Layout
+      collapsed: true
+      description: >-
+        Vertical positions and text sizes. The defaults recreate the layout
+        shown in the blueprint description; y is the top pixel row of each
+        element and the panel is 240 px tall. Both columns share these
+        values, so the screen stays symmetric.
+      input:
+        title_y:
+          name: Title row
+          default: 12
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        icon_y:
+          name: Icon row
+          default: 50
+          selector:
+            number:
+              min: 0
+              max: 220
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        icon_size:
+          name: Icon scale
+          description: >-
+            The icon occupies a 24 px box times this scale, so 1 is 24 px and
+            2 is 48 px. A 48 px icon in a 112 px column leaves little room,
+            so 1 is the default here.
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        label_y:
+          name: Label row
+          default: 84
+          selector:
+            number:
+              min: 0
+              max: 232
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        label_min_size:
+          name: Label minimum text size
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        label_max_size:
+          name: Label maximum text size
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        value_y:
+          name: Value row
+          default: 118
+          selector:
+            number:
+              min: 0
+              max: 232
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        value_min_size:
+          name: Value minimum text size
+          default: 1
+          selector:
+            number:
+              min: 1
+              max: 6
+              step: 1
+              mode: slider
+        value_max_size:
+          name: Value maximum text size
+          description: >-
+            The blueprint uses the largest size in this range that fits the
+            112 px column, and cuts the text at the smallest size if even
+            that is too wide. Scale 4 fits 4 characters, scale 3 fits 6.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 6
+              step: 1
+              mode: slider
+        unit_y:
+          name: Unit row
+          default: 164
+          selector:
+            number:
+              min: 0
+              max: 232
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        unit_size:
+          name: Unit text size
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 4
+              step: 1
+              mode: slider
+        unit_inline:
+          name: Unit on the value line
+          description: >-
+            Append the unit to the value instead of drawing it on its own
+            row. This drops two text primitives from the payload, which is
+            worth doing on the ESP8266 where a screen has only about 700
+            bytes, but it also makes the value line longer, so it usually
+            renders one or two sizes smaller.
+          default: false
+          selector:
+            boolean:
+        divider_y_top:
+          name: Divider top
+          default: 42
+          selector:
+            number:
+              min: 0
+              max: 239
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+        divider_y_bottom:
+          name: Divider bottom
+          default: 228
+          selector:
+            number:
+              min: 0
+              max: 239
+              step: 1
+              unit_of_measurement: px
+              mode: slider
+
+# Hoist !input values into variables before templating: !input is only legal
+# at the top level of trigger/condition/action keys, not inside a template.
+# The template inputs arrive here already rendered, so an empty template and
+# one that renders to an empty string are the same thing below.
+variables:
+  hostname: !input hostname
+  slot: !input slot
+  title: !input title
+  title_tpl: !input title_tpl
+  bg: !input bg
+  bg_tpl: !input bg_tpl
+  title_color: !input title_color
+  divider_color: !input divider_color
+  screen_ttl: !input screen_ttl
+  left_elements: !input left_elements
+  left_entity: !input left_entity
+  left_label: !input left_label
+  left_label_tpl: !input left_label_tpl
+  left_value_tpl: !input left_value_tpl
+  left_decimals: !input left_decimals
+  left_unit: !input left_unit
+  left_icon: !input left_icon
+  left_icon_tpl: !input left_icon_tpl
+  left_color: !input left_color
+  left_color_tpl: !input left_color_tpl
+  right_elements: !input right_elements
+  right_entity: !input right_entity
+  right_label: !input right_label
+  right_label_tpl: !input right_label_tpl
+  right_value_tpl: !input right_value_tpl
+  right_decimals: !input right_decimals
+  right_unit: !input right_unit
+  right_icon: !input right_icon
+  right_icon_tpl: !input right_icon_tpl
+  right_color: !input right_color
+  right_color_tpl: !input right_color_tpl
+  title_y: !input title_y
+  icon_y: !input icon_y
+  icon_size: !input icon_size
+  label_y: !input label_y
+  label_min_size: !input label_min_size
+  label_max_size: !input label_max_size
+  value_y: !input value_y
+  value_min_size: !input value_min_size
+  value_max_size: !input value_max_size
+  unit_y: !input unit_y
+  unit_size: !input unit_size
+  unit_inline: !input unit_inline
+  divider_y_top: !input divider_y_top
+  divider_y_bottom: !input divider_y_bottom
+
+mode: restart
+
+triggers:
+  - trigger: state
+    entity_id: !input watched_entities
+  # Safety refresh: if a state change was missed (or the broker was restarted
+  # and lost the retained message), the screen is republished within a minute.
+  # This is also what keeps the TTL from running out.
+  - trigger: time_pattern
+    minutes: "/1"
+  # Republish the retained screen after every Home Assistant restart.
+  - trigger: homeassistant
+    event: start
+
+conditions:
+  # Do nothing at all until a hostname is configured.
+  - condition: template
+    value_template: "{{ hostname != '' }}"
+  # Both columns must have something to say: an entity that is reporting, or
+  # a value template. While a sensor is unavailable the screen is not
+  # republished, so the retained copy on the panel keeps its last good
+  # reading instead of showing "unavailable" in big type.
+  - condition: template
+    value_template: >-
+      {{ (left_value_tpl != ''
+          or (left_entity != ''
+              and states(left_entity) not in ('unknown', 'unavailable', 'none')))
+         and (right_value_tpl != ''
+              or (right_entity != ''
+                  and states(right_entity) not in ('unknown', 'unavailable', 'none'))) }}
+
+actions:
+  - action: mqtt.publish
+    data:
+      topic: "smalltv/{{ hostname }}/screen/{{ slot }}"
+      retain: true
+      payload: >-
+        {#- Text width in the 6x8 font is length * 6 * scale. A column is half
+            the 240 px panel less a 4 px margin on each side; the title spans
+            the full width on the same margin. -#}
+        {%- set COL = 112 -%}
+        {%- set FULL = 232 -%}
+        {%- macro fitsize(text, a, b, budget) -%}
+        {%- set lo = [a | int(1), b | int(1)] | min -%}
+        {%- set hi = [a | int(1), b | int(1)] | max -%}
+        {%- set ns = namespace(s=0) -%}
+        {%- for cand in range(hi, lo - 1, -1) -%}
+        {%- if ns.s == 0 and text | length * 6 * cand <= budget -%}
+        {%- set ns.s = cand -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {{- ns.s if ns.s > 0 else lo -}}
+        {%- endmacro -%}
+        {%- set bgc = (bg_tpl if bg_tpl != '' else bg) | trim -%}
+        {%- set head = (title_tpl if title_tpl != '' else title) | trim -%}
+        {%- set cols = [
+             {'cx': 60,
+              'e': left_entity,
+              'els': left_elements,
+              'label': (left_label_tpl if left_label_tpl != '' else left_label) | trim,
+              'vtpl': left_value_tpl,
+              'dec': left_decimals,
+              'unit': left_unit,
+              'icon': (left_icon_tpl if left_icon_tpl != '' else left_icon) | trim,
+              'color': (left_color_tpl if left_color_tpl != '' else left_color) | trim},
+             {'cx': 180,
+              'e': right_entity,
+              'els': right_elements,
+              'label': (right_label_tpl if right_label_tpl != '' else right_label) | trim,
+              'vtpl': right_value_tpl,
+              'dec': right_decimals,
+              'unit': right_unit,
+              'icon': (right_icon_tpl if right_icon_tpl != '' else right_icon) | trim,
+              'color': (right_color_tpl if right_color_tpl != '' else right_color) | trim}
+           ] -%}
+        {%- set out = namespace(prims=[]) -%}
+        {%- if head != '' -%}
+        {%- set hs = fitsize(head, 1, 2, FULL) | int -%}
+        {%- set head = head | truncate(FULL // (6 * hs), True, '', 0) -%}
+        {%- set p %}{"t":"text","x":120,"y":{{ title_y | int(12) }},"s":{{ hs }},"c":{{ title_color | tojson }},"a":"c","v":{{ head | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {%- if divider_color | trim != '' -%}
+        {%- set p %}{"t":"line","x":120,"y":{{ divider_y_top | int(42) }},"x2":120,"y2":{{ divider_y_bottom | int(228) }},"c":{{ divider_color | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {%- for c in cols -%}
+        {#- Value: the template wins, else the bare state. The unit is kept
+            out of it so it can go on its own row. -#}
+        {%- set v = (c.vtpl if c.vtpl != '' else states(c.e)) | trim -%}
+        {#- Decimal cap: round a numeric value down to at most `dec` places and
+            drop trailing zeros, so a sensor with ten decimals still renders
+            at a big text size. A non-numeric value passes through. -#}
+        {%- if c.dec != 'off' -%}
+        {%- set num = v | float(none) -%}
+        {%- if num is not none -%}
+        {%- set v = '%.*f' | format(c.dec | int(1), num) -%}
+        {%- if '.' in v -%}
+        {%- set v = v.rstrip('0').rstrip('.') -%}
+        {%- endif -%}
+        {#- A small negative rounds to "-0.0"; show plain "0" instead. -#}
+        {%- if v == '-0' -%}
+        {%- set v = '0' -%}
+        {%- endif -%}
+        {%- endif -%}
+        {%- endif -%}
+        {%- set u = c.unit if c.unit != '' else (state_attr(c.e, 'unit_of_measurement') or '' if c.e != '' else '') -%}
+        {%- set u = u | trim if 'unit' in c.els else '' -%}
+        {#- Inline only makes sense when the value is drawn; with the value
+            switched off the unit keeps its own row. -#}
+        {%- if unit_inline and u != '' and 'value' in c.els -%}
+        {%- set v = v ~ ' ' ~ u -%}
+        {%- set u = '' -%}
+        {%- endif -%}
+        {%- set label = c.label if c.label != '' else (state_attr(c.e, 'friendly_name') or '' if c.e != '' else '') -%}
+        {%- set label = label if 'label' in c.els else '' -%}
+        {%- if 'icon' in c.els and c.icon not in ('', 'none') -%}
+        {%- set p %}{"t":"icon","x":{{ c.cx }},"y":{{ icon_y | int(50) }},"s":{{ icon_size | int(1) }},"c":{{ c.color | tojson }},"a":"c","v":{{ c.icon | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {%- if label != '' -%}
+        {%- set ls = fitsize(label, label_min_size, label_max_size, COL) | int -%}
+        {%- set label = label | truncate(COL // (6 * ls), True, '', 0) -%}
+        {%- set p %}{"t":"text","x":{{ c.cx }},"y":{{ label_y | int(84) }},"s":{{ ls }},"c":{{ c.color | tojson }},"a":"c","v":{{ label | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {#- The value stays one line: a 112 px column has no room to wrap
+            without running into the unit row, so it is cut at the smallest
+            size instead. -#}
+        {%- if 'value' in c.els -%}
+        {%- set vs = fitsize(v, value_min_size, value_max_size, COL) | int -%}
+        {%- set v = v | truncate(COL // (6 * vs), True, '', 0) -%}
+        {%- set p %}{"t":"text","x":{{ c.cx }},"y":{{ value_y | int(118) }},"s":{{ vs }},"c":{{ c.color | tojson }},"a":"c","v":{{ v | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {%- if u != '' -%}
+        {%- set us = fitsize(u, 1, unit_size, COL) | int -%}
+        {%- set u = u | truncate(COL // (6 * us), True, '', 0) -%}
+        {%- set p %}{"t":"text","x":{{ c.cx }},"y":{{ unit_y | int(164) }},"s":{{ us }},"c":{{ c.color | tojson }},"a":"c","v":{{ u | tojson }}}{% endset -%}
+        {%- set out.prims = out.prims + [p] -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {"bg":{{ bgc | tojson }},"ttl":{{ screen_ttl | int(900) }},"draw":[{{ out.prims | join(',') }}]}

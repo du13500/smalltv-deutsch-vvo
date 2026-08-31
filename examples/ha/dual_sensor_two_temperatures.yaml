@@ -1,0 +1,62 @@
+# SmallTV two-sensor screen, without a blueprint: the outdoor and the bedroom
+# temperature side by side on one screen, split down the middle. Each column
+# is a label, the value in big type, and the unit on its own row, in its own
+# colour; a vertical line separates them.
+#
+# One retained JSON screen on the device's `duo` slot, republished on every
+# sensor change, on a 5-minute safety refresh, and after every Home Assistant
+# restart. Replace the two sensor entity ids and the hostname in the topic.
+#
+# Column geometry: the panel is 240 px wide, so each half is centred on x 60
+# and x 180 and has 112 px of usable width. Text width in the 6x8 font is
+# length * 6 * scale, so at scale 4 a column holds 4 characters, which is why
+# the values are formatted to one decimal and the unit gets its own row. Feed
+# a wider string in and it runs off the panel; the blueprint version below
+# sizes text automatically instead.
+#
+# This payload is about 585 bytes, so it fits the ESP8266 budget (~700 B).
+# Adding a per-column icon costs roughly 60 bytes each and pushes it over, so
+# on an ESP8266 drop the title or move the unit onto the value line first.
+#
+# The importable blueprint version of this screen, with the labels, colours,
+# icons, and every position as inputs, lives at
+# blueprints/automation/smalltv/dual_sensor.yaml. A filled-in example of that
+# blueprint is in examples/ha/dual_sensor_instance.md.
+
+automation:
+  - alias: SmallTV two temperatures
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.outside_temperature
+      - trigger: state
+        entity_id: sensor.bedroom_2_temperature
+      - trigger: time_pattern
+        minutes: "/5"   # safety refresh, in case a change was missed
+      - trigger: homeassistant
+        event: start    # republish the retained screen after an HA restart
+    conditions:
+      # Skip the publish while either sensor is not reporting: the retained
+      # copy on the panel keeps its last good reading instead of showing
+      # "unavailable" in big type.
+      - condition: template
+        value_template: >-
+          {{ states('sensor.outside_temperature') not in ('unknown', 'unavailable')
+             and states('sensor.bedroom_2_temperature') not in ('unknown', 'unavailable') }}
+    actions:
+      - action: mqtt.publish
+        data:
+          topic: smalltv/smalltv/screen/duo
+          retain: true
+          payload: >-
+            {% set o = states('sensor.outside_temperature') | float(0) -%}
+            {% set b = states('sensor.bedroom_2_temperature') | float(0) -%}
+            {"bg":"#000000","ttl":0,"draw":[
+            {"t":"text","x":120,"y":12,"s":2,"c":"#FFFFFF","a":"c","v":"Temperatures"},
+            {"t":"line","x":120,"y":42,"x2":120,"y2":228,"c":"#444444"},
+            {"t":"text","x":60,"y":84,"s":2,"c":"#8AB4F8","a":"c","v":"Outside"},
+            {"t":"text","x":60,"y":118,"s":4,"c":"#8AB4F8","a":"c","v":"{{ '%.1f' | format(o) }}"},
+            {"t":"text","x":60,"y":164,"s":2,"c":"#8AB4F8","a":"c","v":"°C"},
+            {"t":"text","x":180,"y":84,"s":2,"c":"#FFCC00","a":"c","v":"Bedroom 2"},
+            {"t":"text","x":180,"y":118,"s":4,"c":"#FFCC00","a":"c","v":"{{ '%.1f' | format(b) }}"},
+            {"t":"text","x":180,"y":164,"s":2,"c":"#FFCC00","a":"c","v":"°C"}]}
