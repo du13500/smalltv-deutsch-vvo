@@ -6,7 +6,7 @@
 
 RadarMode g_radarMode;
 
-#define C_MAGENTA gfxTint(0xF81F)   // speed vector (not in the shared palette)
+#define C_MAGENTA gfxTint(0x00F81F)   // speed vector (not in the shared palette)
 
 // Radar geometry (square 240x240 panel; the circle leaves the corners empty).
 static const int CX = TFT_WIDTH / 2;
@@ -149,7 +149,7 @@ static void drawRadar(const Settings& s) {
         gfx->setCursor(box.x, box.y);
         gfx->print(a.callsign);
         if (a.altFt > 0) {
-          char fl[8];
+          char fl[11];
           snprintf(fl, sizeof(fl), "FL%03d", (int)(a.altFt / 100));
           gfx->setTextSize(1);
           gfx->setCursor(box.x, y + (txt == 1 ? 6 : 10));
