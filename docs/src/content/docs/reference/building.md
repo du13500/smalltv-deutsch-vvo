@@ -113,7 +113,14 @@ src/                    shared core (device, net, web, settings)
     notify/             NotifyMode + its overlay frames (armed over HTTP, never persisted)
 partitions/             ESP32 flash layouts (4 MB shared by C2 + NM-TV-154, 8 MB for the Pro)
 n8n/                    webhook contract and importable workflows
+extra_script.py         Windows-only SCons spawn workaround for the ESP8266 envs
 ```
+
+## Windows builds
+
+`extra_script.py` replaces SCons's process spawn on Windows. The default path sends build-tool command lines through `cmd.exe`, which can mis-tokenize the long quoted lines this project generates and fail a `.cpp` compile with "no such file or directory". The script re-tokenizes the line itself and starts the process directly, including the `\"`-escaped quotes the ESP8266 `ARDUINO_BOARD_ID` define carries.
+
+It is wired into `[env:smalltv]` with `extra_scripts = pre:extra_script.py`, so `smalltv_lean` inherits it through `extends`. The override is gated on `os.name == "nt"` and does nothing on Linux or macOS, where SCons escapes for `sh` with single quotes that this tokenizer does not parse. The ESP32 envs do not use it.
 
 ## ESP32 toolchain notes
 
