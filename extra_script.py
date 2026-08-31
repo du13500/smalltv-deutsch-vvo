@@ -44,4 +44,7 @@ def _spawn(sh, escape, cmd, args, spawnenv):
     except OSError:
         return subprocess.run(cmdline, env=full_env, shell=True, cwd=PROJECT_DIR).returncode
 
-env["SPAWN"] = _spawn
+# Windows-only: POSIX SCons spawns via sh with single-quote escaping, which
+# the double-quote-only tokenizer above would mis-parse.
+if os.name == "nt":
+    env["SPAWN"] = _spawn
