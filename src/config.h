@@ -133,6 +133,40 @@
 #define NOTIFY_TTL_MIN_SEC       2
 #define NOTIFY_TTL_MAX_SEC     120
 
+// Pending overlays wait in a fixed-size queue rather than overwriting each other,
+// so a burst shows every event in turn instead of only the last one. Depth and
+// label length are the whole RAM cost of the feature and the ESP8266 pays for
+// them out of the same 80 KB arena as the heap, so it gets the smaller pair:
+// 2 x 64 B of label against 4 x 112 B here.
+#if defined(SMALLTV_ESP32) || defined(SMALLTV_ESP32C2) || defined(SMALLTV_ESP32_PRO)
+#define NOTIFY_QUEUE_DEPTH       4
+#define NOTIFY_LABEL_MAX        96
+#else
+#define NOTIFY_QUEUE_DEPTH       2
+#define NOTIFY_LABEL_MAX        48
+#endif
+#define NOTIFY_TITLE_MAX        20   // the word above the label, one panel line
+
+// Priority decides queue order and pre-emption: a strictly higher one jumps the
+// queue and takes the panel from whatever is on it. Values are what the API's
+// "priority" field accepts, so they are part of the contract.
+#define NOTIFY_PRIO_LOW          0
+#define NOTIFY_PRIO_MED          1
+#define NOTIFY_PRIO_HIGH         2
+#define NOTIFY_PRIO_MAX          3
+
+// Marquee for labels wider than the panel: pixels per step and step interval.
+// A character is GFX_FONT_W * NOTIFY_LABEL_SIZE = 12 px wide, so 4 px every
+// 40 ms is 100 px/s, or 120 ms per character. At that speed a 90-character
+// label (1108 px including the gap) takes about 11 s for one pass, so the
+// default 20 s hold shows it just under twice. Half this speed did not finish a
+// single pass within the default hold. The step is what changed, not the
+// interval: the band is redrawn at the same 25 Hz as before.
+#define NOTIFY_SCROLL_STEP_PX    4
+#define NOTIFY_SCROLL_MS        40
+#define NOTIFY_SCROLL_GAP_PX    28   // blank run between the end and the repeat
+#define NOTIFY_SCROLL_PAUSE_MS 900   // hold at the start before scrolling begins
+
 // ---------------------------------------------------------------------------
 // Home Assistant screens (MODE_HA, features/ha): full screens pushed over MQTT
 // as retained JSON draw lists, one per slot, on smalltv/<hostname>/screen/<slot>.

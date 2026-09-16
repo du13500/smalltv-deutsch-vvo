@@ -275,7 +275,9 @@ void loop() {
   appApplyBrightness();
 
   // On expiry the carousel dwell is credited back the time it was hidden, so it
-  // resumes on the same feature with the same remaining slice.
+  // resumes on the same feature with the same remaining slice. heldMs() spans
+  // the whole run rather than the last request in it, so a queue that chained
+  // four overlays credits back all four.
 #if WITH_NOTIFY
   static bool wasNotifying = false;
   if (g_notifyMode.active()) {
