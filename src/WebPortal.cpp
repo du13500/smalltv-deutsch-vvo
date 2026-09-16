@@ -367,7 +367,11 @@ static void handleUsagePush() {
               ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
 
-// Attention overlay: {"state":"done"|"waiting","ttl":<seconds>,"label":"<text>"}.
+// Attention overlay. Every field is optional and falls back to the preset named
+// by "type" (itself defaulting to "info"), so the smallest useful request is
+// {"label":"..."} and the largest overrides the lot:
+//   {"type":"alert","title":"NAS","label":"<text>","anim":"bang",
+//    "color":"#3399ff","ttl":<seconds>,"priority":0..3}
 // Never persisted. Behind the password like the rest of the API: unlike the
 // daemon's usage push, whatever fires these is a script of your own and can
 // send credentials, and taking over the whole screen is not something to leave
@@ -381,12 +385,38 @@ static void handleNotify() {
     server.send(400, "text/plain", "bad json");
     return;
   }
-  const char* state = doc["state"] | "";
-  const char* label = doc["label"] | "";
-  uint32_t    ttl   = doc["ttl"] | (uint32_t)NOTIFY_TTL_DEFAULT_SEC;
-  bool ok = g_notifyMode.request(state, ttl, label);
-  server.send(ok ? 200 : 400, "application/json",
-              ok ? "{\"ok\":true}" : "{\"ok\":false}");
+  // "state" is what the endpoint shipped with, before types existed. It named
+  // the same two things "type" now does, so it is read as an alias rather than
+  // a second field: scripts written against the old API keep working untouched.
+  const char* type = doc["type"];
+  if (!type) type = doc["state"];
+
+  NotifyRequest r;
+  r.type  = type;
+  r.title = doc["title"];
+  r.label = doc["label"];
+  r.anim  = doc["anim"];
+  r.color = doc["color"];
+  r.ttlSec = doc["ttl"] | (uint32_t)0;              // 0 -> the preset's own hold
+  r.prio   = doc["priority"] | (int)-1;             // <0 -> the preset's own priority
+
+  // A full queue answers 429, not 400: it is the one failure worth retrying, and
+  // a script cannot back off sensibly if it looks the same as a typo in "type".
+  switch (g_notifyMode.request(r)) {
+    case NOTIFY_REJECTED:
+      server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad request\"}");
+      return;
+    case NOTIFY_QUEUE_FULL:
+      server.send(429, "application/json", "{\"ok\":false,\"error\":\"queue full\"}");
+      return;
+    case NOTIFY_ACCEPTED:
+      break;
+  }
+
+  char body[48];
+  snprintf(body, sizeof(body), "{\"ok\":true,\"queued\":%u}",
+           (unsigned)g_notifyMode.queued());
+  server.send(200, "application/json", body);
 }
 #endif
 
