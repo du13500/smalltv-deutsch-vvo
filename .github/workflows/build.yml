@@ -22,25 +22,51 @@ jobs:
         with:
           python-version: '3.12'
 
+      # restore-keys matters more than the key does. A cold ~/.platformio is not
+      # merely slower, it is the one state in which the build breaks (see the
+      # SCons note below), and the key is a hash of platformio.ini, so every
+      # ordinary edit to that file used to force the broken path and look like
+      # the edit's fault. The prefix fallback reuses the last good cache instead.
+      # The workflow file is in the key too: it pins the toolchain, so a change
+      # here is a toolchain change and deserves a fresh entry.
       - name: Cache PlatformIO
         uses: actions/cache@v4
         with:
           path: |
             ~/.platformio
             ~/.cache/pip
-          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini', '.github/workflows/build.yml') }}
+          restore-keys: |
+            pio-${{ runner.os }}-
 
       # Pinned, because SCons 4.9 dropped SCons.Tool.FortranCommon and the ESP-IDF
       # builder still imports it: unpinned, the two envs carrying a custom sdkconfig
-      # (smalltv_esp32, smalltv_c2) die with ModuleNotFoundError. Core selects SCons
-      # itself, via a hard "tool-scons" range in platformio/dependencies.py, so
-      # installing an older tool-scons alongside does nothing. 6.1.19 asks for
-      # ~4.40801.0 (SCons 4.8.1, still has the module); 6.2.0 asks for ~4.41101.0
-      # (SCons 4.11.1, does not). Only the core version decides, so pin that.
+      # (smalltv_esp32, smalltv_c2) die with ModuleNotFoundError at checkprogsize,
+      # after a successful link. Core selects SCons itself, via a hard "tool-scons"
+      # range in platformio/dependencies.py, so installing an older tool-scons
+      # alongside does nothing. 6.1.19 asks for ~4.40801.0 (SCons 4.8.1, still has
+      # the module); 6.2.0 asks for ~4.41101.0 (SCons 4.11.1, does not). Only the
+      # core version decides, so pin that.
       #
-      # This surfaced when the ~/.platformio cache expired: v2.13.0 built on
-      # 2026-08-31 against a cached toolchain, and tool-scons 4.41101.0 had landed
-      # on 2026-08-27. Revisit when PlatformIO or ESP-IDF stops needing 4.8.
+      # `pip install platformio==6.1.19` is NOT enough on its own, which is what
+      # this file used to assume. The custom_sdkconfig path rebuilds the IDF libs
+      # and, on the way back into the Arduino compile, upgrades PlatformIO itself:
+      # the log reads "Please wait while upgrading... Pio has been successfully
+      # upgraded to 6.2.0!", and the next two lines install scons-local-4.11.1 over
+      # the pinned 4.8.1. That rebuild only runs when ~/.platformio is cold, which
+      # is why the pin looked like it worked. Measured on run 35151515742
+      # (2026-09-16): cold cache, both ESP-IDF envs dead.
+      #
+      # The upgrade is pip: platformio/commands/upgrade.py shells out to
+      # `python -m pip install --upgrade <spec>`. So PIP_CONSTRAINT reaches it,
+      # the subprocess inherits the variable, and the resolve lands back on the
+      # version already installed, which makes the upgrade a no-op rather than an
+      # error. Revisit when PlatformIO or ESP-IDF stops needing SCons 4.8.
+      - name: Pin PlatformIO for every pip in this job
+        run: |
+          echo 'platformio==6.1.19' > "${{ runner.temp }}/pio-constraints.txt"
+          echo "PIP_CONSTRAINT=${{ runner.temp }}/pio-constraints.txt" >> "$GITHUB_ENV"
+
       - name: Install PlatformIO
         run: pip install platformio==6.1.19
 
@@ -53,24 +79,36 @@ jobs:
       # second app image, -lean, with Home Assistant and the usage meter
       # compiled out; UPDATE_ASSET in src/config.h maps each build back to its
       # own file name so self-update keeps a device on the variant it runs.
+      # always() with a tolerant copy, for the same reason as the upload below:
+      # when one env dies the other five still built, and those binaries are
+      # usually what the next question needs. A missing file is a warning here,
+      # not a reason to hand over nothing. The build step's own exit status still
+      # decides whether the run is red.
       - name: Stage artifacts
+        if: always()
         run: |
           mkdir -p dist
-          cp .pio/build/smalltv/firmware.bin               dist/smalltv-mod-firmware.bin
-          cp .pio/build/smalltv_lean/firmware.bin          dist/smalltv-mod-firmware-lean.bin
-          cp .pio/build/smalltv_c2/firmware.bin            dist/smalltv-mod-firmware-c2.bin
-          cp .pio/build/smalltv_c2/firmware.factory.bin    dist/smalltv-mod-firmware-c2.factory.bin
-          cp .pio/build/smalltv_esp32/firmware.bin         dist/smalltv-mod-firmware-esp32.bin
-          cp .pio/build/smalltv_esp32/firmware.factory.bin dist/smalltv-mod-firmware-esp32.factory.bin
-          cp .pio/build/smalltv_esp32_8mb/firmware.bin         dist/smalltv-mod-firmware-esp32-pro.bin
-          cp .pio/build/smalltv_esp32_8mb/firmware.factory.bin dist/smalltv-mod-firmware-esp32-pro.factory.bin
-          cp .pio/build/smalltv_loader/firmware.bin        dist/smalltv-mod-loader.bin
+          copy() { [ -f "$1" ] && cp "$1" "$2" || echo "missing: $1"; }
+          copy .pio/build/smalltv/firmware.bin dist/smalltv-mod-firmware.bin
+          copy .pio/build/smalltv_lean/firmware.bin dist/smalltv-mod-firmware-lean.bin
+          copy .pio/build/smalltv_c2/firmware.bin dist/smalltv-mod-firmware-c2.bin
+          copy .pio/build/smalltv_c2/firmware.factory.bin dist/smalltv-mod-firmware-c2.factory.bin
+          copy .pio/build/smalltv_esp32/firmware.bin dist/smalltv-mod-firmware-esp32.bin
+          copy .pio/build/smalltv_esp32/firmware.factory.bin dist/smalltv-mod-firmware-esp32.factory.bin
+          copy .pio/build/smalltv_esp32_8mb/firmware.bin dist/smalltv-mod-firmware-esp32-pro.bin
+          copy .pio/build/smalltv_esp32_8mb/firmware.factory.bin dist/smalltv-mod-firmware-esp32-pro.factory.bin
+          copy .pio/build/smalltv_loader/firmware.bin dist/smalltv-mod-loader.bin
 
+      # always(), so a run that dies after linking still hands over whatever was
+      # produced. A size question cannot be answered from a red run with no
+      # artifacts, and the step that reports sizes is the one that fails here.
       - name: Upload build artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: smalltv-mod-firmware
           path: dist/
+          if-no-files-found: warn
 
       # generate_release_notes fills the body with the commits and PRs since the
       # previous tag, so a release is never published blank. Editing the release
