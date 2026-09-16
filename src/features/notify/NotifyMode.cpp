@@ -74,6 +74,11 @@ bool NotifyMode::request(const char* state, uint32_t ttlSec, const char* label) 
   if (ttlSec < NOTIFY_TTL_MIN_SEC) ttlSec = NOTIFY_TTL_MIN_SEC;
   if (ttlSec > NOTIFY_TTL_MAX_SEC) ttlSec = NOTIFY_TTL_MAX_SEC;
 
+  // A request that lands while the overlay is still up extends that run; only
+  // one that finds the panel free starts a new one. The carousel is credited the
+  // whole run, not just the tail after the last refresh.
+  if (!active()) runStartedMs_ = millis();
+
   startedMs_    = millis();
   untilMs_      = startedMs_ + ttlSec * 1000UL;
   frame_        = 0;

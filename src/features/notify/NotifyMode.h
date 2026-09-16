@@ -17,7 +17,13 @@ class NotifyMode : public DisplayMode {
 
   bool     request(const char* state, uint32_t ttlSec, const char* label);
   bool     active() const;
-  uint32_t heldMs() const { return millis() - startedMs_; }
+  // How long the overlay has covered the panel, from the request that put it up
+  // rather than the last one that refreshed it. Capped at the expiry so the few
+  // milliseconds before main.cpp notices it has ended are not credited too.
+  uint32_t heldMs() const {
+    const uint32_t now = millis();
+    return (((int32_t)(now - untilMs_) >= 0) ? untilMs_ : now) - runStartedMs_;
+  }
 
  private:
   void draw(bool full);
@@ -26,6 +32,7 @@ class NotifyMode : public DisplayMode {
   char     label_[NOTIFY_LABEL_MAX + 1] = {0};
   uint8_t  anim_ = 0;
   uint32_t startedMs_ = 0;
+  uint32_t runStartedMs_ = 0;   // first request of an unbroken run
   uint32_t untilMs_ = 0;
   uint16_t frame_ = 0;
   uint32_t frameStartMs_ = 0;

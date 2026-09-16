@@ -37,7 +37,7 @@ The overlay is not a mode. It cannot be selected in the Display tab and it never
 
 Handing back is careful about the carousel. The time the overlay spent on screen is credited back to the rotation timer, so if the ticker had four seconds left when the alert arrived, it still has four seconds left afterwards, on the same symbol. The underlying feature repaints from what it already had rather than re-fetching, so an alert costs no extra network traffic.
 
-One edge to that: the credit counts from the most recent alert only. A burst that keeps replacing itself is credited just the last one, so the rotation still moves on while the panel was covered. Three twenty-second alerts fired twenty seconds apart hide the carousel for about a minute and give back about twenty seconds of it.
+The credit covers the whole time the panel was covered, not just the stretch after the most recent alert: a burst that keeps replacing itself is credited from the first request of the burst to the moment the last one expires.
 
 Nothing about a notification is saved. There is no history, and a reboot leaves no trace of one.
 
