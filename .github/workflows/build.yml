@@ -29,8 +29,20 @@ jobs:
       # the edit's fault. The prefix fallback reuses the last good cache instead.
       # The workflow file is in the key too: it pins the toolchain, so a change
       # here is a toolchain change and deserves a fresh entry.
-      - name: Cache PlatformIO
-        uses: actions/cache@v4
+      #
+      # Split into restore + save because actions/cache declares
+      # `post-if: success()`, so a red job never writes a cache. That is what
+      # made the cold failure self-perpetuating: the run builds the ESP-IDF
+      # framework into ~/.platformio, dies at checkprogsize, and throws it away,
+      # so the next run is cold and dies the same way. Measured on run
+      # 35156418997 (2026-09-16): "Post Cache PlatformIO" skipped. Saving on
+      # failure does not fix that build, it only means the re-run is warm and
+      # passes, which turns a state CI cannot leave on its own into one retry.
+      # `save-always` is not the way to do this: it is deprecated as "does not
+      # work as intended" and its message points at this split.
+      - name: Restore PlatformIO cache
+        id: pio-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.platformio
@@ -124,3 +136,17 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+
+      # always(), and last, so a run that dies in the build still hands the next
+      # one a warm ~/.platformio. The cache-hit guard covers the exact-key case,
+      # where the entry already exists and saving would only warn. The key comes
+      # from cache-primary-key rather than a second copy of the expression above,
+      # so the two cannot drift.
+      - name: Save PlatformIO cache
+        if: always() && steps.pio-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: ${{ steps.pio-cache.outputs.cache-primary-key }}
