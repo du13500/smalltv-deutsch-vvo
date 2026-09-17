@@ -5,8 +5,8 @@
 <h1 align="center">smalltv-mod</h1>
 
 <p align="center">
-  <a href="https://github.com/giovi321/smalltv-mod/actions/workflows/build.yml"><img src="https://github.com/giovi321/smalltv-mod/actions/workflows/build.yml/badge.svg" alt="Build"></a>
-  <a href="https://github.com/giovi321/smalltv-mod/actions/workflows/docs.yml"><img src="https://github.com/giovi321/smalltv-mod/actions/workflows/docs.yml/badge.svg" alt="Docs"></a>
+  <a href="https://github.com/giovi321/smalltv-mod/actions/workflows/build.yml"><img src="https://github.com/giovi321/smalltv-mod/actions/workflows/build.yml/badge.svg?branch=main&amp;event=push" alt="Build"></a>
+  <a href="https://github.com/giovi321/smalltv-mod/actions/workflows/docs.yml"><img src="https://github.com/giovi321/smalltv-mod/actions/workflows/docs.yml/badge.svg?branch=main&amp;event=push" alt="Docs"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-WTFPL-blue.svg" alt="License: WTFPL"></a>
   <img src="https://img.shields.io/badge/platform-ESP8266%20%7C%20ESP32--C2%20%7C%20ESP32-informational" alt="ESP8266, ESP32-C2, and ESP32">
 </p>
