@@ -25,6 +25,10 @@ This firmware builds four images from one codebase, covering five devices. The o
   <img src="docs/public/assets/screen.svg" alt="The SmallTV running its three modes: stock ticker, Claude usage, and plane radar" width="900" />
 </p>
 
+<p align="center">
+  <img src="docs/public/assets/screen2.svg" alt="Three more SmallTV screens: a Home Assistant screen pushed over MQTT, a notification overlay, and the ticker's portfolio summary" width="900" />
+</p>
+
 ## Which one do I have
 
 Check the board before you build, because the variants flash differently.
