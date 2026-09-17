@@ -29,20 +29,8 @@ jobs:
       # the edit's fault. The prefix fallback reuses the last good cache instead.
       # The workflow file is in the key too: it pins the toolchain, so a change
       # here is a toolchain change and deserves a fresh entry.
-      #
-      # Split into restore + save because actions/cache declares
-      # `post-if: success()`, so a red job never writes a cache. That is what
-      # made the cold failure self-perpetuating: the run builds the ESP-IDF
-      # framework into ~/.platformio, dies at checkprogsize, and throws it away,
-      # so the next run is cold and dies the same way. Measured on run
-      # 35156418997 (2026-09-16): "Post Cache PlatformIO" skipped. Saving on
-      # failure does not fix that build, it only means the re-run is warm and
-      # passes, which turns a state CI cannot leave on its own into one retry.
-      # `save-always` is not the way to do this: it is deprecated as "does not
-      # work as intended" and its message points at this split.
-      - name: Restore PlatformIO cache
-        id: pio-cache
-        uses: actions/cache/restore@v4
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
         with:
           path: |
             ~/.platformio
@@ -81,26 +69,6 @@ jobs:
 
       - name: Install PlatformIO
         run: pip install platformio==6.1.19
-
-      # This phase exists to absorb the ESP-IDF rebuild, which is the thing that
-      # breaks the build. Each IDF target rebuilds its framework once per job,
-      # and the rebuild pulls scons-local-4.11.1 over the pinned 4.8.1, so the
-      # env that triggers it dies at checkprogsize while every later env sharing
-      # that framework passes: smalltv_esp32_wg passed straight after
-      # smalltv_esp32 failed on runs 35225571924 and 35227546824. smalltv_c2 and
-      # smalltv_esp32 are different chips and rebuild separately, so both belong
-      # here. The failure is expected and discarded; phase two decides the run.
-      #
-      # The swap also wipes .pio/build, which is why a failed run stages so
-      # little: on 35227546824 the three ESP8266 envs reported SUCCESS and left
-      # no binary, and only the two envs built after the swap survived.
-      #
-      # A warm cache does not spare this. Run 35227546824 restored
-      # ~/.platformio from the run before it and rebuilt anyway, with no core
-      # upgrade anywhere in the log, which is also why pinning PlatformIO is not
-      # sufficient on its own.
-      - name: Warm the ESP-IDF frameworks
-        run: pio run -e smalltv_c2 -e smalltv_esp32 || true
 
       - name: Build firmware (all targets)
         run: pio run -e smalltv -e smalltv_lean -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_wg -e smalltv_esp32_8mb -e smalltv_loader
@@ -156,17 +124,3 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
-
-      # always(), and last, so a run that dies in the build still hands the next
-      # one a warm ~/.platformio. The cache-hit guard covers the exact-key case,
-      # where the entry already exists and saving would only warn. The key comes
-      # from cache-primary-key rather than a second copy of the expression above,
-      # so the two cannot drift.
-      - name: Save PlatformIO cache
-        if: always() && steps.pio-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.platformio
-            ~/.cache/pip
-          key: ${{ steps.pio-cache.outputs.cache-primary-key }}
