@@ -57,15 +57,31 @@ jobs:
       # is why the pin looked like it worked. Measured on run 35151515742
       # (2026-09-16): cold cache, both ESP-IDF envs dead.
       #
-      # The upgrade is pip: platformio/commands/upgrade.py shells out to
-      # `python -m pip install --upgrade <spec>`. So PIP_CONSTRAINT reaches it,
-      # the subprocess inherits the variable, and the resolve lands back on the
-      # version already installed, which makes the upgrade a no-op rather than an
-      # error. Revisit when PlatformIO or ESP-IDF stops needing SCons 4.8.
-      - name: Pin PlatformIO for every pip in this job
+      # PIP_CONSTRAINT alone does not reach it, which is what this file used to
+      # assume. `pip install platformio==6.1.19` above lands in the runner's own
+      # Python, but pio re-execs from ~/.platformio/penv, and that venv is
+      # uv-managed, so the upgrade resolves through uv and PIP_CONSTRAINT never
+      # binds. Run 35225571924 (2026-09-17) shows the sequence plainly:
+      # "Created pioarduino Python virtual environment: /home/runner/.platformio/penv"
+      # and then "Pio has been successfully upgraded to 6.2.0!", with
+      # PIP_CONSTRAINT set for the whole job.
+      #
+      # uv reads UV_CONSTRAINT, so both point at the same file and the resolve
+      # lands back on the version already installed, which makes the upgrade a
+      # no-op rather than an error. Revisit when PlatformIO or ESP-IDF stops
+      # needing SCons 4.8.
+      #
+      # The venv is inside the cached path, so a run that upgrades it poisons
+      # every run that restores it: 6.2.0 then asks for scons 4.11.1 with no
+      # upgrade line in the log at all. That is why the cache must never be
+      # written by a red run, and why the plain actions/cache post step, which
+      # declares post-if: success(), is the right behaviour here rather than a
+      # restore/save split.
+      - name: Pin PlatformIO for every pip and uv in this job
         run: |
           echo 'platformio==6.1.19' > "${{ runner.temp }}/pio-constraints.txt"
           echo "PIP_CONSTRAINT=${{ runner.temp }}/pio-constraints.txt" >> "$GITHUB_ENV"
+          echo "UV_CONSTRAINT=${{ runner.temp }}/pio-constraints.txt" >> "$GITHUB_ENV"
 
       - name: Install PlatformIO
         run: pip install platformio==6.1.19
