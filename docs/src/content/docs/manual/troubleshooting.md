@@ -74,7 +74,7 @@ If the device cannot reach any saved network at all (say, after a full house mov
 
 ## The WireGuard tunnel will not come up
 
-Only the ESP32-C2 and the SmallTV Pro carry the client; the other boards have no WireGuard card in the settings page. The line at the top of the card names the problem, so read that first.
+The ESP32-C2 and the SmallTV Pro carry the client, and so does an NM-TV-154 flashed with the `-esp32-wg` image; the ESP8266 boards and a plain-image NM-TV-154 have no WireGuard card in the settings page at all. If the card is missing on an NM-TV-154, check the variant next to the version in the System tab: it reads `esp32` on the image without the tunnel and `esp32-wg` on the one with it. The line at the top of the card names the problem, so read that first.
 
 - "Waiting for the endpoint name to resolve" means DNS has not answered. Check the endpoint hostname, or put the server's IP address there instead.
 - "Handshakes sent with no reply" means the device reached the server and got nothing back. The server needs a peer entry carrying this device's public key, and UDP on the endpoint port has to reach it.

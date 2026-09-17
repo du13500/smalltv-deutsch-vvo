@@ -19,15 +19,25 @@
 #define REPO_OWNER    "giovi321"
 #define REPO_NAME     "smalltv-mod"
 // Release asset the GitHub self-updater pulls, and the short variant name shown
-// in the web UI. One app image per target; the ESP8266 has two, standard and
-// lean, so a device keeps its own variant across a self-update instead of
+// in the web UI. One app image per target, plus a second one for the two boards
+// that ship a stripped or extended build of the same hardware: the ESP8266
+// (standard and lean) and the NM-TV-154 (with and without the WireGuard
+// client). A device keeps its own variant across a self-update instead of
 // silently gaining or losing features.
+//
+// Order matters: this is an #if defined() chain, and both SMALLTV_ESP32_PRO and
+// SMALLTV_ESP32_WG are defined alongside SMALLTV_ESP32 rather than instead of
+// it, so they have to be tested first or they fall into the plain esp32 case
+// and the device self-updates itself onto the wrong image.
 #if defined(SMALLTV_ESP32C2)
   #define UPDATE_ASSET "smalltv-mod-firmware-c2.bin"
   #define FW_VARIANT   "c2"
 #elif defined(SMALLTV_ESP32_PRO)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32-pro.bin"
   #define FW_VARIANT   "esp32-pro"
+#elif defined(SMALLTV_ESP32_WG)
+  #define UPDATE_ASSET "smalltv-mod-firmware-esp32-wg.bin"
+  #define FW_VARIANT   "esp32-wg"
 #elif defined(SMALLTV_ESP32)
   #define UPDATE_ASSET "smalltv-mod-firmware-esp32.bin"
   #define FW_VARIANT   "esp32"
@@ -100,10 +110,15 @@
 
 // ---------------------------------------------------------------------------
 // WireGuard client. Compiled only where the image has room for it: see
-// SMALLTV_WIREGUARD in platformio.ini, which sets it for the ESP32-C2 and the
-// 8 MB SmallTV Pro. Reaches the device from outside the LAN without forwarding
-// its plain-HTTP port to the internet. The ESP8266 has neither the flash nor
-// the heap for it.
+// SMALLTV_WIREGUARD in platformio.ini, which sets it for the ESP32-C2, the 8 MB
+// SmallTV Pro, and smalltv_esp32_wg, the second NM-TV-154 image. Reaches the
+// device from outside the LAN without forwarding its plain-HTTP port to the
+// internet. The ESP8266 has neither the flash nor the heap for it.
+//
+// The field sizes below are compiled unconditionally, and Settings still reads
+// and writes the wg block whether or not the client is in the image. That is
+// deliberate: it lets an NM-TV-154 move between the esp32 and esp32-wg images
+// without losing a tunnel configuration it already had.
 // ---------------------------------------------------------------------------
 #define MAX_WG_KEY_LEN    48   // base64 x25519 key is 44 chars + NUL, with headroom
 #define MAX_WG_HOST_LEN   64   // endpoint hostname or IP

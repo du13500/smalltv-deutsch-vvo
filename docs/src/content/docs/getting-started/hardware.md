@@ -93,8 +93,14 @@ The pins are set in `src/board_esp32c2.h`. Two panel quirks are worth knowing: t
 | MCU | ESP32-WROOM-32E (ESP32-D0WD-V3), 40 MHz crystal, 4 MB flash |
 | Display | 1.54" 240×240 IPS ST7789, SPI, RGB colour order |
 | Sold as | NMMiner NM-TV-154 BTC lottery miner, PCB marked "NM-TV-Miner" |
-| WireGuard VPN | not in the published image, no flash left for it |
-| Build env | `smalltv_esp32` |
+| WireGuard VPN | in the second image only, `-esp32-wg` |
+| Build env | `smalltv_esp32`, or `smalltv_esp32_wg` |
+
+Two images are published for this board, and the only difference is the WireGuard client. `smalltv-mod-firmware-esp32.bin` leaves it out; `smalltv-mod-firmware-esp32-wg.bin` compiles it in. Both carry every other feature, run the same code and use the same partition table.
+
+The split exists because of flash. The 4 MB layout gives each OTA slot 1,572,864 bytes, and the classic ESP32's own framework libraries cost about 100 KB more than the ESP32-C2's. The published images measure 1,422,042 bytes (90.4%) without the client and 1,467,670 bytes (93.3%) with it, so the tunnel costs 45,628 bytes and leaves 105,194 free. Both fit comfortably. It is still a choice because the slot cannot be grown without a new partition table, and a device in the field cannot install one over the air, so the room the plain image keeps is the only room this board will ever have for whatever the firmware grows into next, and the tunnel spends about a third of it.
+
+Take `-esp32-wg` if you want to reach the device from outside your LAN. Take the plain one otherwise. Swapping later is a manual upload in the System tab and needs no cable, because the two images share a partition table; [Which release file to download](/smalltv-mod/reference/release-assets/#switch-a-device-from-one-variant-to-the-other) walks through it.
 
 The pin map comes from [NMMiner's own custom-firmware guide](https://www.nmminer.com/2026/03/02/how-to-develop-nm-tv-custom-firmware/) for the device and is confirmed working on hardware by a community tester in [issue #1](https://github.com/giovi321/smalltv-mod/issues/1): display, colours, backlight PWM, and the 4 MB flash layout all check out.
 

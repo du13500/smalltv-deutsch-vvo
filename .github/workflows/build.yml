@@ -40,13 +40,13 @@ jobs:
             pio-${{ runner.os }}-
 
       # Pinned, because SCons 4.9 dropped SCons.Tool.FortranCommon and the ESP-IDF
-      # builder still imports it: unpinned, the two envs carrying a custom sdkconfig
-      # (smalltv_esp32, smalltv_c2) die with ModuleNotFoundError at checkprogsize,
-      # after a successful link. Core selects SCons itself, via a hard "tool-scons"
-      # range in platformio/dependencies.py, so installing an older tool-scons
-      # alongside does nothing. 6.1.19 asks for ~4.40801.0 (SCons 4.8.1, still has
-      # the module); 6.2.0 asks for ~4.41101.0 (SCons 4.11.1, does not). Only the
-      # core version decides, so pin that.
+      # builder still imports it: unpinned, the envs carrying a custom sdkconfig
+      # (smalltv_esp32, smalltv_esp32_wg, smalltv_c2) die with ModuleNotFoundError
+      # at checkprogsize, after a successful link. Core selects SCons itself, via
+      # a hard "tool-scons" range in platformio/dependencies.py, so installing an
+      # older tool-scons alongside does nothing. 6.1.19 asks for ~4.40801.0
+      # (SCons 4.8.1, still has the module); 6.2.0 asks for ~4.41101.0
+      # (SCons 4.11.1, does not). Only the core version decides, so pin that.
       #
       # `pip install platformio==6.1.19` is NOT enough on its own, which is what
       # this file used to assume. The custom_sdkconfig path rebuilds the IDF libs
@@ -71,16 +71,18 @@ jobs:
         run: pip install platformio==6.1.19
 
       - name: Build firmware (all targets)
-        run: pio run -e smalltv -e smalltv_lean -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_8mb -e smalltv_loader
+        run: pio run -e smalltv -e smalltv_lean -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_wg -e smalltv_esp32_8mb -e smalltv_loader
 
       # One app image per target (web-UI OTA + GitHub self-update), the merged
       # factory images for first-time USB flashing of the ESP32 boards, and the
-      # minimal loader used to install onto a SmallTV-ultra. The ESP8266 gets a
-      # second app image, -lean, with Home Assistant and the usage meter
-      # compiled out; UPDATE_ASSET in src/config.h maps each build back to its
-      # own file name so self-update keeps a device on the variant it runs.
+      # minimal loader used to install onto a SmallTV-ultra. Two boards get a
+      # second app image: the ESP8266 gets -lean, with Home Assistant and the
+      # usage meter compiled out, and the NM-TV-154 gets -esp32-wg, with the
+      # WireGuard client compiled in. UPDATE_ASSET in src/config.h maps each
+      # build back to its own file name so self-update keeps a device on the
+      # variant it runs.
       # always() with a tolerant copy, for the same reason as the upload below:
-      # when one env dies the other five still built, and those binaries are
+      # when one env dies the other six still built, and those binaries are
       # usually what the next question needs. A missing file is a warning here,
       # not a reason to hand over nothing. The build step's own exit status still
       # decides whether the run is red.
@@ -95,6 +97,8 @@ jobs:
           copy .pio/build/smalltv_c2/firmware.factory.bin dist/smalltv-mod-firmware-c2.factory.bin
           copy .pio/build/smalltv_esp32/firmware.bin dist/smalltv-mod-firmware-esp32.bin
           copy .pio/build/smalltv_esp32/firmware.factory.bin dist/smalltv-mod-firmware-esp32.factory.bin
+          copy .pio/build/smalltv_esp32_wg/firmware.bin dist/smalltv-mod-firmware-esp32-wg.bin
+          copy .pio/build/smalltv_esp32_wg/firmware.factory.bin dist/smalltv-mod-firmware-esp32-wg.factory.bin
           copy .pio/build/smalltv_esp32_8mb/firmware.bin dist/smalltv-mod-firmware-esp32-pro.bin
           copy .pio/build/smalltv_esp32_8mb/firmware.factory.bin dist/smalltv-mod-firmware-esp32-pro.factory.bin
           copy .pio/build/smalltv_loader/firmware.bin dist/smalltv-mod-loader.bin

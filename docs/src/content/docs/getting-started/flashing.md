@@ -100,6 +100,8 @@ Use the system esptool, not the one bundled with PlatformIO. The bundled version
 
 Same procedure as the ESP32-C2, with `--chip esp32` and `smalltv-mod-firmware-esp32.factory.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases) (or build it with `pio run -e smalltv_esp32`).
 
+This board has two images. The plain one above has no WireGuard client; `smalltv-mod-firmware-esp32-wg.factory.bin` does, for reaching the device from outside your LAN. They share a partition table, so either can be flashed here, and you can move between them later as an ordinary over-the-air upload in the System tab. [Which release file to download](/smalltv-mod/reference/release-assets/#switch-a-device-from-one-variant-to-the-other) explains the swap and what it costs in flash.
+
 ### Back up the stock image first
 
 The NMMiner stock firmware is not redistributed anywhere official, so this backup is your only way back:
@@ -116,7 +118,9 @@ If `esptool flash_id` reports more than 4 MB of flash, adjust the read length to
 python -m esptool --chip esp32 --port COM3 --baud 921600 write_flash 0x0 smalltv-mod-firmware-esp32.factory.bin
 ```
 
-With a source checkout, `pio run -e smalltv_esp32 -t upload` does the same thing.
+Swap in `smalltv-mod-firmware-esp32-wg.factory.bin` for the image with the WireGuard client.
+
+With a source checkout, `pio run -e smalltv_esp32 -t upload` does the same thing, or `pio run -e smalltv_esp32_wg -t upload` for the WireGuard image.
 
 ## SmallTV Pro (classic ESP32, 8 MB)
 

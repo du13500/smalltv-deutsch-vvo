@@ -1,6 +1,6 @@
 ---
 title: Building from source
-description: Build any of the four board targets with PlatformIO, the lean ESP8266 variant, and the ESP32 toolchain notes.
+description: Build any of the four board targets with PlatformIO, the lean ESP8266 and WireGuard ESP32 variants, and the ESP32 toolchain notes.
 ---
 
 The four board targets share one codebase and build from [PlatformIO](https://platformio.org/). Pick the env that matches your board.
@@ -10,13 +10,14 @@ pio run -e smalltv                 # ESP8266
 pio run -e smalltv_lean            # ESP8266, without HA screens or the usage meter
 pio run -e smalltv_c2              # ESP32-C2
 pio run -e smalltv_esp32           # NM-TV-154 (classic ESP32)
+pio run -e smalltv_esp32_wg        # the same board, with the WireGuard client
 pio run -e smalltv_esp32_8mb       # SmallTV Pro (classic ESP32, 8 MB flash)
 pio run -e smalltv_c2 -t upload    # build + flash the C2 over USB-C
 pio device monitor -e smalltv_c2   # serial logs @ 115200
 pio run -e smalltv_loader          # ESP8266 loader for the SmallTV-ultra
 ```
 
-Six envs, five published images plus the loader. Which file each env becomes is in [Which release file to download](/smalltv-mod/reference/release-assets/).
+Seven envs, six published images plus the loader. Two boards get two images each: the ESP8266 (`smalltv` and `smalltv_lean`) and the NM-TV-154 (`smalltv_esp32` and `smalltv_esp32_wg`). Which file each env becomes is in [Which release file to download](/smalltv-mod/reference/release-assets/).
 
 ## The smalltv_lean env
 
@@ -133,12 +134,31 @@ The ESP32 targets have a few requirements the ESP8266 does not.
 
 ## WireGuard
 
-The optional WireGuard client is compiled into `smalltv_c2` and `smalltv_esp32_8mb`, the two envs whose app slot has room for it. Its switches live in those envs in `platformio.ini`: `-D SMALLTV_WIREGUARD=1` plus `-D CONFIG_WIREGUARD_MAX_PEERS=1` and `-D CONFIG_WIREGUARD_MAX_SRC_IPS=5`, and `droscy/esp_wireguard @ 0.4.5` in `lib_deps`. These have to be `build_flags`, not `build_src_flags`, because they must reach the library's own translation units. Without the flag `src/WgClient.cpp` compiles to no-op stubs, so every other env builds unchanged.
+The optional WireGuard client is compiled into `smalltv_c2`, `smalltv_esp32_8mb` and `smalltv_esp32_wg`. Its switches live in those envs in `platformio.ini`: `-D SMALLTV_WIREGUARD=1` plus `-D CONFIG_WIREGUARD_MAX_PEERS=1` and `-D CONFIG_WIREGUARD_MAX_SRC_IPS=5`, and `droscy/esp_wireguard @ 0.4.5` in `lib_deps`. These have to be `build_flags`, not `build_src_flags`, because they must reach the library's own translation units. Without the flag `src/WgClient.cpp` compiles to no-op stubs, so every other env builds unchanged.
 
-To build it for `smalltv_esp32` anyway, copy those four lines into that env. It links, but at 1,571,195 bytes against a 1,572,864-byte app slot, so it fits only as long as nothing else grows. To give it real room, raise both `app0` and `app1` in `partitions/smalltv_4mb_ota.csv` and take the space from `spiffs` (0xF0000 is generous for one `config.json`). That is a partition-table change, so the device has to be flashed over USB with `firmware.factory.bin`; an over-the-air update cannot install it.
+The two peer limits are compile-time because `esp_wireguard` allocates peers statically inside its device struct; both default to 1, and `MAX_SRC_IPS` has to cover every allowed-IPs entry plus the device's own address, which the component adds itself.
+
+### The smalltv_esp32_wg env
+
+`smalltv_esp32_wg` builds the same NM-TV-154 code as `smalltv_esp32` with the WireGuard client compiled in, and is published as `smalltv-mod-firmware-esp32-wg.bin`. It exists because this board's image is the tightest fit of the ESP32 boards, and the client is a meaningful slice of what is left:
+
+| Build | `firmware.bin` | Of the 1,572,864 B slot | Free |
+|-------|---------------|-------------------------|------|
+| `smalltv_esp32` | 1,422,042 B | 90.4% | 150,822 B |
+| `smalltv_esp32_wg` | 1,467,670 B | 93.3% | 105,194 B |
+
+Measured in CI, which is what builds the published binaries. The client costs 45,628 bytes, about a third of the plain image's spare flash. Both fit with room left, so this is a headroom decision rather than a hard limit: the plain image keeps all 150,822 spare bytes for whatever the firmware grows into next, and the WireGuard one spends a third of them on the tunnel.
+
+A local build reports about 75 KB more for each, 1,497,014 B and 1,543,046 B. That is the Arduino core, not your checkout: `platform` points at pioarduino's `stable` release, which is a mutable rolling tag, so a cold CI runner re-resolves it (55.3.311, core 3.3.11) while a warm `~/.platformio` keeps whatever it first cached (55.3.39, core 3.3.9 here). The published assets track the same step: the `esp32` image was 1,490,688 bytes at v2.13.1 and 1,453,632 at v2.14.0. Quote CI's figures for anything that describes a downloadable binary. That local build is also where the RAM numbers come from, since the table above does not carry them: 97,448 bytes without the client and 98,992 with it, so the tunnel costs 1,544 bytes of static RAM.
+
+Growing the slot is the alternative to the split, and it is not one a field device can take: raising `app0` and `app1` in `partitions/smalltv_4mb_ota.csv` at the expense of `spiffs` (0xF0000 is generous for one `config.json`) is a partition-table change, and only `firmware.factory.bin` over USB can install that.
+
+The env inherits `smalltv_esp32` through `extends` and interpolates that env's `build_flags` and `lib_deps` rather than restating them, so anything added to the base env reaches both images. It adds `-D SMALLTV_ESP32_WG`, which selects the matching `UPDATE_ASSET` and `FW_VARIANT` in `src/config.h` so a tunnel device self-updates to the tunnel image and a plain one stays plain. Everything else, including the board pin map, still keys off `SMALLTV_ESP32`.
+
+`custom_sdkconfig` is inherited unchanged, which matters for build times: pioarduino keeps one `sdkconfig.defaults` per project and rebuilds the whole Arduino/IDF framework whenever its hash changes. The two envs hash the same, so building them back to back costs one framework build, not two.
 
 ## Footprint
 
-Measured as the flashable `firmware.bin`, which is what an OTA slot has to hold: the ESP8266 build is 694 KB of a 1,020 KB budget and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The ESP32-C2 build is 1,469,520 bytes of a 1,572,864-byte app slot with the WireGuard client in it, using around 16 percent of RAM. The classic ESP32 build is 1,501,344 bytes in the same slot, which is why WireGuard is not in it. The SmallTV Pro runs the same code in a 2,228,224-byte slot and comes to 1,573,904 bytes with the client, 71 percent. The mascot frame data lives in flash, not the heap.
+Measured as the flashable `firmware.bin`, which is what an OTA slot has to hold. The ESP8266 build is 694 KB of a 1,020 KB budget and roughly half the RAM at boot, with headroom for OTA, which needs room for two sketch copies. The NM-TV-154 build is 1,422,042 bytes of a 1,572,864-byte app slot, 1,467,670 bytes with the WireGuard client, and uses about 30 percent of RAM. The ESP32-C2 shares that slot size and the SmallTV Pro has a 2,228,224-byte one; both carry the client. The figures this page used to give for those two have not been re-measured on the current toolchain, so they have been dropped rather than restated. The mascot frame data lives in flash, not the heap.
 
 The PC-side usage daemon is a separate repo: [clawdmeter-daemon](https://github.com/giovi321/clawdmeter-daemon).

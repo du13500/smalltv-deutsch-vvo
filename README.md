@@ -33,10 +33,10 @@ Check the board before you build, because the variants flash differently.
 |---|---|---|---|---|---|
 | Photo | <img src="docs/public/assets/product-8266.png" alt="The SmallTV (ESP8266)" width="240"> | <img src="docs/public/assets/product-ultra.png" alt="The SmallTV-ultra" width="240"> | <img src="docs/public/assets/product-c2.png" alt="The SmallTV (ESP32-C2)" width="240"> | <img src="docs/public/assets/product-esp32.png" alt="The NM-TV-154 (ESP32)" width="240"> | <img src="docs/public/assets/product-pro.png" alt="The GeekMagic SmallTV Pro" width="240"> |
 | MCU | ESP-12F (ESP8266), 4 MB flash | same ESP-12F (ESP8266), 4 MB flash | ESP32-C2 / ESP8684, 4 MB flash | ESP32-WROOM-32E, 4 MB flash | classic ESP32, 8 MB flash |
-| Build env | `smalltv`, or `smalltv_lean` | `smalltv` (same image, `smalltv_loader` to install) | `smalltv_c2` | `smalltv_esp32` | `smalltv_esp32_8mb` |
+| Build env | `smalltv`, or `smalltv_lean` | `smalltv` (same image, `smalltv_loader` to install) | `smalltv_c2` | `smalltv_esp32`, or `smalltv_esp32_wg` | `smalltv_esp32_8mb` |
 | Display | 1.54" 240×240 IPS ST7789 | same panel | same panel, RGB order | same panel | same panel |
 | Flashing | OTA from the stock web UI, or UART header | two-step [loader](#flashing) then OTA, or UART | USB-C via the onboard CH340C (esptool) | USB via esptool | OTA from the stock web UI, or UART header |
-| WireGuard VPN | no, the chip has neither the flash nor the heap | no, same chip | yes | no, the 4 MB image has no room left for it | yes, the 8 MB layout has room to spare |
+| WireGuard VPN | no, the chip has neither the flash nor the heap | no, same chip | yes | yes, in the separate `-esp32-wg` image; the default image leaves it out to keep flash headroom | yes, the 8 MB layout has room to spare |
 | Tell-tale | ESP8266 module, no USB-serial chip | stock firmware branded "Ultra", OTA of this image fails with "Not Enough Space" | CH340C chip next to the USB-C port | PCB reads "NM-TV-Miner" | sold as "SmallTV Pro", touch button on top |
 
 The screens in the photos above are each unit's **stock firmware**, not this one, and they differ by model and firmware version (the ultra ships as a weather clock, the original as a ticker, and so on). Use the on-screen look as a first clue to which model you are holding, then confirm with the tell-tale row, because the binary and the install method differ per model. If your board has a **CH340C** chip beside the USB-C port and the main chip reads **ESP8684**, you have the ESP32-C2 model. Full teardown photos and pin maps are in [Hardware and variants](https://giovi321.github.io/smalltv-mod/getting-started/hardware/).
@@ -48,7 +48,7 @@ The screens in the photos above are each unit's **stock firmware**, not this one
 - **Plane radar.** A scope centred on your location with nearby aircraft as heading triangles, speed vectors, and callsign or altitude labels, from the free [adsb.lol](https://adsb.lol) or [adsb.fi](https://adsb.fi) APIs or a LAN webhook. Marker size, an altitude filter, and label decluttering are configurable.
 - **Home Assistant screens over MQTT.** Publish a small JSON draw list to a LAN broker and the device shows it as a full 240×240 screen. Each carousel slot gets one retained message, and the device rotates through them. Not included in the lean ESP8266 image. See [Home Assistant screens](https://giovi321.github.io/smalltv-mod/features/ha/).
 - **Web UI for everything.** Join WiFi (up to 4 saved networks), pick the mode or a carousel that rotates through them, manage the symbol list, set brightness, orientation, and the panel's colour balance, set an NTP timezone and a nightly dimming schedule (night brightness, 0 = screen off), and back up or restore the whole configuration as a file. First boot creates a `SmallTV-Setup` hotspot with a captive portal.
-- **WireGuard VPN, on the ESP32-C2 and the SmallTV Pro.** A built-in tunnel, so you can reach the device from outside your LAN without forwarding its plain-HTTP port to the internet. Configured in the WiFi tab: private key, peer public key, endpoint, tunnel address, allowed IPs. Three crash reboots in a row hold the tunnel down at the next boot, so a bad tunnel config cannot lock you out of the settings page. Whether a board gets it comes down to how much of its update slot the image already uses; see [WireGuard VPN](https://giovi321.github.io/smalltv-mod/features/wireguard/) for the numbers.
+- **WireGuard VPN, on the ESP32-C2, the SmallTV Pro and the NM-TV-154.** A built-in tunnel, so you can reach the device from outside your LAN without forwarding its plain-HTTP port to the internet. Configured in the WiFi tab: private key, peer public key, endpoint, tunnel address, allowed IPs. Three crash reboots in a row hold the tunnel down at the next boot, so a bad tunnel config cannot lock you out of the settings page. The ESP8266 boards cannot have it at all, and on the NM-TV-154, whose image is the tightest fit of the three ESP32 boards, it ships as a second image rather than in the default one. See [WireGuard VPN](https://giovi321.github.io/smalltv-mod/features/wireguard/) for the numbers.
 - **Optional password on the web UI.** Off by default, so nothing changes unless you want it to. Turn it on in the System tab and the settings page, the API, and the firmware upload all sit behind HTTP digest auth, which keeps the password off the wire on a plain-HTTP LAN. The clawdmeter push endpoint stays open, since the daemon cannot send credentials and can only change what the screen shows. There is no recovery for a forgotten password other than reflashing over a cable.
 - **Updates over WiFi.** Every board pulls the newest release from GitHub itself from the web UI's System tab, or takes a manual firmware upload from the browser. On the ESP8266 the download runs at boot (the device reboots twice). **Warning: ESP8266 devices on firmware 2.6.1 or older cannot self-update** (the updater itself was broken; it fails with "connection failed"). Update those once manually: upload `smalltv-mod-firmware.bin` from the [Releases page](https://github.com/giovi321/smalltv-mod/releases) in the System tab. From 2.7.0 on, self-update works everywhere.
 
@@ -59,7 +59,7 @@ You do not need a toolchain. GitHub Actions builds the images for all the boards
 - Every push: the **Actions** tab, latest `build` run, download the firmware artifact.
 - Tagged releases (`vX.Y.Z`): attached to the [Releases](../../releases) page.
 
-Nine files come with each release. Pick by board first, then by whether you are installing for the first time or updating:
+Eleven files come with each release. Pick by board first, then by whether you are installing for the first time or updating:
 
 | File | Board | Use it for |
 |------|-------|-----------|
@@ -70,10 +70,12 @@ Nine files come with each release. Pick by board first, then by whether you are 
 | `smalltv-mod-firmware-c2.factory.bin` | SmallTV (ESP32-C2) | First install over USB-C |
 | `smalltv-mod-firmware-esp32.bin` | NM-TV-154 (ESP32) | Updates |
 | `smalltv-mod-firmware-esp32.factory.bin` | NM-TV-154 (ESP32) | First install over USB |
+| `smalltv-mod-firmware-esp32-wg.bin` | NM-TV-154 (ESP32) | The same board when you want the WireGuard tunnel. Updates |
+| `smalltv-mod-firmware-esp32-wg.factory.bin` | NM-TV-154 (ESP32) | The same, first install over USB |
 | `smalltv-mod-firmware-esp32-pro.bin` | SmallTV Pro (ESP32, 8 MB) | First install over the stock web UI, and every later update |
 | `smalltv-mod-firmware-esp32-pro.factory.bin` | SmallTV Pro (ESP32, 8 MB) | Direct install or recovery over the UART header |
 
-The names follow one pattern, `smalltv-mod-<image>[-<target>][.factory].bin`. No target suffix means the original ESP8266; `-lean`, `-c2`, `-esp32`, and `-esp32-pro` name the others. A `.factory` image is the merged bootloader, partition table, and app, written at offset `0x0` over a cable; without it the file is an app image sized for an OTA slot. The System tab shows which variant a device runs, and self-update keeps it on that variant. Full detail in [Which release file to download](https://giovi321.github.io/smalltv-mod/reference/release-assets/).
+The names follow one pattern, `smalltv-mod-<image>[-<target>][.factory].bin`. No target suffix means the original ESP8266; `-lean`, `-c2`, `-esp32`, `-esp32-wg`, and `-esp32-pro` name the others. A `.factory` image is the merged bootloader, partition table, and app, written at offset `0x0` over a cable; without it the file is an app image sized for an OTA slot. The System tab shows which variant a device runs, and self-update keeps it on that variant. Full detail in [Which release file to download](https://giovi321.github.io/smalltv-mod/reference/release-assets/).
 
 Or [build it yourself](#building-from-source).
 
@@ -135,12 +137,13 @@ pio run -e smalltv                 # ESP8266
 pio run -e smalltv_lean            # ESP8266, without HA screens or the usage meter
 pio run -e smalltv_c2              # ESP32-C2
 pio run -e smalltv_esp32           # NM-TV-154 (classic ESP32)
+pio run -e smalltv_esp32_wg        # the same, with the WireGuard client
 pio run -e smalltv_esp32_8mb       # SmallTV Pro (classic ESP32, 8 MB)
 pio run -e smalltv_c2 -t upload    # build + flash the C2 over USB-C
 pio device monitor -e smalltv_c2   # serial logs @ 115200
 ```
 
-The five images build from one codebase. Chip differences live in `src/Platform.h` and the per-board pin headers (`src/board_esp8266.h`, `src/board_esp32c2.h`, `src/board_esp32.h`, `src/board_esp32_pro.h`); the three feature modes and the web UI are identical across all of them. See [Building from source](https://giovi321.github.io/smalltv-mod/reference/building/) for the project layout and the ESP32 toolchain notes.
+The six images build from one codebase. Chip differences live in `src/Platform.h` and the per-board pin headers (`src/board_esp8266.h`, `src/board_esp32c2.h`, `src/board_esp32.h`, `src/board_esp32_pro.h`); the three feature modes and the web UI are identical across all of them. See [Building from source](https://giovi321.github.io/smalltv-mod/reference/building/) for the project layout and the ESP32 toolchain notes.
 
 The PC-side usage daemon lives in its own repo: [clawdmeter-daemon](https://github.com/giovi321/clawdmeter-daemon).
 
