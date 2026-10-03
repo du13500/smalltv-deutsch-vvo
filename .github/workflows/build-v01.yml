@@ -1,0 +1,63 @@
+name: Build SmallTV DD v0.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.1.zip'
+      - '.github/workflows/build-v01.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v01:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: v0.1 entpacken
+        run: |
+          rm -rf /tmp/smalltv-v01
+          mkdir -p /tmp/smalltv-v01
+          unzip -q smalltv-deutsch-vvo-v0.1.zip -d /tmp/smalltv-v01
+          test -f /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/platformio.ini
+          test -f /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/src/main.cpp
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          if [ -f /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/build.log ]; then
+            cp /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/build.log dist/build.log
+          fi
+          if [ -f /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/.pio/build/smalltv_ultra/firmware.bin ]; then
+            cp /tmp/smalltv-v01/smalltv-deutsch-vvo-v0.1/.pio/build/smalltv_ultra/firmware.bin dist/smalltv-dd-v0.1-firmware.bin
+            echo "Firmware size:"
+            stat -c '%s bytes' dist/smalltv-dd-v0.1-firmware.bin
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.1
+          path: dist/
+          if-no-files-found: warn
