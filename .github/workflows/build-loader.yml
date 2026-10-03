@@ -1,0 +1,62 @@
+name: Build SmallTV Ultra Loader
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-ultra-loader-v0.1.zip'
+      - '.github/workflows/build-loader.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-loader:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: Loader entpacken
+        run: |
+          rm -rf /tmp/smalltv-loader
+          mkdir -p /tmp/smalltv-loader
+          unzip -q smalltv-ultra-loader-v0.1.zip -d /tmp/smalltv-loader
+          test -f /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/platformio.ini
+          test -f /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/src/loader.cpp
+
+      - name: Loader bauen
+        working-directory: /tmp/smalltv-loader/smalltv-ultra-loader-v0.1
+        run: |
+          set -o pipefail
+          pio run -e smalltv_loader 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          if [ -f /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/build.log ]; then
+            cp /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/build.log dist/build.log
+          fi
+          if [ -f /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/.pio/build/smalltv_loader/firmware.bin ]; then
+            cp /tmp/smalltv-loader/smalltv-ultra-loader-v0.1/.pio/build/smalltv_loader/firmware.bin dist/smalltv-ultra-loader.bin
+            echo "Loader size:"
+            stat -c '%s bytes' dist/smalltv-ultra-loader.bin
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-ultra-loader
+          path: dist/
+          if-no-files-found: warn
