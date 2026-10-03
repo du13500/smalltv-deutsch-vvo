@@ -1,0 +1,66 @@
+name: Build SmallTV DD v0.3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.3.zip'
+      - '.github/workflows/build-v03.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v03:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: v0.3 entpacken
+        run: |
+          rm -rf /tmp/smalltv-v03
+          mkdir -p /tmp/smalltv-v03
+          unzip -q smalltv-deutsch-vvo-v0.3.zip -d /tmp/smalltv-v03
+          test -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/platformio.ini
+          test -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/src/main.cpp
+          test -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/src/Vvo.cpp
+          test -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/src/Weather.cpp
+          test -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/src/Flight.cpp
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          if [ -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/build.log ]; then
+            cp /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/build.log dist/build.log
+          fi
+          if [ -f /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/.pio/build/smalltv_ultra/firmware.bin ]; then
+            cp /tmp/smalltv-v03/smalltv-deutsch-vvo-v0.3/.pio/build/smalltv_ultra/firmware.bin dist/smalltv-dd-v0.3-firmware.bin
+            echo "Firmware size:"
+            stat -c '%s bytes' dist/smalltv-dd-v0.3-firmware.bin
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.3
+          path: dist/
+          if-no-files-found: warn
