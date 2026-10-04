@@ -11,3 +11,45 @@
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
   0. You just DO WHAT THE FUCK YOU WANT TO.
+
+
+SmallTV Deutsch/VVO - project licensing notice
+==============================================
+
+Modifications and additional code in SmallTV Deutsch/VVO:
+Copyright (C) 2026 du13500
+
+Unless a file explicitly states otherwise, the modifications and additional
+source code in this repository are also released under the WTFPL Version 2
+shown above. This permits free use, modification and redistribution of the
+project code, including commercial use.
+
+Third-party services and data
+-----------------------------
+
+The WTFPL applies to the project code. It does NOT grant rights to data,
+trademarks, content or services provided by third parties and accessed by the
+firmware at runtime.
+
+SmallTV Deutsch/VVO can access, among others:
+
+- Verkehrsverbund Oberelbe (VVO)
+- Open-Meteo
+- adsb.lol
+- adsbdb
+- optionally aviationstack
+- OpenStreetMap map tiles in the web interface
+
+Those services and data remain subject to their respective terms of use,
+licences, rate limits and attribution requirements. Some free services used by
+the default configuration are intended only for private/non-commercial use or
+otherwise restrict reuse of their data.
+
+Commercial use of the project code is therefore not the same as permission to
+commercially use every configured external data source. Anyone using,
+distributing or integrating this firmware commercially is responsible for
+obtaining suitable rights for the external services they actually use, or for
+replacing them with appropriately licensed alternatives.
+
+This project notice does not modify the WTFPL. It only clarifies that the
+project cannot license rights belonging to third parties.

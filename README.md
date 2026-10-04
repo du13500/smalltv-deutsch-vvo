@@ -1,12 +1,12 @@
-# SmallTV Deutsch / VVO
+# SmallTV Deutsch/VVO
 
 [![Build SmallTV DD v0.4.1](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v041.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v041.yml)
 
-Eigene deutschsprachige Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 x 240 Pixel ST7789-Display.
+Deutschsprachige Custom-Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 × 240 Pixel ST7789-Display.
 
-Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer Server ist nicht erforderlich.
+Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und vier unabhängige Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer eigener Server ist nicht erforderlich.
 
-> **Aktueller Stand:** v0.4 wurde erfolgreich auf echter SmallTV-Ultra-Hardware getestet. v0.4.1 ist die aktuelle Entwicklungsfassung und erweitert vor allem Bedienung und Alltagstauglichkeit. Der GitHub-Actions-Build und der anschließende Hardwaretest von v0.4.1 stehen zum Zeitpunkt dieses README noch aus.
+> **Aktueller Stand:** v0.4.1 wurde erfolgreich gebaut und auf echter SmallTV-Ultra-Hardware getestet. **v0.4.2** ist die aktuelle Entwicklungsfassung mit UX- und Display-Politur. Build und Hardwaretest von v0.4.2 stehen noch aus.
 
 ## Unterstützte Hardware
 
@@ -14,12 +14,12 @@ Der aktuelle Build ist für den **GeekMagic SmallTV-Ultra** ausgelegt:
 
 - ESP8266 / ESP-12F
 - 4 MB Flash
-- 240 x 240 Pixel ST7789
+- 240 × 240 Pixel ST7789
 - SPI Mode 3
 - LittleFS
 - OTA-Firmwareupdates über das Webinterface
 
-Andere SmallTV-Varianten sind derzeit **nicht getestet**.
+Andere SmallTV-Varianten sind derzeit nicht getestet.
 
 ## Programme
 
@@ -28,33 +28,27 @@ Andere SmallTV-Varianten sind derzeit **nicht getestet**.
 Live-Abfahrten des Verkehrsverbunds Oberelbe direkt auf dem Würfel.
 
 - Haltestellensuche per Freitext im Webinterface
-- Auswahl des gewünschten Suchtreffers
 - Echtzeit-Abfahrten und Ausfälle
 - Anzahl der angezeigten Abfahrten konfigurierbar
-- Verkehrsmittel einzeln auswählbar:
-  - Zug
-  - S-Bahn
-  - Straßenbahn
-  - Bus
-  - Seil- und Schwebebahn
-  - Fähre
-  - AST / Rufbus
+- Verkehrsmittel einzeln auswählbar: Zug, S-Bahn, Straßenbahn, Bus, Seil-/Schwebebahn, Fähre und AST/Rufbus
 - adaptive Darstellung längerer Linienbezeichnungen wie `RE50`, `IC 2045` oder `ICE 1650`
+- farbliche Statusanzeige für reguläre, verspätete, unmittelbar anstehende und ausfallende Fahrten
 
 ### Wetter
 
 Aktuelles Wetter über Open-Meteo.
 
-- Ortssuche statt manueller Eingabe von Koordinaten
-- optionaler eigener Anzeigename, zum Beispiel `ZUHAUSE`
-- Browser-Standort als zusätzliche Eingabemöglichkeit, sofern der verwendete Browser dies auf der lokalen Seite zulässt
+- Ortssuche statt manueller Koordinatensuche
+- ab v0.4.2 zusätzlicher Karten-Picker für die exakte Position
+- Koordinaten bleiben weiterhin manuell editierbar
+- optionaler eigener Anzeigename, z. B. `ZUHAUSE`
 - aktuelle Temperatur
 - Wetterzustand
 - Tageshöchst- und Tiefsttemperatur
 - Regenwahrscheinlichkeit
 - Sonnenaufgang und Sonnenuntergang mit eigenen Pixel-Symbolen
 - optional farbige Darstellung der großen aktuellen Temperatur
-- echte deutsche Umlaute und `ß` im Pixel-Font
+- deutsche Umlaute und `ß` im Pixel-Font
 
 ### Flugradar
 
@@ -62,9 +56,11 @@ Zeigt das nächstgelegene empfangene Flugzeug zu einem frei wählbaren Beobachtu
 
 - eigener Standort unabhängig vom Wetterprogramm
 - Ortssuche im Webinterface
+- ab v0.4.2 Karten-Picker zum exakten Setzen des Radar-Mittelpunkts
+- Koordinaten weiterhin manuell editierbar
 - frei einstellbarer Suchradius
 - Callsign
-- Airline, soweit aus dem Callsign ableitbar
+- Airline, soweit auflösbar
 - Route, soweit über die verfügbaren Datenquellen auflösbar
 - Flugzeugtyp
 - Registrierung
@@ -80,21 +76,22 @@ Für die Live-Flugdaten wird **adsb.lol** verwendet. Für die Routenauflösung w
 - deutsche Zeitzone mit Sommer- und Winterzeit
 - Uhrzeit als eigene Ansicht
 - Footer-Uhr in den Informationsansichten
-- in v0.4.1 unabhängig vom Datenabruf minütlich aktualisiert
+- ab v0.4.2 ohne zusätzliche `UHR`-Überschrift
+- minütliche Aktualisierung ohne vollständiges Löschen und Neuzeichnen des Displays
 
 ### Flug-Tracker
 
 Detailansicht für einen gezielt eingetragenen Flug.
 
 - Eingabe einer Flugnummer im Webinterface
-- Flugstatus und Flugplandaten über Aviationstack
+- Flugstatus und Flugplandaten optional über aviationstack
 - zusätzliche Live-Telemetrie über ADS-B, soweit verfügbar
 - Route
 - geplante und tatsächliche Zeiten
 - Flugdauer
 - Höhe und Geschwindigkeit
 
-Für Aviationstack ist ein **eigener API-Key** erforderlich. Kontingente und Nutzungsbedingungen des gewählten Tarifs sind zu beachten. Die Firmware fragt den Dienst bewusst sparsam und nur bei aktivem Flug-Tracker ab.
+Für aviationstack ist ein eigener API-Key erforderlich. Der Flug-Tracker ist optional; ohne Key bleiben die übrigen Programme vollständig nutzbar.
 
 ### Countdown 1 bis 4
 
@@ -103,108 +100,90 @@ Vier voneinander unabhängige und dauerhaft gespeicherte Countdown-Slots.
 - optionaler Titel
 - eigene Farbe für Titel und Countdown
 - 7-Segment-Darstellung im Retro-Digitalstil
-- drei manuell wählbare Modi:
-  - Kalendertage
-  - Stunden : Minuten : Sekunden
-  - Minuten : Sekunden
-- `-` vor dem Zielzeitpunkt
-- kein sichtbares Vorzeichen bei exakt Null
-- `+` nach dem Zielzeitpunkt
+- Kalendertage, Stunden:Minuten:Sekunden oder Minuten:Sekunden
+- `-` vor dem Zielzeitpunkt, kein sichtbares Vorzeichen bei Null, `+` danach
 - feste Vorzeichenspalte gegen horizontales Springen
 - absolute Zielzeitpunkte bleiben auch nach Stromverlust erhalten
-
-Die Countdowns laufen unabhängig voneinander weiter, auch wenn gerade ein anderes Programm angezeigt wird.
+- ab v0.4.2 wird ein Tages-Countdown nur noch neu gezeichnet, wenn sich sein sichtbarer Wert tatsächlich ändert
 
 ## Anzeigerotation
 
-Ab v0.4.1 muss nicht mehr genau ein Programm dauerhaft ausgewählt werden.
+Mehrere Ansichten können gleichzeitig aktiviert und mit einer individuellen Anzeigedauer versehen werden. Bei nur einer aktivierten Ansicht bleibt diese dauerhaft stehen.
 
-Im Webinterface können mehrere Ansichten per Checkbox aktiviert und jeweils mit einer eigenen Anzeigedauer versehen werden. Die Firmware rotiert anschließend automatisch durch die gewählten Programme.
-
-Die **Anzeigedauer ist von der Datenaktualisierung getrennt**. Wetterdaten werden beispielsweise nicht bei jedem erneuten Einblenden der Wetteransicht neu vom Server geladen.
+Die **Anzeigedauer ist von der Datenaktualisierung getrennt**. Wetter- oder VVO-Daten werden nicht bei jedem Einblenden neu geladen.
 
 ## Webinterface
 
-Die komplette Konfiguration erfolgt lokal im Browser. Aktuell gibt es Bereiche für:
+Die Konfiguration erfolgt lokal im Browser. Bereiche gibt es für Anzeige/Rotation, Abfahrten, Wetter, Flugradar, Flug-Tracker, Countdowns, WLAN und Systemstatus.
 
-- Anzeige und Rotation
-- Abfahrten
-- Wetter
-- Flugradar
-- Flug-Tracker
-- Countdown
-- System und WLAN
+### Neu in v0.4.2
 
-v0.4.1 ergänzt unter anderem:
+- Branding als **SmallTV Deutsch/VVO**
+- dezenter Footer mit Autor und GitHub-Link
+- störende Browser-`alert()`-Fenster durch automatische Toast-Meldungen ersetzt
+- Karten-Picker für Wetter und Flugradar
+- Browser-GPS-Schaltfläche entfernt, da Geolocation auf einer lokalen HTTP-Seite von modernen Browsern regelmäßig blockiert wird
+- manuelle Eingabe von Breitengrad und Längengrad bleibt erhalten
+- Uhr ohne gelbe `UHR`-Überschrift und mit teilweisem statt vollständigem Redraw
+- Tages-Countdown ohne unnötiges sekündliches Fullscreen-Redraw
 
-- WLAN-Scan mit anklickbaren SSIDs
-- Sortierung nach Signalstärke
-- Signalbalken und RSSI in dBm
-- deutsche und verständlichere Netzwerkfehlermeldungen
-- Ortssuche für Wetter und Flugradar
-- bequemere Konfiguration ohne manuelles Heraussuchen von Längen- und Breitengraden
+Der Karten-Picker wird erst beim Öffnen im Browser geladen. Dadurch bleibt das normale Webinterface auch im Setup-Hotspot ohne Internet benutzbar. Die Karte verwendet **Leaflet** und Kartenkacheln von **OpenStreetMap**. Ein Klick auf die Karte oder das Verschieben des Markers übernimmt die exakten Koordinaten.
 
 ## Ersteinrichtung
 
-Nach einem frischen Start ohne gespeicherte WLAN-Daten öffnet die Firmware den Access Point:
+Ohne gespeicherte WLAN-Daten öffnet die Firmware den Access Point:
 
 ```text
 SmallTV-Setup
 ```
 
-Anschließend im Browser öffnen:
+Danach im Browser öffnen:
 
 ```text
 http://192.168.4.1/
 ```
 
-Dort WLAN und die gewünschten Programme konfigurieren. Nach dem Speichern startet der SmallTV neu und verbindet sich mit dem Heimnetz.
+WLAN und gewünschte Programme konfigurieren, speichern und den Neustart abwarten.
 
-## Installation
+> Die Ortssuche und der Karten-Picker benötigen Internetzugang. Im reinen Setup-Hotspot ohne Internet bleiben die manuellen Koordinatenfelder als Fallback verfügbar.
 
-### Update von v0.4 auf v0.4.1
+## Installation und Updates
 
-Wer bereits v0.4 oder eine neuere Version dieser Firmware verwendet, benötigt den Ultra-Loader **nicht erneut**.
+### Update von v0.4/v0.4.1 auf eine neuere Version
 
-1. Den erfolgreichen GitHub-Actions-Build `Build SmallTV DD v0.4.1` öffnen.
-2. Das Artefakt `smalltv-dd-v0.4.1` herunterladen und entpacken.
-3. Im Webinterface des SmallTV `Firmware-Update` öffnen oder direkt `http://<IP-des-SmallTV>/update` aufrufen.
-4. **Nur** `smalltv-dd-v0.4.1-firmware.bin` als Firmware hochladen.
-5. Den SmallTV während des Updates nicht vom Strom trennen.
+Wer bereits diese Custom-Firmware verwendet, benötigt den Ultra-Loader **nicht erneut**.
 
-Die vorhandene `/config.json` wird weiterverwendet. Neue v0.4.1-Einstellungen erhalten kompatible Standardwerte.
+1. Erfolgreichen GitHub-Actions-Build der gewünschten Version öffnen.
+2. Build-Artefakt herunterladen und entpacken.
+3. Im SmallTV-Webinterface `Firmware-Update` öffnen oder `http://<IP-des-SmallTV>/update` aufrufen.
+4. Nur die kompilierte `*-firmware.bin` hochladen.
+5. Während des Updates die Stromversorgung nicht trennen.
+
+Die gespeicherte Konfiguration wird weiterverwendet; neue Einstellungen erhalten kompatible Standardwerte.
 
 ### Erstinstallation auf originaler SmallTV-Ultra-Firmware
 
-Die originale Ultra-Firmware verwendet ein Partitionslayout, bei dem die vollständige Custom-Firmware nicht direkt in den verfügbaren OTA-Slot passt. Deshalb erfolgt die Erstinstallation zweistufig über einen kleinen Loader.
+Die originale Ultra-Firmware verwendet ein Partitionslayout, bei dem die vollständige Custom-Firmware nicht direkt in den verfügbaren OTA-Slot passt. Die Erstinstallation erfolgt deshalb zweistufig über den kleinen **SmallTV-Ultra-Loader**.
 
 > **Wichtig:** Die vollständige SmallTV-DD-Firmware nicht direkt über den Updater der originalen Ultra-Firmware hochladen.
 
-1. Den Loader über den Workflow `Build SmallTV Ultra Loader` bauen bzw. dessen Artefakt herunterladen.
+1. Loader-BIN über den Loader-Workflow bauen bzw. das Artefakt herunterladen.
 2. In der originalen SmallTV-Firmware `/update` öffnen.
-3. Dort **nur** `smalltv-ultra-loader.bin` als Firmware hochladen.
-4. Nach dem Neustart mit dem offenen WLAN `SmallTV-Loader` verbinden.
+3. Nur `smalltv-ultra-loader.bin` hochladen.
+4. Nach dem Neustart mit `SmallTV-Loader` verbinden.
 5. `http://192.168.4.1/update` öffnen.
-6. Dort die aktuelle `smalltv-dd-v0.4.1-firmware.bin` hochladen.
-7. Nach dem Neustart mit `SmallTV-Setup` verbinden und `http://192.168.4.1/` öffnen.
-
-Der Loader besitzt absichtlich keine eigene Displayausgabe. Ein schwarzes oder unverändertes Display während dieser Zwischenstufe ist daher nicht automatisch ein Fehler.
+6. Dort die aktuelle Custom-Firmware-BIN hochladen.
+7. Anschließend über `SmallTV-Setup` einrichten.
 
 ## Build
 
-Der v0.4.1-Quellstand liegt im Release-Quellpaket:
-
-```text
-smalltv-deutsch-vvo-v0.4.1.zip
-```
-
-Nach dem Entpacken im enthaltenen Projektordner:
+Das Projekt verwendet PlatformIO. Im entpackten Versionsordner:
 
 ```bash
 pio run -e smalltv_ultra
 ```
 
-Die erzeugte Firmware liegt anschließend unter:
+Die Firmware liegt anschließend unter:
 
 ```text
 .pio/build/smalltv_ultra/firmware.bin
@@ -216,11 +195,9 @@ Verwendete Hauptbibliotheken:
 - GFX Library for Arduino
 - ESP8266 Arduino Core
 
-Der GitHub-Actions-Workflow `.github/workflows/build-v041.yml` führt denselben Build automatisiert aus und stellt bei Erfolg `smalltv-dd-v0.4.1-firmware.bin`, Build-Log und SHA-256-Prüfsumme als Artefakt bereit.
-
 ## Datenquellen und externe Dienste
 
-Die Firmware arbeitet ohne eigenen Backend-Server, greift für Live-Daten aber auf externe Dienste zu:
+Die Firmware besitzt keinen eigenen Cloud-Backenddienst, greift für Live-Daten aber direkt auf externe Quellen zu:
 
 | Funktion | Quelle |
 | --- | --- |
@@ -229,47 +206,60 @@ Die Firmware arbeitet ohne eigenen Backend-Server, greift für Live-Daten aber a
 | Ortssuche | Open-Meteo Geocoding |
 | Flugradar | adsb.lol |
 | Flugrouten-Fallback | adsbdb |
-| Flug-Tracker | Aviationstack + adsb.lol |
+| Flug-Tracker | optional aviationstack + adsb.lol |
+| Karten-Picker | Leaflet + OpenStreetMap |
 | Uhrzeit | NTP |
 
-Verfügbarkeit, Limits und Nutzungsbedingungen externer Dienste können sich unabhängig von diesem Projekt ändern.
+Verfügbarkeit, Rate-Limits, Nutzungsbedingungen und Datenlizenzen dieser Dienste können sich unabhängig von diesem Projekt ändern.
+
+## Lizenz und kommerzielle Nutzung
+
+Der **Quellcode dieses Projekts** wird grundsätzlich frei unter der [WTFPL Version 2](LICENSE) bereitgestellt. Er darf damit grundsätzlich verwendet, verändert und weitergegeben werden, auch in kommerziellen Projekten.
+
+**Diese Projektlizenz umfasst jedoch nicht automatisch die externen Daten und APIs, die die Firmware verwendet.** Für sie gelten die jeweiligen Bedingungen der Anbieter. Das ist insbesondere bei kommerzieller Nutzung wichtig:
+
+- Die kostenlose Open-Meteo-API ist aktuell für **nicht-kommerzielle Nutzung** vorgesehen; kommerzielle Nutzung erfordert einen geeigneten Dienst bzw. eine andere Bereitstellung. Siehe <https://open-meteo.com/en/terms>.
+- Der VVO weist für Inhalte seines Internetangebotes auf Beschränkungen für öffentliche bzw. kommerzielle Verwertung ohne vorherige Zustimmung hin. Siehe <https://www.vvo-online.de/de/impressum/index.cshtml>.
+- adsb.lol stellt seine öffentliche API und öffentlich bereitgestellte Daten unter der **ODbL** bereit. Siehe <https://api.adsb.lol/docs>.
+- adsbdb weist für Teile der verwendeten Flugroutendaten auf eigene Weiterverwendungsbeschränkungen hin. Siehe <https://www.adsbdb.com/>.
+- Der kostenlose aviationstack-Tarif ist aktuell für **nicht-kommerzielle Nutzung** vorgesehen. Siehe <https://aviationstack.com/pricing>.
+- OpenStreetMap-Daten stehen unter der ODbL; für die Standard-Kachelserver gelten zusätzlich eigene Nutzungsregeln und Attributionspflichten. Siehe <https://www.openstreetmap.org/copyright> und <https://operations.osmfoundation.org/policies/tiles/>.
+
+Wer SmallTV Deutsch/VVO kommerziell einsetzt oder vertreibt, muss daher selbst prüfen, ob die jeweils aktivierten externen Quellen dafür genutzt werden dürfen, und gegebenenfalls eigene Lizenzen, eigene Infrastruktur oder alternative Datenquellen verwenden.
 
 ## Datenschutz
 
-Die Konfiguration liegt lokal auf dem SmallTV. WLAN-Passwort, ausgewählte Orte, Countdowns und gegebenenfalls der Aviationstack-Key werden auf dem Gerät gespeichert.
+Die Konfiguration liegt lokal auf dem SmallTV. WLAN-Passwort, ausgewählte Orte, Countdowns und gegebenenfalls ein aviationstack-Key werden auf dem Gerät gespeichert.
 
-Das Webinterface ist für das lokale Netzwerk gedacht. Die Firmware betreibt keinen eigenen Cloud-Dienst.
+Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressourcen von `unpkg.com` sowie Kartenkacheln von OpenStreetMap abgerufen. Die Firmware selbst betreibt keinen eigenen Cloud-Dienst.
 
 ## Bekannte Grenzen
 
-- Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen. Bei fehlenden Daten wird bewusst `N/A` angezeigt.
-- Die Browserfunktion `Aktuelle Position` ist vom Browser und dessen Sicherheitsregeln abhängig und kann auf einer lokalen HTTP-Seite blockiert werden.
+- Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen; bei fehlenden Daten wird bewusst `N/A` angezeigt.
+- Ortssuche und Karten-Picker benötigen Internetzugang.
 - Die Zuverlässigkeit der Live-Funktionen hängt von den jeweiligen externen APIs und der WLAN-Verbindung ab.
-- v0.4.1 muss nach erfolgreichem Build noch vollständig auf echter Hardware regressionsgetestet werden.
+- v0.4.2 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
 
-## Späterer Ideentopf
+## Vorgemerkt für v0.5
 
-Nicht Teil von v0.4.1, aber als mögliche spätere Erweiterungen vorgemerkt:
-
-- grafisches Regenradar für einen festen Ort
-- freier Textmodus
-- Listenmodus für Einkauf, To-dos oder Packlisten
-- eigener Bahnhofsmonitor mit Zug, Ziel, Zeit, Verspätung und Gleis
+- DWD-Wetterwarnungen als zusätzliche Wetterseite, optional per Checkbox und mit Hinweis `nur Deutschland`
+- Bevölkerungsschutzwarnungen als zusätzliche Wetterseite, separat schaltbar und ebenfalls `nur Deutschland`
+- mehrere gleichzeitig aktive Warnungen nacheinander anzeigen
+- mögliche neue Flughafen-Ankunfts-/Abflugtafel mit möglichst freier, registrierungsfreier Datenquelle
 
 ## Projektgeschichte
 
 - **v0.1:** deutsches Webinterface, WLAN, NTP, OTA und erste Ansichten
 - **v0.2:** echte VVO-Haltestellensuche und Live-Abfahrten
-- **v0.3:** Open-Meteo, adsb.lol und vollständig live arbeitende Hauptansichten
-- **v0.4:** Flug-Tracker und vier persistente Countdowns; erster umfassender Hardwaretest auf einem echten SmallTV-Ultra erfolgreich
-- **v0.4.1:** UX-Politur, Anzeigerotation, WLAN-Scan, Ortssuchen, deutsche Glyphen, VVO-Verkehrsmittelfilter und robusteres Flugradar
+- **v0.3:** Open-Meteo, adsb.lol und live arbeitende Hauptansichten
+- **v0.4:** Flug-Tracker und vier persistente Countdowns; Hardwaretest auf echtem SmallTV-Ultra erfolgreich
+- **v0.4.1:** Anzeigerotation, WLAN-Scan, Ortssuchen, deutsche Glyphen, VVO-Verkehrsmittelfilter, Wetter-Politur und robusteres Flugradar; erfolgreich auf echter Hardware getestet
+- **v0.4.2:** UX-/Redraw-Politur, Karten-Picker, Toast-Meldungen und Projekt-Branding; aktuell in Entwicklung
 
-## Basis und Lizenz
+## Basis
 
-Das Projekt entstand auf Basis von [`giovi321/smalltv-mod`](https://github.com/giovi321/smalltv-mod), insbesondere dessen Hardware- und Displayansteuerung für den GeekMagic SmallTV. Das Ursprungsprojekt steht unter der **WTFPL**.
-
-Die Lizenz dieses Repositories befindet sich in [`LICENSE`](LICENSE).
+Das Projekt entstand auf Basis von [`giovi321/smalltv-mod`](https://github.com/giovi321/smalltv-mod), insbesondere dessen Hardware- und Displayansteuerung für den GeekMagic SmallTV. Das Ursprungsprojekt steht ebenfalls unter der **WTFPL**.
 
 ## Hinweis
 
-Dies ist ein privates Community-/Experimentierprojekt und keine offizielle Firmware von GeekMagic, VVO, DVB, Open-Meteo, adsb.lol, adsbdb oder Aviationstack. Die genannten Marken und Dienste gehören ihren jeweiligen Rechteinhabern.
+Dies ist ein privates Community-/Experimentierprojekt und keine offizielle Firmware von GeekMagic, VVO, DVB, Open-Meteo, adsb.lol, adsbdb, aviationstack, Leaflet oder OpenStreetMap. Marken, Daten und Dienste gehören ihren jeweiligen Rechteinhabern.
