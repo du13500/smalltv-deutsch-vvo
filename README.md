@@ -1,12 +1,12 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.1](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v041.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v041.yml)
+[![Build SmallTV DD v0.4.3](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v043.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v043.yml)
 
 Deutschsprachige Custom-Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 × 240 Pixel ST7789-Display.
 
 Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und vier unabhängige Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer eigener Server ist nicht erforderlich.
 
-> **Aktueller Stand:** v0.4.1 wurde erfolgreich gebaut und auf echter SmallTV-Ultra-Hardware getestet. **v0.4.2** ist die aktuelle Entwicklungsfassung mit UX- und Display-Politur. Build und Hardwaretest von v0.4.2 stehen noch aus.
+> **Aktueller Stand:** **v0.4.3** ist der aktuelle Entwicklungsstand und gegenüber v0.4.2 ausschließlich ein **Privacy-Hotfix**. Build und Hardwaretest stehen noch aus.
 
 ## Unterstützte Hardware
 
@@ -238,7 +238,7 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen; bei fehlenden Daten wird bewusst `N/A` angezeigt.
 - Ortssuche und Karten-Picker benötigen Internetzugang.
 - Die Zuverlässigkeit der Live-Funktionen hängt von den jeweiligen externen APIs und der WLAN-Verbindung ab.
-- v0.4.2 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
+- v0.4.3 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
 
 ## Vorgemerkt für v0.5
 
@@ -254,7 +254,8 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - **v0.3:** Open-Meteo, adsb.lol und live arbeitende Hauptansichten
 - **v0.4:** Flug-Tracker und vier persistente Countdowns; Hardwaretest auf echtem SmallTV-Ultra erfolgreich
 - **v0.4.1:** Anzeigerotation, WLAN-Scan, Ortssuchen, deutsche Glyphen, VVO-Verkehrsmittelfilter, Wetter-Politur und robusteres Flugradar; erfolgreich auf echter Hardware getestet
-- **v0.4.2:** UX-/Redraw-Politur, Karten-Picker, Toast-Meldungen und Projekt-Branding; aktuell in Entwicklung
+- **v0.4.2:** UX-/Redraw-Politur, Karten-Picker, Toast-Meldungen und Projekt-Branding; GitHub-Actions-Build erfolgreich
+- **v0.4.3:** Privacy-Hotfix
 
 ## Basis
 
