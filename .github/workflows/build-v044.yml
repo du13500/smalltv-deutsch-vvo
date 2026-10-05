@@ -1,0 +1,103 @@
+name: Build SmallTV DD v0.4.4
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.4.4.zip'
+      - '.github/workflows/build-v044.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v044:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: v0.4.4 entpacken und pruefen
+        run: |
+          rm -rf /tmp/smalltv-v044
+          mkdir -p /tmp/smalltv-v044
+          unzip -q smalltv-deutsch-vvo-v0.4.4.zip -d /tmp/smalltv-v044
+          ROOT=/tmp/smalltv-v044/smalltv-deutsch-vvo-v0.4.4
+          test -f "$ROOT/platformio.ini"
+          test -f "$ROOT/LICENSE"
+          test -f "$ROOT/README.md"
+          test -f "$ROOT/src/main.cpp"
+          test -f "$ROOT/src/Vvo.cpp"
+          test -f "$ROOT/src/Weather.cpp"
+          test -f "$ROOT/src/Flight.cpp"
+          test -f "$ROOT/src/TrackFlight.cpp"
+          test -f "$ROOT/src/Geo.cpp"
+          grep -q 'FW_VERSION "0.4.4"' "$ROOT/src/main.cpp"
+          grep -q 'entwickelt von du13500' "$ROOT/src/main.cpp"
+          grep -q 'Copyright (C) 2026 du13500' "$ROOT/LICENSE"
+          grep -q 'geoReversePlace' "$ROOT/src/Geo.cpp"
+          grep -q 'nominatim.openstreetmap.org/reverse' "$ROOT/src/Geo.cpp"
+          grep -q 'weatherFahrenheit' "$ROOT/src/main.cpp"
+          grep -q 'planePlaceToggleSec' "$ROOT/src/main.cpp"
+          grep -q 'right = "X"' "$ROOT/src/main.cpp"
+          grep -q 'MAX_DEP = 10' "$ROOT/src/Vvo.cpp"
+          grep -q 'g_consecutiveFailures' "$ROOT/src/Flight.cpp"
+          grep -q 'drawFooter("EUROPE/BERLIN", false)' "$ROOT/src/main.cpp"
+          grep -q 'tile.openstreetmap.org' "$ROOT/src/main.cpp"
+          grep -q 'toast(' "$ROOT/src/main.cpp"
+          ! grep -q 'navigator.geolocation' "$ROOT/src/main.cpp"
+          ! grep -q 'alert(' "$ROOT/src/main.cpp"
+          grep -q 'api.adsbdb.com/v0/callsign/' "$ROOT/src/Flight.cpp"
+          grep -q 'g_routeRetryDone' "$ROOT/src/Flight.cpp"
+          grep -q '60000UL' "$ROOT/src/Flight.cpp"
+
+      - name: Web-JavaScript syntaktisch pruefen
+        run: |
+          ROOT=/tmp/smalltv-v044/smalltv-deutsch-vvo-v0.4.4
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/smalltv-v044/smalltv-deutsch-vvo-v0.4.4/src/main.cpp').read_text()
+          a=s.index('<script>')+len('<script>')
+          b=s.index('</script>',a)
+          Path('/tmp/webui-v044.js').write_text(s[a:b])
+          PY
+          node --check /tmp/webui-v044.js
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v044/smalltv-deutsch-vvo-v0.4.4
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          ROOT=/tmp/smalltv-v044/smalltv-deutsch-vvo-v0.4.4
+          if [ -f "$ROOT/build.log" ]; then
+            cp "$ROOT/build.log" dist/build.log
+          fi
+          if [ -f "$ROOT/.pio/build/smalltv_ultra/firmware.bin" ]; then
+            cp "$ROOT/.pio/build/smalltv_ultra/firmware.bin" dist/smalltv-dd-v0.4.4-firmware.bin
+            echo "Firmware size:"
+            stat -c '%s bytes' dist/smalltv-dd-v0.4.4-firmware.bin
+            sha256sum dist/smalltv-dd-v0.4.4-firmware.bin | tee dist/sha256.txt
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.4
+          path: dist/
+          if-no-files-found: warn
