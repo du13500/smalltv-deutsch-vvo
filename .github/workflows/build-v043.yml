@@ -1,0 +1,98 @@
+name: Build SmallTV DD v0.4.3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.4.3.zip'
+      - '.github/workflows/build-v043.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v043:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: v0.4.3 entpacken und pruefen
+        run: |
+          rm -rf /tmp/smalltv-v043
+          mkdir -p /tmp/smalltv-v043
+          unzip -q smalltv-deutsch-vvo-v0.4.3.zip -d /tmp/smalltv-v043
+          ROOT=/tmp/smalltv-v043/smalltv-deutsch-vvo-v0.4.3
+          test -f "$ROOT/platformio.ini"
+          test -f "$ROOT/LICENSE"
+          test -f "$ROOT/README.md"
+          test -f "$ROOT/src/main.cpp"
+          test -f "$ROOT/src/Vvo.cpp"
+          test -f "$ROOT/src/Weather.cpp"
+          test -f "$ROOT/src/Flight.cpp"
+          test -f "$ROOT/src/TrackFlight.cpp"
+          test -f "$ROOT/src/Geo.cpp"
+          grep -q 'FW_VERSION "0.4.3"' "$ROOT/src/main.cpp"
+          grep -q 'entwickelt von du13500' "$ROOT/src/main.cpp"
+          grep -q 'Copyright (C) 2026 du13500' "$ROOT/LICENSE"
+          grep -q 'SmallTV Deutsch/VVO' "$ROOT/src/main.cpp"
+          grep -q 'weatherMapBtn' "$ROOT/src/main.cpp"
+          grep -q 'planeMapBtn' "$ROOT/src/main.cpp"
+          grep -q 'tile.openstreetmap.org' "$ROOT/src/main.cpp"
+          grep -q 'lastCountdownRendered' "$ROOT/src/main.cpp"
+          grep -q 'drawClock(false)' "$ROOT/src/main.cpp"
+          grep -q 'toast(' "$ROOT/src/main.cpp"
+          ! grep -q 'navigator.geolocation' "$ROOT/src/main.cpp"
+          ! grep -q 'alert(' "$ROOT/src/main.cpp"
+          grep -q 'api.adsbdb.com/v0/callsign/' "$ROOT/src/Flight.cpp"
+
+      - name: Web-JavaScript syntaktisch pruefen
+        run: |
+          ROOT=/tmp/smalltv-v043/smalltv-deutsch-vvo-v0.4.3
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/smalltv-v043/smalltv-deutsch-vvo-v0.4.3/src/main.cpp').read_text()
+          a=s.index('<script>')+len('<script>')
+          b=s.index('</script>',a)
+          Path('/tmp/webui-v043.js').write_text(s[a:b])
+          PY
+          node --check /tmp/webui-v043.js
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v043/smalltv-deutsch-vvo-v0.4.3
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          ROOT=/tmp/smalltv-v043/smalltv-deutsch-vvo-v0.4.3
+          if [ -f "$ROOT/build.log" ]; then
+            cp "$ROOT/build.log" dist/build.log
+          fi
+          if [ -f "$ROOT/.pio/build/smalltv_ultra/firmware.bin" ]; then
+            cp "$ROOT/.pio/build/smalltv_ultra/firmware.bin" dist/smalltv-dd-v0.4.3-firmware.bin
+            echo "Firmware size:"
+            stat -c '%s bytes' dist/smalltv-dd-v0.4.3-firmware.bin
+            sha256sum dist/smalltv-dd-v0.4.3-firmware.bin | tee dist/sha256.txt
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.3
+          path: dist/
+          if-no-files-found: warn
