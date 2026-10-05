@@ -1,12 +1,12 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.3](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v043.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v043.yml)
+[![Build SmallTV DD v0.4.4](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v044.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v044.yml)
 
 Deutschsprachige Custom-Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 × 240 Pixel ST7789-Display.
 
 Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und vier unabhängige Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer eigener Server ist nicht erforderlich.
 
-> **Aktueller Stand:** **v0.4.3** ist der aktuelle Entwicklungsstand und gegenüber v0.4.2 ausschließlich ein **Privacy-Hotfix**. Build und Hardwaretest stehen noch aus.
+> **Aktueller Stand:** **v0.4.4** ist der aktuelle Entwicklungsstand. v0.4.3 wurde erfolgreich gebaut und auf echter SmallTV-Ultra-Hardware getestet. Für v0.4.4 stehen GitHub-Actions-Build und Hardwaretest noch aus.
 
 ## Unterstützte Hardware
 
@@ -30,6 +30,7 @@ Live-Abfahrten des Verkehrsverbunds Oberelbe direkt auf dem Würfel.
 - Haltestellensuche per Freitext im Webinterface
 - Echtzeit-Abfahrten und Ausfälle
 - Anzahl der angezeigten Abfahrten konfigurierbar
+- optional 10 Abfahrten auf zwei automatisch wechselnden 5er-Seiten
 - Verkehrsmittel einzeln auswählbar: Zug, S-Bahn, Straßenbahn, Bus, Seil-/Schwebebahn, Fähre und AST/Rufbus
 - adaptive Darstellung längerer Linienbezeichnungen wie `RE50`, `IC 2045` oder `ICE 1650`
 - farbliche Statusanzeige für reguläre, verspätete, unmittelbar anstehende und ausfallende Fahrten
@@ -40,9 +41,10 @@ Aktuelles Wetter über Open-Meteo.
 
 - Ortssuche statt manueller Koordinatensuche
 - ab v0.4.2 zusätzlicher Karten-Picker für die exakte Position
+- ab v0.4.4 Reverse-Geocoding des gesetzten Kartenpunkts, einschließlich geeigneter Gebiets- oder Gewässernamen
 - Koordinaten bleiben weiterhin manuell editierbar
 - optionaler eigener Anzeigename, z. B. `ZUHAUSE`
-- aktuelle Temperatur
+- aktuelle Temperatur in Celsius oder Fahrenheit
 - Wetterzustand
 - Tageshöchst- und Tiefsttemperatur
 - Regenwahrscheinlichkeit
@@ -57,6 +59,8 @@ Zeigt das nächstgelegene empfangene Flugzeug zu einem frei wählbaren Beobachtu
 - eigener Standort unabhängig vom Wetterprogramm
 - Ortssuche im Webinterface
 - ab v0.4.2 Karten-Picker zum exakten Setzen des Radar-Mittelpunkts
+- ab v0.4.4 Reverse-Geocoding des gesetzten Kartenpunkts
+- optionaler Anzeigename und optionaler Wechsel zwischen `IN DER NÄHE` und Standortname
 - Koordinaten weiterhin manuell editierbar
 - frei einstellbarer Suchradius
 - Callsign
@@ -75,7 +79,7 @@ Für die Live-Flugdaten wird **adsb.lol** verwendet. Für die Routenauflösung w
 - NTP-Zeitsynchronisation
 - deutsche Zeitzone mit Sommer- und Winterzeit
 - Uhrzeit als eigene Ansicht
-- Footer-Uhr in den Informationsansichten
+- Footer-Uhr in den Informationsansichten, in der Uhr-Ansicht selbst ohne redundante zweite Uhrzeit
 - ab v0.4.2 ohne zusätzliche `UHR`-Überschrift
 - minütliche Aktualisierung ohne vollständiges Löschen und Neuzeichnen des Displays
 
@@ -116,6 +120,23 @@ Die **Anzeigedauer ist von der Datenaktualisierung getrennt**. Wetter- oder VVO-
 
 Die Konfiguration erfolgt lokal im Browser. Bereiche gibt es für Anzeige/Rotation, Abfahrten, Wetter, Flugradar, Flug-Tracker, Countdowns, WLAN und Systemstatus.
 
+### Neu in v0.4.4
+
+- robustere Flugradar-Fehlerbehandlung bei einzelnen fehlgeschlagenen Abrufen
+- sparsame Routenauflösung: positive Treffer werden für den Callsign gecacht, `N/A` wird nach 60 Sekunden genau einmal erneut geprüft
+- Karten-Picker für Wetter und Flugradar mit Reverse-Geocoding des gesetzten Pins
+- optionaler Standortname im Flugradar mit frei wählbarem Wechselintervall
+- Celsius/Fahrenheit-Auswahl und vollständige `°C`/`°F`-Darstellung im Wetter
+- symmetrisch ausgerichtete H/T-Zeile
+- VVO-Ausfälle kompakt als rotes `X`
+- optional 10 VVO-Abfahrten auf zwei automatisch wechselnden Seiten
+- Uhr-Ansicht ohne redundante kleine Footer-Uhrzeit
+- vereinheitlichte Standorttexte in Wetter und Flugradar
+
+### Neu in v0.4.3
+
+- Privacy-Hotfix
+
 ### Neu in v0.4.2
 
 - Branding als **SmallTV Deutsch/VVO**
@@ -127,7 +148,9 @@ Die Konfiguration erfolgt lokal im Browser. Bereiche gibt es für Anzeige/Rotati
 - Uhr ohne gelbe `UHR`-Überschrift und mit teilweisem statt vollständigem Redraw
 - Tages-Countdown ohne unnötiges sekündliches Fullscreen-Redraw
 
-Der Karten-Picker wird erst beim Öffnen im Browser geladen. Dadurch bleibt das normale Webinterface auch im Setup-Hotspot ohne Internet benutzbar. Die Karte verwendet **Leaflet** und Kartenkacheln von **OpenStreetMap**. Ein Klick auf die Karte oder das Verschieben des Markers übernimmt die exakten Koordinaten.
+Der Karten-Picker wird erst beim Öffnen im Browser geladen. Dadurch bleibt das normale Webinterface auch im Setup-Hotspot ohne Internet benutzbar. Die Karte verwendet **Leaflet** und Kartenkacheln von **OpenStreetMap**. Ein Klick auf die Karte oder das Verschieben des Markers übernimmt die exakten Koordinaten. Ab v0.4.4 wird der gesetzte Kartenpunkt zusätzlich über **OpenStreetMap Nominatim** in einen passenden geografischen Namen aufgelöst.
+
+Die Flugroute wird beim ersten Auftauchen eines Callsigns über adsb.lol aufgelöst, mit ADSBDB als Fallback. Ein positiver Treffer bleibt für diesen Callsign im Cache. Falls beide Quellen zunächst keine Route liefern, erfolgt nach 60 Sekunden genau ein weiterer Versuch. Danach werden für denselben Callsign keine weiteren Routenanfragen gesendet. Die Routendaten sind keine Live-Flugplandaten und können quellenbedingt fehlen oder veraltet sein. In diesem Fall zeigt die Firmware bewusst `N/A > N/A` statt eine Route zu erfinden.
 
 ## Ersteinrichtung
 
@@ -238,7 +261,7 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen; bei fehlenden Daten wird bewusst `N/A` angezeigt.
 - Ortssuche und Karten-Picker benötigen Internetzugang.
 - Die Zuverlässigkeit der Live-Funktionen hängt von den jeweiligen externen APIs und der WLAN-Verbindung ab.
-- v0.4.3 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
+- v0.4.4 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
 
 ## Vorgemerkt für v0.5
 
@@ -256,6 +279,7 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - **v0.4.1:** Anzeigerotation, WLAN-Scan, Ortssuchen, deutsche Glyphen, VVO-Verkehrsmittelfilter, Wetter-Politur und robusteres Flugradar; erfolgreich auf echter Hardware getestet
 - **v0.4.2:** UX-/Redraw-Politur, Karten-Picker, Toast-Meldungen und Projekt-Branding; GitHub-Actions-Build erfolgreich
 - **v0.4.3:** Privacy-Hotfix
+- **v0.4.4:** Karten-/Standort-Politur, Wettereinheiten, VVO-10er-Paging und robustere Flugradar-Fehlerbehandlung
 
 ## Basis
 
@@ -263,4 +287,4 @@ Das Projekt entstand auf Basis von [`giovi321/smalltv-mod`](https://github.com/g
 
 ## Hinweis
 
-Dies ist ein privates Community-/Experimentierprojekt und keine offizielle Firmware von GeekMagic, VVO, DVB, Open-Meteo, adsb.lol, adsbdb, aviationstack, Leaflet oder OpenStreetMap. Marken, Daten und Dienste gehören ihren jeweiligen Rechteinhabern.
+Dies ist ein privates Community-/Experimentierprojekt und keine offizielle Firmware von GeekMagic, VVO, DVB, Open-Meteo, adsb.lol, adsbdb, aviationstack, Leaflet, Nominatim oder OpenStreetMap. Marken, Daten und Dienste gehören ihren jeweiligen Rechteinhabern.

@@ -39,6 +39,7 @@ SmallTV Deutsch/VVO can access, among others:
 - adsbdb
 - optionally aviationstack
 - OpenStreetMap map tiles in the web interface
+- OpenStreetMap Nominatim for reverse geocoding
 
 Those services and data remain subject to their respective terms of use,
 licences, rate limits and attribution requirements. Some free services used by
