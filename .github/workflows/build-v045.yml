@@ -1,0 +1,122 @@
+name: Build SmallTV DD v0.4.5
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.4.5.zip'
+      - '.github/workflows/build-v045.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v045:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: v0.4.5 entpacken und pruefen
+        run: |
+          rm -rf /tmp/smalltv-v045
+          mkdir -p /tmp/smalltv-v045
+          unzip -q smalltv-deutsch-vvo-v0.4.5.zip -d /tmp/smalltv-v045
+          ROOT=/tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5
+          test -f "$ROOT/platformio.ini"
+          test -f "$ROOT/LICENSE"
+          test -f "$ROOT/README.md"
+          test -f "$ROOT/TESTPLAN.md"
+          test -f "$ROOT/STATIC_CHECKS.json"
+          test -f "$ROOT/src/main.cpp"
+          test -f "$ROOT/src/Vvo.cpp"
+          test -f "$ROOT/src/Weather.cpp"
+          test -f "$ROOT/src/Flight.cpp"
+          test -f "$ROOT/src/TrackFlight.cpp"
+          test -f "$ROOT/src/Geo.cpp"
+          grep -q 'FW_VERSION "0.4.5"' "$ROOT/src/main.cpp"
+          grep -q 'entwickelt von du13500' "$ROOT/src/main.cpp"
+          grep -q 'Copyright (C) 2026 du13500' "$ROOT/LICENSE"
+          grep -q 'departureCompactDestinations' "$ROOT/src/main.cpp"
+          grep -q 'Standortname Darstellung' "$ROOT/src/main.cpp"
+          grep -q 'Standortname Wechselintervall' "$ROOT/src/main.cpp"
+          grep -q 'Farbige Darstellung' "$ROOT/src/main.cpp"
+          grep -q 'geoGermanNames' "$ROOT/src/main.cpp"
+          grep -q 'nominatim.openstreetmap.org/reverse' "$ROOT/src/Geo.cpp"
+          grep -q 'namedetails=1' "$ROOT/src/Geo.cpp"
+          grep -q 'accept-language=de' "$ROOT/src/Geo.cpp"
+          grep -q 'config.json.tmp' "$ROOT/src/main.cpp"
+          grep -q 'measureJson' "$ROOT/src/main.cpp"
+          grep -q 'ESP.getMaxFreeBlockSize() >= 16000' "$ROOT/src/Flight.cpp"
+          grep -q 'probeMaxFragmentLength' "$ROOT/src/Flight.cpp"
+          grep -q 'useHTTP10(true)' "$ROOT/src/Flight.cpp"
+          grep -q 'flightStageName' "$ROOT/src/main.cpp"
+          grep -q 'api.adsbdb.com/v0/callsign/' "$ROOT/src/Flight.cpp"
+          grep -q 'g_routeRetryDone' "$ROOT/src/Flight.cpp"
+          grep -q '60000UL' "$ROOT/src/Flight.cpp"
+          grep -q 'right = "X"' "$ROOT/src/main.cpp"
+          grep -q 'MAX_DEP = 10' "$ROOT/src/Vvo.cpp"
+          ! grep -q 'navigator.geolocation' "$ROOT/src/main.cpp"
+          ! grep -q 'alert(' "$ROOT/src/main.cpp"
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('/tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5/STATIC_CHECKS.json')
+          checks = json.loads(p.read_text(encoding='utf-8'))
+          failed = [name for name, ok in checks.items() if not ok]
+          print(f"Static checks: {sum(bool(v) for v in checks.values())}/{len(checks)} OK")
+          if failed:
+              raise SystemExit('Fehlgeschlagene Checks: ' + ', '.join(failed))
+          PY
+
+      - name: Web-JavaScript syntaktisch pruefen
+        run: |
+          ROOT=/tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('/tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5/src/main.cpp').read_text(encoding='utf-8')
+          a = s.index('<script>') + len('<script>')
+          b = s.index('</script>', a)
+          Path('/tmp/webui-v045.js').write_text(s[a:b], encoding='utf-8')
+          PY
+          node --check /tmp/webui-v045.js
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          ROOT=/tmp/smalltv-v045/smalltv-deutsch-vvo-v0.4.5
+          if [ -f "$ROOT/build.log" ]; then
+            cp "$ROOT/build.log" dist/build.log
+          fi
+          if [ -f "$ROOT/.pio/build/smalltv_ultra/firmware.bin" ]; then
+            cp "$ROOT/.pio/build/smalltv_ultra/firmware.bin" dist/smalltv-dd-v0.4.5-firmware.bin
+            echo "Firmware size:"
+            stat -c '%s bytes' dist/smalltv-dd-v0.4.5-firmware.bin
+            sha256sum dist/smalltv-dd-v0.4.5-firmware.bin | tee dist/sha256.txt
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.5
+          path: dist/
+          if-no-files-found: warn
