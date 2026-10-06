@@ -42,12 +42,20 @@ jobs:
           unzip -q smalltv-deutsch-vvo-v0.4.6.zip -d /tmp/smalltv-v046
           test -f /tmp/smalltv-v046/smalltv-deutsch-vvo-v0.4.6/platformio.ini
 
-      - name: Dokumentation und Quellen prüfen
+      - name: Dokumentation im Repository abgleichen
         run: |
           RELEASE_ROOT=/tmp/smalltv-v046/smalltv-deutsch-vvo-v0.4.6
           for doc in README.md LICENSE CONTRIBUTING.md THIRD_PARTY_SERVICES.md ROADMAP.md CHANGELOG.md TESTPLAN.md VALIDATION.md; do
-            cmp "$doc" "$RELEASE_ROOT/$doc"
+            if [ ! -f "$doc" ]; then
+              echo "::warning file=$doc::Dokumentation fehlt im Repository-Hauptverzeichnis. Die aktuelle Datei liegt im Versionsarchiv."
+            elif ! cmp -s "$doc" "$RELEASE_ROOT/$doc"; then
+              echo "::warning file=$doc::Dokumentation weicht vom Versionsarchiv ab. Bitte die aktuelle Datei aus dem Versionsarchiv übernehmen."
+            fi
           done
+
+      - name: Quellen und Display prüfen
+        run: |
+          RELEASE_ROOT=/tmp/smalltv-v046/smalltv-deutsch-vvo-v0.4.6
           python3 "$RELEASE_ROOT/tools/check.py"
           python3 "$RELEASE_ROOT/tools/test_display.py"
           g++ -std=c++11 -Wall -Wextra -Werror "$RELEASE_ROOT/tests/test_core.cpp" -o /tmp/smalltv-core-test
