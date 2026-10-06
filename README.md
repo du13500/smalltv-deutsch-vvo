@@ -1,12 +1,12 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.4](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v044.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v044.yml)
+[![Build SmallTV DD v0.4.5](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v045.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v045.yml)
 
 Deutschsprachige Custom-Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 × 240 Pixel ST7789-Display.
 
 Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und vier unabhängige Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer eigener Server ist nicht erforderlich.
 
-> **Aktueller Stand:** **v0.4.4** ist der aktuelle Entwicklungsstand. v0.4.3 wurde erfolgreich gebaut und auf echter SmallTV-Ultra-Hardware getestet. Für v0.4.4 stehen GitHub-Actions-Build und Hardwaretest noch aus.
+> **Aktueller Stand:** **v0.4.5** ist der aktuelle Entwicklungsstand. **v0.4.4 läuft erfolgreich auf echter SmallTV-Ultra-Hardware.** Für v0.4.5 stehen GitHub-Actions-Build und Hardwaretest noch aus.
 
 ## Unterstützte Hardware
 
@@ -30,9 +30,10 @@ Live-Abfahrten des Verkehrsverbunds Oberelbe direkt auf dem Würfel.
 - Haltestellensuche per Freitext im Webinterface
 - Echtzeit-Abfahrten und Ausfälle
 - Anzahl der angezeigten Abfahrten konfigurierbar
-- optional 10 Abfahrten auf zwei automatisch wechselnden 5er-Seiten
+- optional 10 Abfahrten auf zwei automatisch im festen 5-Sekunden-Takt wechselnden 5er-Seiten
 - Verkehrsmittel einzeln auswählbar: Zug, S-Bahn, Straßenbahn, Bus, Seil-/Schwebebahn, Fähre und AST/Rufbus
 - adaptive Darstellung längerer Linienbezeichnungen wie `RE50`, `IC 2045` oder `ICE 1650`
+- optional kompakte Schrift für lange Fahrziele, die sonst gekürzt würden
 - farbliche Statusanzeige für reguläre, verspätete, unmittelbar anstehende und ausfallende Fahrten
 
 ### Wetter
@@ -41,7 +42,9 @@ Aktuelles Wetter über Open-Meteo.
 
 - Ortssuche statt manueller Koordinatensuche
 - ab v0.4.2 zusätzlicher Karten-Picker für die exakte Position
-- ab v0.4.4 Reverse-Geocoding des gesetzten Kartenpunkts, einschließlich geeigneter Gebiets- oder Gewässernamen
+- Reverse-Geocoding des gesetzten Kartenpunkts mit bevorzugter Stadt/Gemeinde statt Stadtteil
+- lokale Ortsnamen oder optional deutsche Namen, wenn verfügbar
+- Gewässer-Fallbacks für Punkte auf Nordsee, Ostsee, Mittelmeer und Atlantik
 - Koordinaten bleiben weiterhin manuell editierbar
 - optionaler eigener Anzeigename, z. B. `ZUHAUSE`
 - aktuelle Temperatur in Celsius oder Fahrenheit
@@ -59,7 +62,7 @@ Zeigt das nächstgelegene empfangene Flugzeug zu einem frei wählbaren Beobachtu
 - eigener Standort unabhängig vom Wetterprogramm
 - Ortssuche im Webinterface
 - ab v0.4.2 Karten-Picker zum exakten Setzen des Radar-Mittelpunkts
-- ab v0.4.4 Reverse-Geocoding des gesetzten Kartenpunkts
+- Reverse-Geocoding nach derselben Ortslogik wie beim Wetter
 - optionaler Anzeigename und optionaler Wechsel zwischen `IN DER NÄHE` und Standortname
 - Koordinaten weiterhin manuell editierbar
 - frei einstellbarer Suchradius
@@ -119,6 +122,20 @@ Die **Anzeigedauer ist von der Datenaktualisierung getrennt**. Wetter- oder VVO-
 ## Webinterface
 
 Die Konfiguration erfolgt lokal im Browser. Bereiche gibt es für Anzeige/Rotation, Abfahrten, Wetter, Flugradar, Flug-Tracker, Countdowns, WLAN und Systemstatus.
+
+### Neu in v0.4.5
+
+- VVO-10er-Paging wechselt fest alle 5 Sekunden, unabhängig vom Datenrefresh
+- optionale kompakte Darstellung langer Fahrziele zum direkten Hardwarevergleich
+- H/T-Wetterwerte mit einheitlichem Abstand vor `°C` bzw. `°F`
+- gemeinsame Geo-Namenslogik für Wetter und Flugradar: Stadt/Gemeinde vor Stadtteil
+- lokale Ortsnamen als Standard, optional deutsche Namen, wenn verfügbar
+- sinnvollere Gewässer-Fallbacks statt administrativer Küstengebiets-Bezeichnungen
+- übersichtlichere Einstellungsgruppen im Webinterface
+- deaktiviertes Standortname-Wechselintervall wird sichtbar gedimmt
+- atomisches Speichern der Konfiguration mit Rollback bei Schreibfehlern
+- Radar-TLS prüft den größten zusammenhängenden Heap-Block und nutzt bei adsb.lol MFLN für kleinere Empfangspuffer
+- zusätzliche Radar-Diagnose im Systemstatus
 
 ### Neu in v0.4.4
 
@@ -261,7 +278,7 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen; bei fehlenden Daten wird bewusst `N/A` angezeigt.
 - Ortssuche und Karten-Picker benötigen Internetzugang.
 - Die Zuverlässigkeit der Live-Funktionen hängt von den jeweiligen externen APIs und der WLAN-Verbindung ab.
-- v0.4.4 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
+- v0.4.5 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
 
 ## Vorgemerkt für v0.5
 
@@ -279,7 +296,8 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - **v0.4.1:** Anzeigerotation, WLAN-Scan, Ortssuchen, deutsche Glyphen, VVO-Verkehrsmittelfilter, Wetter-Politur und robusteres Flugradar; erfolgreich auf echter Hardware getestet
 - **v0.4.2:** UX-/Redraw-Politur, Karten-Picker, Toast-Meldungen und Projekt-Branding; GitHub-Actions-Build erfolgreich
 - **v0.4.3:** Privacy-Hotfix
-- **v0.4.4:** Karten-/Standort-Politur, Wettereinheiten, VVO-10er-Paging und robustere Flugradar-Fehlerbehandlung
+- **v0.4.4:** Karten-/Standort-Politur, Wettereinheiten, VVO-10er-Paging und robustere Flugradar-Fehlerbehandlung; auf echter Hardware getestet
+- **v0.4.5:** Geo-/UI-Politur, kompakte VVO-Ziele, festes 5-s-Paging, atomare Config-Saves und ESP8266-Radar-TLS-Stabilisierung
 
 ## Basis
 
