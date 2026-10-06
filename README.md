@@ -1,12 +1,25 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.5](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v045.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v045.yml)
+[![Build SmallTV DD v0.4.6](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v046.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v046.yml)
 
 Deutschsprachige Custom-Firmware für den **GeekMagic SmallTV-Ultra** mit ESP8266 und 240 × 240 Pixel ST7789-Display.
 
 Aus dem kleinen WLAN-Display wird ein autonomer Informationswürfel für **VVO-Abfahrten, Wetter, Flugradar, Uhr, Flug-Tracking und vier unabhängige Countdowns**. Nach der Einrichtung benötigt der SmallTV nur **USB-Strom und WLAN**. Ein Raspberry Pi, Home Assistant oder anderer eigener Server ist nicht erforderlich.
 
-> **Aktueller Stand:** **v0.4.5** ist der aktuelle Entwicklungsstand. **v0.4.4 läuft erfolgreich auf echter SmallTV-Ultra-Hardware.** Für v0.4.5 stehen GitHub-Actions-Build und Hardwaretest noch aus.
+> **Aktueller Stand: v0.4.6, bereit für den Hardwaretest.** v0.4.5 wurde auf
+> echter SmallTV-Ultra-Hardware getestet; v0.4.6 behebt die dabei gemeldeten Punkte.
+> Prüfungen und verbleibende Hardwaretests stehen in [TESTPLAN.md](TESTPLAN.md).
+
+**Quellcode:** `smalltv-deutsch-vvo-v0.4.6.zip` entpacken und im Versionsordner
+bauen. Der Workflow `build-v046.yml` verwendet dieses Archiv. Die übrigen
+historischen Dateien des Ursprungsprojekts im Repository-Hauptverzeichnis
+werden für diesen Versionsbuild nicht verwendet.
+Der Workflow gehört nach `.github/workflows/build-v046.yml`.
+Die Dokumentationsdateien aus dem Lieferpaket ersetzen die Dateien im
+Repository-Hauptverzeichnis.
+
+[Änderungen](CHANGELOG.md) · [Themenspeicher](ROADMAP.md) ·
+[Mitmachen](CONTRIBUTING.md) · [Datenquellen](THIRD_PARTY_SERVICES.md)
 
 ## Unterstützte Hardware
 
@@ -42,7 +55,7 @@ Aktuelles Wetter über Open-Meteo.
 
 - Ortssuche statt manueller Koordinatensuche
 - ab v0.4.2 zusätzlicher Karten-Picker für die exakte Position
-- Reverse-Geocoding des gesetzten Kartenpunkts mit bevorzugter Stadt/Gemeinde statt Stadtteil
+- Reverse-Geocoding des gesetzten Kartenpunkts mit detaillierten Orts-/Stadtteilnamen; eine Suchauswahl behält ihren ausgewählten Ortsnamen
 - lokale Ortsnamen oder optional deutsche Namen, wenn verfügbar
 - Gewässer-Fallbacks für Punkte auf Nordsee, Ostsee, Mittelmeer und Atlantik
 - Koordinaten bleiben weiterhin manuell editierbar
@@ -53,7 +66,8 @@ Aktuelles Wetter über Open-Meteo.
 - Regenwahrscheinlichkeit
 - Sonnenaufgang und Sonnenuntergang mit eigenen Pixel-Symbolen
 - optional farbige Darstellung der großen aktuellen Temperatur
-- deutsche Umlaute und `ß` im Pixel-Font
+- europäische Sonderzeichen im Pixel-Font, einschließlich französischer, tschechischer und polnischer Buchstaben
+- kompakte H/T-Werte wie `H 21°C` und `T 7°C`
 
 ### Flugradar
 
@@ -68,7 +82,8 @@ Zeigt das nächstgelegene empfangene Flugzeug zu einem frei wählbaren Beobachtu
 - frei einstellbarer Suchradius
 - Callsign
 - Airline, soweit auflösbar
-- Route, soweit über die verfügbaren Datenquellen auflösbar
+- Route samt verfügbaren Zwischenstopps; das normale Zwei-Flughäfen-Layout bleibt unverändert
+- bis zu acht Flughafencodes, bei längeren Folgen sichtbarer Fortsetzungshinweis
 - Flugzeugtyp
 - Registrierung
 - Entfernung
@@ -93,18 +108,25 @@ Detailansicht für einen gezielt eingetragenen Flug.
 - Eingabe einer Flugnummer im Webinterface
 - Flugstatus und Flugplandaten optional über aviationstack
 - zusätzliche Live-Telemetrie über ADS-B, soweit verfügbar
-- Route
+- Route mit belegten Zwischenstopps, soweit zur gemeldeten Strecke passend
+- durchgehender Footer mit Status/Datenquelle und minütlich aktualisierter Uhr
 - geplante und tatsächliche Zeiten
 - Flugdauer
 - Höhe und Geschwindigkeit
 
-Für aviationstack ist ein eigener API-Key erforderlich. Der Flug-Tracker ist optional; ohne Key bleiben die übrigen Programme vollständig nutzbar.
+Für aviationstack ist weiterhin ein eigener API-Key erforderlich. Der Flug-Tracker
+ist optional; ohne Key bleiben die übrigen Programme vollständig nutzbar. Eine
+angezeigte Strecke ist keine Nonstop-Zusage. Kostenlose Routen-/ADS-B-Quellen
+ersetzen die Planzeiten und den Flugstatus nicht vollständig, siehe
+[Ergebnis der Quellenprüfung](THIRD_PARTY_SERVICES.md#flugtracker-ergebnis-der-quellenprüfung-für-v046).
 
 ### Countdown 1 bis 4
 
 Vier voneinander unabhängige und dauerhaft gespeicherte Countdown-Slots.
 
-- optionaler Titel
+- optionaler Titel mit europäischen Sonderzeichen und Pixelherzen
+- Herzzeichen und farbige Herz-Emojis erscheinen einheitlich in der gewählten Titelfarbe
+- unbekannte Zeichen erscheinen als Kasten `□`, echte Fragezeichen bleiben erhalten
 - eigene Farbe für Titel und Countdown
 - 7-Segment-Darstellung im Retro-Digitalstil
 - Kalendertage, Stunden:Minuten:Sekunden oder Minuten:Sekunden
@@ -123,47 +145,17 @@ Die **Anzeigedauer ist von der Datenaktualisierung getrennt**. Wetter- oder VVO-
 
 Die Konfiguration erfolgt lokal im Browser. Bereiche gibt es für Anzeige/Rotation, Abfahrten, Wetter, Flugradar, Flug-Tracker, Countdowns, WLAN und Systemstatus.
 
-### Neu in v0.4.5
+### Neu in v0.4.6
 
-- VVO-10er-Paging wechselt fest alle 5 Sekunden, unabhängig vom Datenrefresh
-- optionale kompakte Darstellung langer Fahrziele zum direkten Hardwarevergleich
-- H/T-Wetterwerte mit einheitlichem Abstand vor `°C` bzw. `°F`
-- gemeinsame Geo-Namenslogik für Wetter und Flugradar: Stadt/Gemeinde vor Stadtteil
-- lokale Ortsnamen als Standard, optional deutsche Namen, wenn verfügbar
-- sinnvollere Gewässer-Fallbacks statt administrativer Küstengebiets-Bezeichnungen
-- übersichtlichere Einstellungsgruppen im Webinterface
-- deaktiviertes Standortname-Wechselintervall wird sichtbar gedimmt
-- atomisches Speichern der Konfiguration mit Rollback bei Schreibfehlern
-- Radar-TLS prüft den größten zusammenhängenden Heap-Block und nutzt bei adsb.lol MFLN für kleinere Empfangspuffer
-- zusätzliche Radar-Diagnose im Systemstatus
+- Zeitfelder passen auf schmalen Displays innerhalb der Karte; nebeneinander
+  erhalten sie gleich breite Spalten mit Abstand.
+- Checkbox-Zwischenüberschriften sind grau und normal gewichtet.
+- Bestehende Option „Lange Ziele kompakt darstellen“ bleibt unverändert.
+- Erweiterter Pixelzeichensatz, Herzen und Kasten für unbekannte Zeichen.
+- Detaillierte Ortsnamen bei Kartenpunkten und kompakte H/T-Werte.
+- Vollständiger Flugtracker-Hinweis, Footer in allen Zuständen und Zwischenstopps.
 
-### Neu in v0.4.4
-
-- robustere Flugradar-Fehlerbehandlung bei einzelnen fehlgeschlagenen Abrufen
-- sparsame Routenauflösung: positive Treffer werden für den Callsign gecacht, `N/A` wird nach 60 Sekunden genau einmal erneut geprüft
-- Karten-Picker für Wetter und Flugradar mit Reverse-Geocoding des gesetzten Pins
-- optionaler Standortname im Flugradar mit frei wählbarem Wechselintervall
-- Celsius/Fahrenheit-Auswahl und vollständige `°C`/`°F`-Darstellung im Wetter
-- symmetrisch ausgerichtete H/T-Zeile
-- VVO-Ausfälle kompakt als rotes `X`
-- optional 10 VVO-Abfahrten auf zwei automatisch wechselnden Seiten
-- Uhr-Ansicht ohne redundante kleine Footer-Uhrzeit
-- vereinheitlichte Standorttexte in Wetter und Flugradar
-
-### Neu in v0.4.3
-
-- Privacy-Hotfix
-
-### Neu in v0.4.2
-
-- Branding als **SmallTV Deutsch/VVO**
-- dezenter Footer mit Autor und GitHub-Link
-- störende Browser-`alert()`-Fenster durch automatische Toast-Meldungen ersetzt
-- Karten-Picker für Wetter und Flugradar
-- Browser-GPS-Schaltfläche entfernt, da Geolocation auf einer lokalen HTTP-Seite von modernen Browsern regelmäßig blockiert wird
-- manuelle Eingabe von Breitengrad und Längengrad bleibt erhalten
-- Uhr ohne gelbe `UHR`-Überschrift und mit teilweisem statt vollständigem Redraw
-- Tages-Countdown ohne unnötiges sekündliches Fullscreen-Redraw
+Alle Änderungen einschließlich früherer Versionen stehen im [Changelog](CHANGELOG.md).
 
 Der Karten-Picker wird erst beim Öffnen im Browser geladen. Dadurch bleibt das normale Webinterface auch im Setup-Hotspot ohne Internet benutzbar. Die Karte verwendet **Leaflet** und Kartenkacheln von **OpenStreetMap**. Ein Klick auf die Karte oder das Verschieben des Markers übernimmt die exakten Koordinaten. Ab v0.4.4 wird der gesetzte Kartenpunkt zusätzlich über **OpenStreetMap Nominatim** in einen passenden geografischen Namen aufgelöst.
 
@@ -243,7 +235,7 @@ Die Firmware besitzt keinen eigenen Cloud-Backenddienst, greift für Live-Daten 
 | --- | --- |
 | VVO-Abfahrten | VVO-WebAPI |
 | Wetter | Open-Meteo |
-| Ortssuche | Open-Meteo Geocoding |
+| Ortssuche / Reverse-Geocoding | OpenStreetMap Nominatim |
 | Flugradar | adsb.lol |
 | Flugrouten-Fallback | adsbdb |
 | Flug-Tracker | optional aviationstack + adsb.lol |
@@ -252,20 +244,11 @@ Die Firmware besitzt keinen eigenen Cloud-Backenddienst, greift für Live-Daten 
 
 Verfügbarkeit, Rate-Limits, Nutzungsbedingungen und Datenlizenzen dieser Dienste können sich unabhängig von diesem Projekt ändern.
 
-## Lizenz und kommerzielle Nutzung
+## Lizenz und externe Daten
 
-Der **Quellcode dieses Projekts** wird grundsätzlich frei unter der [WTFPL Version 2](LICENSE) bereitgestellt. Er darf damit grundsätzlich verwendet, verändert und weitergegeben werden, auch in kommerziellen Projekten.
-
-**Diese Projektlizenz umfasst jedoch nicht automatisch die externen Daten und APIs, die die Firmware verwendet.** Für sie gelten die jeweiligen Bedingungen der Anbieter. Das ist insbesondere bei kommerzieller Nutzung wichtig:
-
-- Die kostenlose Open-Meteo-API ist aktuell für **nicht-kommerzielle Nutzung** vorgesehen; kommerzielle Nutzung erfordert einen geeigneten Dienst bzw. eine andere Bereitstellung. Siehe <https://open-meteo.com/en/terms>.
-- Der VVO weist für Inhalte seines Internetangebotes auf Beschränkungen für öffentliche bzw. kommerzielle Verwertung ohne vorherige Zustimmung hin. Siehe <https://www.vvo-online.de/de/impressum/index.cshtml>.
-- adsb.lol stellt seine öffentliche API und öffentlich bereitgestellte Daten unter der **ODbL** bereit. Siehe <https://api.adsb.lol/docs>.
-- adsbdb weist für Teile der verwendeten Flugroutendaten auf eigene Weiterverwendungsbeschränkungen hin. Siehe <https://www.adsbdb.com/>.
-- Der kostenlose aviationstack-Tarif ist aktuell für **nicht-kommerzielle Nutzung** vorgesehen. Siehe <https://aviationstack.com/pricing>.
-- OpenStreetMap-Daten stehen unter der ODbL; für die Standard-Kachelserver gelten zusätzlich eigene Nutzungsregeln und Attributionspflichten. Siehe <https://www.openstreetmap.org/copyright> und <https://operations.osmfoundation.org/policies/tiles/>.
-
-Wer SmallTV Deutsch/VVO kommerziell einsetzt oder vertreibt, muss daher selbst prüfen, ob die jeweils aktivierten externen Quellen dafür genutzt werden dürfen, und gegebenenfalls eigene Lizenzen, eigene Infrastruktur oder alternative Datenquellen verwenden.
+Projektcode und eigene Änderungen stehen unter der [WTFPL Version 2](LICENSE).
+Die ursprüngliche Lizenz bleibt unverändert. Datenquellen, Bibliotheken und
+Dienste haben eigene Bedingungen: [THIRD_PARTY_SERVICES.md](THIRD_PARTY_SERVICES.md).
 
 ## Datenschutz
 
@@ -278,14 +261,20 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - Flugrouten lassen sich nicht für jedes ADS-B-Callsign zuverlässig auflösen; bei fehlenden Daten wird bewusst `N/A` angezeigt.
 - Ortssuche und Karten-Picker benötigen Internetzugang.
 - Die Zuverlässigkeit der Live-Funktionen hängt von den jeweiligen externen APIs und der WLAN-Verbindung ab.
-- v0.4.5 ist bis zum erfolgreichen GitHub-Actions-Build und Hardwaretest als Entwicklungsfassung zu betrachten.
+- v0.4.6 benötigt noch den Hardwaretest, insbesondere native Safari-Zeitfelder,
+  Glyphenlesbarkeit und Tracker mit eigenem API-Key.
+- Zwei Flughafencodes garantieren keinen Nonstop-Flug. Nicht gelieferte Stopps
+  werden nicht geraten.
+- HTTPS verwendet wie die Vorversion `setInsecure()` ohne Zertifikatsprüfung.
+  Das lokale Webinterface und OTA sind ohne Anmeldung erreichbar; das Gerät
+  gehört in ein vertrauenswürdiges WLAN und sollte nicht öffentlich erreichbar sein.
 
-## Vorgemerkt für v0.5
+## Kommende Versionen
 
-- DWD-Wetterwarnungen als zusätzliche Wetterseite, optional per Checkbox und mit Hinweis `nur Deutschland`
-- Bevölkerungsschutzwarnungen als zusätzliche Wetterseite, separat schaltbar und ebenfalls `nur Deutschland`
-- mehrere gleichzeitig aktive Warnungen nacheinander anzeigen
-- mögliche neue Flughafen-Ankunfts-/Abflugtafel mit möglichst freier, registrierungsfreier Datenquelle
+Für v0.5 sind optionale DWD-/Bevölkerungsschutzwarnungen sowie die Prüfung einer
+Flughafen-Ankunfts-/Abflugtafel vorgemerkt. Text-/Listenprogramme, Regenradar,
+Bahnhofsmonitor und AIS bleiben spätere Ideen. Der vollständige Stand mit
+v1.0-Veröffentlichungsideen liegt in [ROADMAP.md](ROADMAP.md).
 
 ## Projektgeschichte
 
@@ -298,6 +287,8 @@ Der Karten-Picker läuft im Browser. Beim Laden der Karte werden Leaflet-Ressour
 - **v0.4.3:** Privacy-Hotfix
 - **v0.4.4:** Karten-/Standort-Politur, Wettereinheiten, VVO-10er-Paging und robustere Flugradar-Fehlerbehandlung; auf echter Hardware getestet
 - **v0.4.5:** Geo-/UI-Politur, kompakte VVO-Ziele, festes 5-s-Paging, atomare Config-Saves und ESP8266-Radar-TLS-Stabilisierung
+
+- **v0.4.6:** europäischer Pixelzeichensatz, Herzen, Zwischenstopps, Tracker-Footer, responsive Zeitfelder und Dokumentation
 
 ## Basis
 
