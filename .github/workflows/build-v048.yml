@@ -1,0 +1,91 @@
+name: Build SmallTV DD v0.4.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.4.8.zip'
+      - '.github/workflows/build-v048.yml'
+      - 'README.md'
+      - 'LICENSE'
+      - 'CONTRIBUTING.md'
+      - 'THIRD_PARTY_SERVICES.md'
+      - 'ROADMAP.md'
+      - 'CHANGELOG.md'
+      - 'TESTPLAN.md'
+      - 'VALIDATION.md'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v048:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Versionsarchiv entpacken
+        run: |
+          mkdir -p /tmp/smalltv-v048
+          unzip -q smalltv-deutsch-vvo-v0.4.8.zip -d /tmp/smalltv-v048
+          test -f /tmp/smalltv-v048/smalltv-deutsch-vvo-v0.4.8/platformio.ini
+
+      - name: Quellen und Display prüfen
+        run: |
+          RELEASE_ROOT=/tmp/smalltv-v048/smalltv-deutsch-vvo-v0.4.8
+          python3 "$RELEASE_ROOT/tools/check.py"
+          python3 "$RELEASE_ROOT/tools/test_radar.py"
+          python3 "$RELEASE_ROOT/tools/test_policy.py"
+          python3 "$RELEASE_ROOT/tools/test_display.py"
+          g++ -std=c++11 -Wall -Wextra -Werror "$RELEASE_ROOT/tests/test_core.cpp" -o /tmp/smalltv-core-test
+          /tmp/smalltv-core-test
+          node --check "$RELEASE_ROOT/tests/webui.cjs"
+
+      - name: WebKit-Layoutprüfung
+        working-directory: /tmp/smalltv-v048/smalltv-deutsch-vvo-v0.4.8
+        run: |
+          npm install --ignore-scripts
+          npx playwright install --with-deps webkit
+          npm run test:webui
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v048/smalltv-deutsch-vvo-v0.4.8
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist
+          RELEASE_ROOT=/tmp/smalltv-v048/smalltv-deutsch-vvo-v0.4.8
+          if [ -f "$RELEASE_ROOT/build.log" ]; then
+            cp "$RELEASE_ROOT/build.log" dist/build.log
+          fi
+          if [ -f "$RELEASE_ROOT/.pio/build/smalltv_ultra/firmware.bin" ]; then
+            cp "$RELEASE_ROOT/.pio/build/smalltv_ultra/firmware.bin" dist/smalltv-dd-v0.4.8-firmware.bin
+            sha256sum dist/smalltv-dd-v0.4.8-firmware.bin > dist/sha256.txt
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.8
+          path: dist/
+          if-no-files-found: warn
