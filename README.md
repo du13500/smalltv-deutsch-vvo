@@ -1,5 +1,7 @@
 # SmallTV Deutsch/VVO
 
+[![Build SmallTV DD v0.4.8](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v048.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v048.yml)
+
 > 🟨 **v0.4.8 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
@@ -19,7 +21,7 @@ Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker 
 | Wetterbilder | 🟨 Verschiedene Wetterlagen getestet; vollständiger Praxistest offen |
 | Flug-Tracker mit aviationstack | ⬜ Vollständiger Hardwaretest mit gültigem API-Schlüssel offen |
 
-Die Ampel beschreibt den Entwicklungsstand. Sie ist keine Anzeige eines automatisch ermittelten GitHub-Buildstatus.
+Die Textampel beschreibt den Praxistest der Funktionen. Das Build-Badge oben zeigt separat das Ergebnis des GitHub-Workflows.
 
 ## Unterstütztes Gerät
 
@@ -80,15 +82,34 @@ Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung f
 
 Externe Dienste können Abrufe begrenzen. Bei HTTP 429 pausieren die betroffenen ADS-B-Abfragen automatisch. Während einer Fehlerphase zeigt das Radar kurzzeitig **LETZTER STAND**; nach 30 Sekunden ohne neue Positionsdaten wird ein als veraltet markiertes Flugzeug entfernt. Ein eingestellter Aktualisierungstakt garantiert keine neuen Daten vom Anbieter.
 
-## Neu in v0.4.8
+## Versionsgeschichte
 
-- Gemeinsame Abrufpausen bei Rate-Limits für Radar und Tracker.
-- Routenprüfung gegen die aktuelle Position und zeitlich begrenzter Zusatzdaten-Cache.
-- Online-Ergänzung von Airline- und Typnamen mit kompakter Typdarstellung.
-- `GND` für ausdrücklich gemeldete Flugzeuge am Boden.
-- Kartenkoordinaten korrekt über den Kartenrand hinweg; verspätete Ortsantworten überschreiben keinen neueren Kartenpunkt.
-- Gewässernamen aus der Ortsabfrage statt grober lokaler Gebietsrechtecke.
-- Gezieltes Aktualisieren geänderter Anzeigeelemente in weiteren Programmen.
+### v0.4.8
+
+- **Abrufpausen:** Radar und Tracker berücksichtigen Rate-Limits gemeinsam. Bei HTTP 429 oder 503 wird die vom Anbieter angegebene Wartezeit verwendet; ohne Angabe verlängert sich die Pause bei wiederholten Fehlern schrittweise.
+- **Radar-Routen:** Zusatzdaten werden gegen die aktuelle Flugzeugposition geprüft. Unpassende oder zu alte Routen werden ausgeblendet, statt dauerhaft am Flugzeug zu hängen. Eine korrekte Ersatzroute kann dadurch nicht garantiert werden.
+- **Airline und Flugzeugtyp:** Verfügbare Namen werden online ergänzt und zwischengespeichert. Lokale Bezeichnungen bleiben als Rückfall erhalten. Lange Typnamen werden kompakt dargestellt oder durch den Typcode ersetzt.
+- **Bodenstatus:** Ausdrücklich als am Boden gemeldete Flugzeuge zeigen `GND`. Eine fehlende Höhe bleibt `N/A`; eine gemeldete numerische Nullhöhe wird als `0 m` dargestellt.
+- **Karten-Picker:** Längengrade werden beim Verschieben über den Kartenrand korrekt umgerechnet. Schnelle Auswahlen werden zusammengefasst; verspätete Ortsantworten überschreiben weder einen neueren Kartenpunkt noch einen inzwischen gewählten Suchtreffer.
+- **Orte und Gewässer:** Gewässernamen stammen aus der Ortsabfrage statt aus groben lokalen Gebietsrechtecken. Auch ohne verfügbaren Namen bleiben die Koordinaten verwendbar; ein eigener Anzeigename ist optional.
+- **Anzeige:** Abfahrten, Wetter, Tracker, Countdown und Uhr zeichnen geänderte sichtbare Inhalte gezielt neu. Unveränderte Werte bleiben stehen; bei Programmwechseln und erforderlichen Layoutwechseln wird die Ansicht neu aufgebaut.
+- **Dokumentation:** Projektbeschreibung, Testplan und GitHub-Workflow aktualisiert. Versionsbadge und Textampel zeigen Build-Ergebnis und Praxistest getrennt an.
+
+### Ältere Versionen
+
+| Version | Wichtigste Neuerungen |
+| --- | --- |
+| **v0.4.7** | Einstellbare Zeitzonen, griechische und kyrillische Zeichen, differenziertere Wetterbilder sowie Verbesserungen bei Radar-Abrufen und der Anzeige veralteter Daten |
+| **v0.4.6** | Erweiterter lateinischer Zeichensatz, mehrteilige Flugrouten, Tracker-Footer und Verbesserungen am Webinterface |
+| **v0.4.5** | Kompakte Abfahrtsziele, Verbesserungen an Karten- und Standortauswahl, Speichern der Einstellungen und Radar-Verbindungen |
+| **v0.4.4** | Bis zu zehn Abfahrten mit Seitenwechsel, Temperatureinheiten, Uhr im Footer und robustere Radarfehlerbehandlung |
+| **v0.4.3** | Überarbeitung der öffentlichen Projektangaben |
+| **v0.4.2** | Karten-Picker, Rückmeldungen im Webinterface und ruhigere Uhr- und Countdown-Anzeige |
+| **v0.4.1** | Programmrotation, WLAN-Scan, Ortssuche, deutsche Sonderzeichen und Verkehrsmittelfilter |
+| **v0.4** | Flug-Tracker und vier speicherbare Countdowns |
+| **v0.3** | Live-Wetter, Flugradar und weitere Hauptansichten |
+| **v0.2** | VVO-Haltestellensuche und Abfahrtsmonitor |
+| **v0.1** | WLAN-Einrichtung, Webinterface, automatische Zeitabfrage und Firmware-Updates |
 
 ## Fehlerberichte und Lizenz
 
