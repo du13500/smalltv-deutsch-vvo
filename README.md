@@ -2,8 +2,8 @@
 
 [![Build SmallTV DD v0.4.13](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml)
 
-> 🟨 **v0.4.13 · Entwicklungsbuild**  
-> Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
+> 🟨 **v0.4.14 ff · Entwicklungsbuild**  
+> Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · aktuell bestehende Leistungsprobleme und Abstürze
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
