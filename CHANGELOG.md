@@ -1,3 +1,24 @@
+## v0.4.13
+
+- Geo prüft den freien Heap und den größten Speicherblock erneut unmittelbar vor dem HTTP-Abruf, nach Vorbereitung von LittleFS-Datei, URL, HTTP-Client und Headern. Eine nicht ausreichende Reserve führt zum kontrollierten Abbruch vor dem Verbindungsaufbau.
+- Lokale URL-Kopien und die interne Suchtextkopie werden nach Übernahme durch HTTPClient freigegeben. Die Suche fordert keine ungenutzten Addressdetails mehr an; acht Treffer und deutsche Namensvarianten bleiben erhalten. Die Kartenauflösung fordert ihre benötigten Adressdaten weiterhin an.
+- Feste Diagnosebezeichnungen liegen im Flash. Der statische RAM-Bedarf sinkt gegenüber v0.4.12 um 484 Bytes. Das ist ein begrenzter Gewinn, keine Garantie für erfolgreiche Ortsabfragen in jedem Betriebszustand.
+- Neue Geo-Marker: Geo:Vorbereitung, Geo:Verbinden, Geo:Empfang und Geo:TLS-frei. Normale Fortschrittsmarker werden nicht als letzter Fehler gespeichert; sie bleiben als RTC-Marker auswertbar.
+- Der Empfangsschutz aus v0.4.12 bleibt bestehen: mindestens 3 KiB Rest-Heap, höchstens 48 KiB Antwort, begrenzte Schreibschritte und JSON erst nach TLS-Freigabe.
+
+Hardwaretest offen. Der v0.4.12-Absturz ist durch die passende ELF als ungültiger Schreibzugriff innerhalb der ROM-Speicherkopierfunktion eingegrenzt, aber nicht vollständig erklärt. Wetter-/Radar-Abrufe, Anbieterpausen, Typanzeige und Programme bleiben erhalten.
+
+## v0.4.12
+
+- Geo-Empfang gezielt repariert: Der LittleFS-Zwischenpuffer meldet nun seine Schreibkapazität. Ohne diese Angabe übertrug die ESP8266-Routine in v0.4.11 keine Bytes und wartete bis zum Timeout.
+- Empfang in höchstens 256-Byte-Schritten. Unter 3 KiB freiem Heap, bei Schreibfehlern oder Antworten über 48 KiB wird kontrolliert abgebrochen. Der Dateicache wird vor der TLS-Verbindung vorbereitet; JSON wird weiterhin erst nach TLS-Freigabe gelesen.
+- Diagnose unterscheidet Empfangsfehler, Dateifehler und zu große Antworten von JSON-Parserfehlern.
+- Regressionstest verwendet den tatsächlichen Übertragungscode des installierten ESP8266-Frameworks statt eines vereinfachten Transfers.
+- Bekannte Airbus-, Boeing- und Embraer-E-Jet-Typen erhalten stabile lesbare Displaynamen, auch bevor Metadaten eintreffen. E75L und E75S werden als Embraer E175 angezeigt.
+- Abfahrten-Hinweis nennt jetzt den Verkehrsverbund Oberelbe (VVO) ausgeschrieben.
+
+Gezielte Weiterentwicklung von v0.4.11. Radar-Abrufe, Anbieterpausen, Routenprüfung, Wetterabrufe und Konfiguration bleiben erhalten. Kein vollständiger Rückbau auf v0.4.9. Hardwaretest dieser Version offen.
+
 ## v0.4.11
 
 - Ortssuche und Karten-Ortsnamen: TLS zuerst beenden, anschließend JSON lesen. Die Antwort wird vorübergehend in einer größenbegrenzten LittleFS-Datei gespeichert und danach gelöscht. Das vermeidet gleichzeitigen TLS-/JSON-Speicherbedarf, verursacht aber zusätzliche Flash-Schreibvorgänge bei Ortsabfragen. Keine Schreibvorgänge bei normalen Wetter- oder Radar-Aktualisierungen.

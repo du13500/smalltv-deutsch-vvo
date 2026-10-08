@@ -1,6 +1,6 @@
-# Lizenzprüfung für v0.4.11
+# Lizenzprüfung für v0.4.13
 
-Stand: 7. Oktober 2026. Eigener Projektcode und Dokumentation stehen ab v0.4.11 unter MIT. Herkunft und fremde Bedingungen werden getrennt dokumentiert. Die Entscheidung folgt dem Wunsch nach freier Nutzung unter Erhalt des Copyright- und Lizenzhinweises.
+Stand: 7. Oktober 2026. Eigener Projektcode und Dokumentation stehen ab v0.4.13 unter MIT. Herkunft und fremde Bedingungen werden getrennt dokumentiert. Die Entscheidung folgt dem Wunsch nach freier Nutzung unter Erhalt des Copyright- und Lizenzhinweises.
 
 ## CC0 und MIT
 
