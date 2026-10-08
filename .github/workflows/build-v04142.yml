@@ -1,0 +1,104 @@
+name: Build SmallTV DD v0.4.14.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'smalltv-deutsch-vvo-v0.4.14.2.zip'
+      - '.github/workflows/build-v04142.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-v04142:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Versionsarchiv entpacken
+        run: |
+          mkdir -p /tmp/smalltv-v04142
+          unzip -q smalltv-deutsch-vvo-v0.4.14.2.zip -d /tmp/smalltv-v04142
+          test -f /tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2/platformio.ini
+
+      - name: Quellen und Display prüfen
+        run: |
+          RELEASE_ROOT=/tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2
+          python3 "$RELEASE_ROOT/tools/check.py"
+          python3 "$RELEASE_ROOT/tools/test_radar.py"
+          python3 "$RELEASE_ROOT/tools/test_policy.py"
+          python3 "$RELEASE_ROOT/tools/test_display.py"
+          python3 "$RELEASE_ROOT/tools/test_diagnostics.py"
+          python3 "$RELEASE_ROOT/tools/test_enrichment.py"
+          g++ -std=c++11 -Wall -Wextra -Werror "$RELEASE_ROOT/tests/test_core.cpp" -o /tmp/smalltv-core-test
+          /tmp/smalltv-core-test
+          node --check "$RELEASE_ROOT/tests/webui.cjs"
+
+      - name: WebKit-Layoutprüfung
+        working-directory: /tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2
+        run: |
+          npm install --ignore-scripts
+          npx playwright install --with-deps webkit
+          npm run test:webui
+
+      - name: PlatformIO installieren
+        run: pip install platformio==6.1.19
+
+      - name: JSON- und Geo-Speicherschutz prüfen
+        working-directory: /tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2
+        run: |
+          pio pkg install -e smalltv_ultra
+          python3 tools/test_network_json.py
+          python3 tools/test_geo_buffer.py
+
+      - name: ESP8266-Firmware bauen
+        working-directory: /tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2
+        run: |
+          set -o pipefail
+          pio run -e smalltv_ultra 2>&1 | tee build.log
+
+      - name: Ergebnis vorbereiten
+        if: always()
+        run: |
+          mkdir -p dist/firmware dist/begleitpaket
+          RELEASE_ROOT=/tmp/smalltv-v04142/smalltv-deutsch-vvo-v0.4.14.2
+          if [ -f "$RELEASE_ROOT/build.log" ]; then
+            cp "$RELEASE_ROOT/build.log" dist/begleitpaket/build.log
+          fi
+          if [ -f "$RELEASE_ROOT/.pio/build/smalltv_ultra/firmware.bin" ]; then
+            cp "$RELEASE_ROOT/.pio/build/smalltv_ultra/firmware.bin" dist/firmware/smalltv-dd-v0.4.14.2-firmware.bin
+            cp "$RELEASE_ROOT/.pio/build/smalltv_ultra/firmware.elf" dist/begleitpaket/smalltv-dd-v0.4.14.2-firmware.elf
+            cp "$RELEASE_ROOT/LICENSE" "$RELEASE_ROOT/THIRD_PARTY_NOTICES.md" "$RELEASE_ROOT/RELINKING.md" dist/begleitpaket/
+            cp -r "$RELEASE_ROOT/LICENSES" dist/begleitpaket/
+            python3 "$RELEASE_ROOT/tools/package_build_sources.py" "$RELEASE_ROOT" dist/begleitpaket/smalltv-dd-v0.4.14.2-build-sources.tar.gz
+            sha256sum dist/firmware/smalltv-dd-v0.4.14.2-firmware.bin > dist/firmware/sha256.txt
+          fi
+
+      - name: Build-Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.14.2-firmware
+          path: dist/firmware/
+          if-no-files-found: warn
+
+      - name: Begleitpaket hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smalltv-dd-v0.4.14.2-begleitpaket
+          path: dist/begleitpaket/
+          if-no-files-found: warn
