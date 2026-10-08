@@ -10,7 +10,7 @@ und 240 × 240 Pixel ST7789**. Andere Geräte und Displayvarianten sind nicht
 getestet; Kompatibilität wird nicht zugesichert.
 
 Der aktuelle Quellstand liegt im Versionsarchiv
-`smalltv-deutsch-vvo-v0.4.11.zip`. Vor Änderungen dieses Archiv entpacken.
+`smalltv-deutsch-vvo-v0.4.13.zip`. Vor Änderungen dieses Archiv entpacken.
 Die noch vorhandenen Dateien des Ursprungsprojekts im Repository-Hauptverzeichnis
 sind nicht der Quellstand dieses Versionsbuilds. Kein automatischer Fork-Sync.
 
@@ -25,7 +25,7 @@ g++ -std=c++11 -Wall -Wextra -Werror tests/test_core.cpp -o /tmp/smalltv-test-co
 pio run -e smalltv_ultra
 ```
 
-Der GitHub-Workflow `.github/workflows/build-v0411.yml` baut ausschließlich dieses
+Der GitHub-Workflow `.github/workflows/build-v0413.yml` baut ausschließlich dieses
 Versionsarchiv. Änderungen am Quellcode müssen auch im Archiv enthalten sein.
 Die README ist die vollständige Benutzerdokumentation ohne Unterseiten.
 Weitere Dateien im Quellarchiv dienen Entwicklung und Validierung.

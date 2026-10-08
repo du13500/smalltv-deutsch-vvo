@@ -1,26 +1,23 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.11](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0411.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0411.yml)
+[![Build SmallTV DD v0.4.13](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml)
 
-> 🟨 **v0.4.11 · Entwicklungsbuild**  
+> 🟨 **v0.4.13 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
 
-## v0.4.11
+## v0.4.13
 
-- Ortssuche und Karten-Ortsnamen: TLS zuerst beenden, anschließend JSON lesen. Die Antwort wird vorübergehend in einer größenbegrenzten LittleFS-Datei gespeichert und danach gelöscht. Das vermeidet gleichzeitigen TLS-/JSON-Speicherbedarf, verursacht aber zusätzliche Flash-Schreibvorgänge bei Ortsabfragen. Keine Schreibvorgänge bei normalen Wetter- oder Radar-Aktualisierungen.
-- Flugzeugtyp nur übernehmen, wenn Live-Typ oder unterstützte Live-Kategorie dazu passen. Bei unbekannter Kategorie bleiben zusätzliche Typangaben leer. Testfall N54561: gemeldete Kategorie A3 darf keinen ST75-Doppeldecker übernehmen.
-- Streckendaten bleiben eine externe Datenbankzuordnung, kein belegter aktueller Flugplan. Falsche Herkunft mit gleichem Ziel kann die Positionsprüfung weiterhin bestehen.
-- Leere HTTP-201-Antwort bei Radar.Route im Log als leer kenntlich machen.
-- Log kopieren mit Auswahl-Fallback auf lokalem HTTP; gleiche Schrift für Schaltflächen. Letzten Fehler dieses Starts separat behalten, auch wenn die 24 Ereignisse überschrieben sind.
-- Programmauswahl: Abfahrten, Wetter, Flugradar, Flug-Tracker, Uhr, Countdowns. Bestehende Programm-IDs bleiben erhalten.
-- Standortname: Kein Wechsel (Wert 0), Wunschtext bleibt stehen.
-- Workflow: Firmware und Diagnose-/Lizenz-/Quellenpaket als getrennte Downloads.
+- Geo prüft den freien Heap und den größten Speicherblock erneut unmittelbar vor dem HTTP-Abruf, nach Vorbereitung von LittleFS-Datei, URL, HTTP-Client und Headern. Eine nicht ausreichende Reserve führt zum kontrollierten Abbruch vor dem Verbindungsaufbau.
+- Lokale URL-Kopien und die interne Suchtextkopie werden nach Übernahme durch HTTPClient freigegeben. Die Suche fordert keine ungenutzten Addressdetails mehr an; acht Treffer und deutsche Namensvarianten bleiben erhalten. Die Kartenauflösung fordert ihre benötigten Adressdaten weiterhin an.
+- Feste Diagnosebezeichnungen liegen im Flash. Der statische RAM-Bedarf sinkt gegenüber v0.4.12 um 484 Bytes. Das ist ein begrenzter Gewinn, keine Garantie für erfolgreiche Ortsabfragen in jedem Betriebszustand.
+- Neue Geo-Marker: Geo:Vorbereitung, Geo:Verbinden, Geo:Empfang und Geo:TLS-frei. Normale Fortschrittsmarker werden nicht als letzter Fehler gespeichert; sie bleiben als RTC-Marker auswertbar.
+- Der Empfangsschutz aus v0.4.12 bleibt bestehen: mindestens 3 KiB Rest-Heap, höchstens 48 KiB Antwort, begrenzte Schreibschritte und JSON erst nach TLS-Freigabe.
 
-Hardwaretest für v0.4.11 offen. v0.4.10 lief im Nutzer-Belastungstest über 83 Minuten ohne Neustart, inklusive Programmwechseln und selbstständiger Erholung nach HTTP 429. Ortssuche in v0.4.10 blieb durch JSON:NoMemory defekt.
+Hardwaretest offen. Der v0.4.12-Absturz ist durch die passende ELF als ungültiger Schreibzugriff innerhalb der ROM-Speicherkopierfunktion eingegrenzt, aber nicht vollständig erklärt. Wetter-/Radar-Abrufe, Anbieterpausen, Typanzeige und Programme bleiben erhalten.
 
 ## Entwicklungsstand
 
@@ -30,9 +27,9 @@ Hardwaretest für v0.4.11 offen. v0.4.10 lief im Nutzer-Belastungstest über 83 
 | --- | --- |
 | Einrichtung, Zeitzone, Nachtmodus und Zeichensatz | 🟩 In v0.4.7 auf echter Hardware bestätigt |
 | Teilaktualisierung bei Radar, Abfahrten und Countdowns | 🟩 In v0.4.8 auf echter Hardware bestätigt |
-| Wetter und VVO: Abrufe und Fehlererholung | 🟩 VVO einzeln und Programmwechsel in v0.4.10 stabil getestet; Wetter-Ortssuche v0.4.11 noch offen |
-| Flugradar | 🟩 v0.4.10 über 83 Minuten ohne Neustart; 🟨 externe Routenqualität und neue Typprüfung weiter offen |
-| Diagnose-Log und Speichersperre | 🟩 Schutz in v0.4.10 praktisch beobachtet; 🟨 Kopieren und Geo-Puffer in v0.4.11 noch auf Hardware zu testen |
+| Wetter und VVO: Abrufe und Fehlererholung | 🟩 VVO einzeln und Programmwechsel in v0.4.10 stabil getestet; Wetter-Ortssuche v0.4.13 noch offen |
+| Flugradar | 🟩 v0.4.10 über 2 Stunden 49 Minuten ohne Neustart; 🟨 externe Routenqualität und neue Typprüfung weiter offen |
+| Diagnose-Log und Speichersperre | 🟩 Schutz in v0.4.10 praktisch beobachtet; 🟨 Kopieren und Geo-Puffer in v0.4.13 noch auf Hardware zu testen |
 | Wetterbilder | 🟨 Verschiedene Wetterlagen getestet; vollständiger Praxistest offen |
 | Flug-Tracker mit aviationstack | ⬜ Vollständiger Hardwaretest mit gültigem API-Schlüssel offen |
 
@@ -76,11 +73,11 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
 
-- `smalltv-deutsch-vvo-v0.4.11.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build-v0411.yml` als `.github/workflows/build-v0411.yml` ablegen.
+- `smalltv-deutsch-vvo-v0.4.13.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
+- `build-v0413.yml` als `.github/workflows/build-v0413.yml` ablegen.
 - Die separate README-ZIP entpacken und deren README sowie Lizenzunterlagen im Hauptverzeichnis ersetzen. Sie enthält auch `LICENSE`, `LICENSES`, `THIRD_PARTY_NOTICES.md` und `THIRD_PARTY_SERVICES.md`.
-- Unter **Actions** den Workflow **Build SmallTV DD v0.4.11** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build **smalltv-dd-v0.4.11-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.11-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+- Unter **Actions** den Workflow **Build SmallTV DD v0.4.13** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
+- Nach erfolgreichem Build **smalltv-dd-v0.4.13-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.13-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
 
 Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
 
