@@ -1,48 +1,59 @@
-# Contributing
+# Mitmachen bei SmallTV Deutsch/VVO
 
-## Features reach every display target
+Danke für Fehlerberichte und Verbesserungsvorschläge. Dieses Projekt ist eine
+eigenständige deutschsprachige Firmware auf Grundlage von smalltv-mod.
 
-A new feature must build and run on every display target:
+## Unterstützte Hardware und Projektstruktur
 
-| Target | Hardware |
-|---|---|
-| `smalltv` | GeekMagic SmallTV and SmallTV-ultra (ESP8266) |
-| `smalltv_c2` | SmallTV knockoff (ESP32-C2) |
-| `smalltv_esp32` | NMMiner NM-TV-154 (ESP32) |
-| `smalltv_esp32_wg` | NMMiner NM-TV-154 with WireGuard (ESP32) |
-| `smalltv_esp32_8mb` | SmallTV Pro (ESP32, 8 MB flash) |
+Getestetes Gerät: **GeekMagic SmallTV-Ultra mit ESP8266 / ESP-12F, 4 MB Flash
+und 240 × 240 Pixel ST7789**. Andere Geräte und Displayvarianten sind nicht
+getestet; Kompatibilität wird nicht zugesichert.
 
-`smalltv_lean` and `smalltv_loader` are exempt. The lean image exists to drop features and free heap on the ESP8266, and the loader is a minimal installer with no display modes.
+Der aktuelle Quellstand liegt im Versionsarchiv
+`smalltv-deutsch-vvo-v0.4.11.zip`. Vor Änderungen dieses Archiv entpacken.
+Die noch vorhandenen Dateien des Ursprungsprojekts im Repository-Hauptverzeichnis
+sind nicht der Quellstand dieses Versionsbuilds. Kein automatischer Fork-Sync.
 
-The reason is maintenance. Each feature limited to some boards adds a row to a feature-by-device matrix that the docs, the web UI, the issue tracker and every later contribution have to respect. That matrix grows with each contribution until nobody can tell what runs where, and users cannot answer "does my SmallTV do X" without reading the build flags.
+Im entpackten Versionsordner:
 
-A board-specific limit is accepted only where the hardware cannot support the feature, for example a chip without the flash or RAM for it. The pull request has to show that limit with measured numbers. Porting effort is not a hardware limit. WireGuard is the existing example: the ESP8266 cannot run it, as documented in the README.
+```sh
+python3 tools/check.py
+python3 tools/test_radar.py
+python3 tools/test_display.py
+g++ -std=c++11 -Wall -Wextra -Werror tests/test_core.cpp -o /tmp/smalltv-test-core
+/tmp/smalltv-test-core
+pio run -e smalltv_ultra
+```
 
-## Building and testing
+Der GitHub-Workflow `.github/workflows/build-v0411.yml` baut ausschließlich dieses
+Versionsarchiv. Änderungen am Quellcode müssen auch im Archiv enthalten sein.
+Die README ist die vollständige Benutzerdokumentation ohne Unterseiten.
+Weitere Dateien im Quellarchiv dienen Entwicklung und Validierung.
+Die separate README-ZIP bleibt Teil jeder Auslieferung.
 
-- Build every target listed above: `pio run -e smalltv -e smalltv_c2 -e smalltv_esp32 -e smalltv_esp32_wg -e smalltv_esp32_8mb`
-- Report the flash and static RAM usage of each image the change affects
-- State which boards the change ran on and which were only built. An untested board is fine, an unstated one is not
-- On the ESP8266, report free heap while the feature runs alongside the stock ticker's TLS fetch
+## Fehler melden
 
-## Code
+Bitte Firmwareversion, Gerät, betroffenen Programmtyp, Schritte zur Reproduktion
+und erwartetes/tatsächliches Verhalten nennen. Bei Layoutfehlern Browser und
+Bildschirmgröße ergänzen. Fotos und bereinigte Buildlogs helfen.
 
-- Match the layout and comment density of the surrounding code
-- Keep unrelated changes, such as a fix to settings storage, in their own pull request
-- `src/webui.html` is the source of the web UI. After editing it, run `python tools/gzip_webui.py` and commit the regenerated `src/webui.h` in the same commit
-- A new setting gets a default in `Settings::setDefaults()` and appears in both `settingsToJson()` and `settingsApplyJson()`, so it survives the backup and restore in the System tab
-- Do not change `FW_VERSION` in `src/config.h`. The maintainer bumps it at release time
-- Never commit credentials, API keys, WiFi passwords or captures from a real device
+Keine WLAN-Passwörter, API-Keys oder vollständigen privaten Konfigurationsdateien
+veröffentlichen. Für öffentliche Credits ausschließlich `du13500` verwenden.
 
-## Documentation
+## Änderungen beitragen
 
-- A new feature gets a page under `docs/src/content/docs/features/` and an entry in the sidebar in `docs/astro.config.mjs`
-- A new feature gets a bullet in the README feature list that links to the published page on `https://giovi321.github.io/smalltv-mod/`, not to the Markdown source
+- Pixelstil und funktionierende Standardansichten erhalten.
+- Neue Optionen mit kompatiblen Standardwerten versehen.
+- Speicherbedarf, Watchdog, API-Abfragehäufigkeit und OTA-Größe beachten.
+- Keine Flugrouten, Zeiten oder Statuswerte erfinden, wenn eine Quelle sie nicht liefert.
+- Geeignete Prüfungen ausführen und Hardwaretests ehrlich kennzeichnen.
+- README, Änderungsprotokoll und Testplan zum Verhalten aktualisieren.
+- Den generierten Font über `tools/generate_font.py` ändern und neu erzeugen.
 
-## Commits
+WireGuard, MQTT/Home Assistant und zusätzliche Hardwaretargets gehören nicht zum
+zugesagten Funktionsumfang. Neue größere Ideen zunächst diskutieren.
 
-- Commit messages use `type(scope): summary`, for example `feat(ha): ...`, `fix(notify): ...`, `docs(readme): ...`, `ci: ...`
+## Lizenz und Datenquellen
 
-## License
-
-Contributions are released under the WTFPL, the same license as the rest of the repo.
+Projektcode: [MIT](LICENSE). Für externe Daten, Bibliotheken und Dienste gelten
+ihre jeweiligen Bedingungen; siehe [Datenquellen](THIRD_PARTY_SERVICES.md).

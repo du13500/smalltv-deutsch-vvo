@@ -38,6 +38,6 @@ Start-/Zielpaare sind keine Nonstop-Zusage.
 
 Prüfstand: 6. Oktober 2026. Anbieter können APIs und Bedingungen ändern.
 
-## Abrufverhalten ab v0.4.10
+## Abrufverhalten ab v0.4.11
 
 Radarpositionen und Zusatzdaten werden getrennt geladen. Mehrteilige Routen bleiben erhalten, wenn die bestehende Positionsprüfung sie akzeptiert. Ein Start- oder Zielflughafen wird nicht allein aus der Nähe zu einem Flughafen abgeleitet. Die Quellen können weiterhin veraltete, unvollständige oder falsche Routen liefern.
