@@ -1,8 +1,8 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.9](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v049.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v049.yml)
+[![Build SmallTV DD v0.4.10](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0410.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0410.yml)
 
-> 🟨 **v0.4.9 · Entwicklungsbuild**  
+> 🟨 **v0.4.10 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
@@ -17,9 +17,9 @@ Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker 
 | --- | --- |
 | Einrichtung, Zeitzone, Nachtmodus und Zeichensatz | 🟩 In v0.4.7 auf echter Hardware bestätigt |
 | Teilaktualisierung bei Radar, Abfahrten und Countdowns | 🟩 In v0.4.8 auf echter Hardware bestätigt |
-| Wetter und VVO: Abrufe und Fehlererholung | 🟨 Änderungen in v0.4.9; Hardwaretest offen |
-| Flugradar | 🟨 Getrennte Abrufe und Diagnose in v0.4.9; zuverlässiger Dauerbetrieb noch offen |
-| Diagnose-Log und Speichersperre | 🟨 Automatisiert geprüft; Hardwaretest offen |
+| Wetter und VVO: Abrufe und Fehlererholung | 🟨 Speicherprobleme in v0.4.9 beobachtet; Änderungen in v0.4.10 zu testen |
+| Flugradar | 🟨 HTTP 429 und Verbindungsfehler in v0.4.9; Anpassungen in v0.4.10 zu testen |
+| Diagnose-Log und Speichersperre | 🟨 Log in v0.4.9 praktisch genutzt; erweiterter Speicherschutz in v0.4.10 zu testen |
 | Wetterbilder | 🟨 Verschiedene Wetterlagen getestet; vollständiger Praxistest offen |
 | Flug-Tracker mit aviationstack | ⬜ Vollständiger Hardwaretest mit gültigem API-Schlüssel offen |
 
@@ -40,7 +40,7 @@ Die Textampel beschreibt den Praxistest der Funktionen. Das Build-Badge oben zei
 | **Flug-Tracker** | Status, Flughäfen, Flugzeiten und verfügbare Live-Daten eines eingetragenen Fluges; aviationstack-Schlüssel erforderlich |
 | **Countdown 1 bis 4** | Vier unabhängige Timer mit eigenem Titel und Farben; Kalendertage, Stunden/Minuten/Sekunden oder Minuten/Sekunden |
 
-Programme können einzeln oder im automatischen Wechsel angezeigt werden. Die Anzeigedauer lässt sich je Programm einstellen. Ein Nachtmodus reduziert die Helligkeit in einem frei wählbaren Zeitfenster.
+Programme können einzeln oder im automatischen Wechsel angezeigt werden. Die Anzeigedauer lässt sich je Programm einstellen. Ein Nachtmodus reduziert die Helligkeit in einem frei wählbaren Zeitfenster. Die Mindesthelligkeit beträgt tagsüber und nachts 1 %.
 
 Wetterbilder unterscheiden Tag und Nacht, Bewölkung, Nebel, Niederschlagsart und Intensität. Unterstützt werden erweiterte lateinische Zeichen sowie griechische und kyrillische Buchstaben. Für nicht darstellbare Ortsnamen kann ein eigener Anzeigename eingetragen werden.
 
@@ -63,11 +63,11 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
 
-- `smalltv-deutsch-vvo-v0.4.9.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build-v049.yml` als `.github/workflows/build-v049.yml` ablegen.
-- Die README aus der separaten README-ZIP bei Bedarf als `README.md` im Hauptverzeichnis ersetzen.
-- Unter **Actions** den Workflow **Build SmallTV DD v0.4.9** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build das Artefakt **smalltv-dd-v0.4.9** herunterladen und entpacken. Es enthält die Firmware-BIN und den Buildlog.
+- `smalltv-deutsch-vvo-v0.4.10.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
+- `build-v0410.yml` als `.github/workflows/build-v0410.yml` ablegen.
+- Die separate README-ZIP entpacken und deren README sowie Lizenzunterlagen im Hauptverzeichnis ersetzen. Sie enthält auch `LICENSE`, `LICENSES`, `THIRD_PARTY_NOTICES.md` und `THIRD_PARTY_SERVICES.md`.
+- Unter **Actions** den Workflow **Build SmallTV DD v0.4.10** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
+- Nach erfolgreichem Build das Artefakt **smalltv-dd-v0.4.10** herunterladen und entpacken. Es enthält die Firmware-BIN, Buildlog, ELF-Datei für Absturzanalysen sowie Lizenztexte und ein Begleitarchiv mit Quellen und Buildobjekten. Für das Firmware-Update wird nur die BIN ausgewählt.
 
 Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
 
@@ -84,24 +84,25 @@ Im Webinterface unter **System → Firmware-Update** die passende `.bin` auswäh
 
 Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung falsch oder unvollständig sein. Unpassende oder nicht verfügbare Routen werden nicht durch vermutete Flughäfen ersetzt. `N/A` bedeutet fehlende Information, `GND` einen ausdrücklich gemeldeten Bodenstatus. Höhenangaben stammen aus den verfügbaren Flugdaten und sind keine Höhe über dem Gelände.
 
-Externe Dienste können Abrufe begrenzen. Bei HTTP 429 pausieren die betroffenen ADS-B-Abfragen automatisch. Während einer Fehlerphase zeigt das Radar kurzzeitig **LETZTER STAND**; nach 30 Sekunden ohne neue Positionsdaten wird ein als veraltet markiertes Flugzeug entfernt. Ein eingestellter Aktualisierungstakt garantiert keine neuen Daten vom Anbieter.
+Externe Dienste können Abrufe begrenzen. Bei HTTP 429 pausieren die betroffenen ADS-B-Abfragen automatisch. Nach einer Drosselung gilt mindestens 15 Sekunden Abstand zwischen Positionsabrufen, bei wiederholter Drosselung mindestens 20 Sekunden. Der eingestellte Wert bleibt gespeichert; das höhere Mindestintervall gilt bis zehn Minuten ohne weitere Drosselung vergangen sind. Währenddessen entfallen zusätzliche adsb.lol-Routenabrufe. Das Webinterface zeigt das aktive Mindestintervall. Während einer Fehlerphase zeigt das Radar kurzzeitig **LETZTER STAND**; nach 30 Sekunden ohne neue Positionsdaten wird ein als veraltet markiertes Flugzeug entfernt. Ein eingestellter Aktualisierungstakt garantiert keine neuen Daten vom Anbieter.
 
 ## Versionsgeschichte
 
-### v0.4.9
+### v0.4.10
 
-- **Diagnose im Webinterface:** Im Reiter System lassen sich die letzten 24 Ereignisse anzeigen und als Textdatei herunterladen. Abrufe werden nach Position, Route, Metadaten, Airline, Wetter, VVO und Ortsabfrage unterschieden. Aufgeführt werden HTTP-Ergebnis, Zeit seit Start, Dauer, freier Heap und größter Speicherblock. Passwörter, API-Schlüssel, Suchtexte und vollständige URLs werden nicht protokolliert.
-- **Neustart-Hinweise:** Reset-Grund und Reset-Information werden angezeigt. Ein kleiner RTC-Marker hält den letzten protokollierten Arbeitsschritt des vorherigen Starts fest, soweit er einen Neustart übersteht. Er liefert einen Hinweis, keinen Beweis für die Absturzursache. Der normale Ereignislog beginnt nach jedem Neustart neu.
-- **Radar-Abrufe:** Positionsdaten werden vor den Zusatzabfragen übernommen. Route, Metadaten und Airline werden getrennt und nacheinander ergänzt. Der Positionspfad verwendet nur zwischengespeicherte Zusatzdaten. Bei wechselnden Flugzeugen liegen mindestens 60 Sekunden zwischen neuen Ergänzungszyklen; fehlende Routen werden frühestens nach zwei Minuten erneut geprüft. Gültige Routen bleiben höchstens fünf Minuten verwendbar und werden weiterhin gegen die Position geprüft.
-- **Hintergrundabfragen:** Abfahrten, Wetter, Radar und Tracker werden im Wechsel bedient. Zwischen Hintergrundaufgaben liegt eine kurze Pause; das Webinterface kann dazwischen Anfragen bearbeiten. Eine einzelne HTTPS-Abfrage kann weiterhin einige Sekunden blockieren.
-- **Erholung bei Fehlern:** Wetter und VVO wiederholen fehlgeschlagene Abrufe nach 15, 30, 60 und höchstens 120 Sekunden. Nach Erfolg gilt wieder das eingestellte Intervall. Bei HTTP 429/503 werden zusätzlich Anbieterpausen berücksichtigt. TLS-Abfragen für Wetter, VVO, Ortsnamen und Tracker prüfen den verfügbaren Speicher vor dem Verbindungsaufbau.
-- **Einstellungen speichern:** Unveränderte Programme behalten ihre Daten und Abrufzeiten. Neue Standorte, Haltestellen, Datenfilter oder neu aktivierte Programme lösen den jeweiligen Neuabruf aus. Während eine Karten-Ortsabfrage wartet oder läuft, ist die Speichertaste sichtbar deaktiviert. Nach Erfolg, fehlendem Ortsnamen oder einem Fehler wird sie wieder freigegeben.
-- **Antwortprüfung:** Eine Radar-Antwort ohne Flugzeugliste oder mit ungültigen Positionskoordinaten gilt als Abruffehler. Eine ausdrücklich leere Liste bleibt ein erfolgreicher Abruf ohne Flugzeuge.
+- **Speicher bei Netzwerkabfragen:** JSON-Speicher wächst in kleineren Blöcken. Ein eigener Allocator hält 3 KiB freien Heap zurück; bei fehlendem Speicher wird die Antwort verworfen. Nicht mehr benötigte Anfrage-, Filter- und TLS-Daten werden vor der weiteren Auswertung freigegeben. Auch ein unvollständig aufgebauter JSON-Filter wird erkannt. Das soll die in v0.4.9 beobachteten Abstürze bei Karten- und VVO-Abfragen vermeiden; der Hardwaretest steht aus.
+- **TLS-Puffer:** Wetter, VVO, Ortsabfragen und Radar-Metadaten prüfen einmal pro Start, ob der jeweilige Server kleinere TLS-Empfangsblöcke unterstützt. Nur bei bestätigter Unterstützung wird ein 512-Byte-Puffer verwendet. Andernfalls bleibt der bisherige größere Puffer.
+- **Radar-Drosselung:** Ein erfolgreicher Abruf setzt nach HTTP 429 nicht mehr sofort alle Drosselungshinweise zurück. Positionsabrufe laufen vorübergehend mit mindestens 15 beziehungsweise 20 Sekunden Abstand; zusätzliche adsb.lol-Routenabfragen pausieren. Retry-After und Anbieterpausen bleiben maßgeblich. Kürzere HTTP-Antworttimeouts verkürzen einige Wartephasen, sind aber keine garantierte Obergrenze für die gesamte Verbindung.
+- **Routen:** HTTP 201 wird beim adsb.lol-Routenendpunkt als mögliche erfolgreiche Antwort verarbeitet. Callsign, Antwortstruktur und Plausibilität der Flughäfen werden weiterhin geprüft.
+- **Diagnose:** Der Log unterscheidet JSON-Speichermangel, unvollständige, leere, zu tief verschachtelte und ungültige Antworten. Der Systemstatus zeigt das vorübergehende Radar-Mindestintervall. Der Build enthält die passende ELF-Datei zur späteren Zuordnung von Absturzadressen.
+- **Helligkeit:** Normal- und Nachtmodus erlauben mindestens 1 %. Zuvor gespeicherte 0 % werden beim Laden auf 1 % angehoben.
+- **Lizenz:** Eigener Projektcode und Dokumentation stehen unter MIT. Copyright- und Lizenzhinweis bleiben bei Weitergabe verpflichtend. Herkunft aus smalltv-mod, Bibliothekslizenzen und externe Datenrechte werden getrennt aufgeführt. Dem Firmware-Build liegen Quellen, Lizenzhinweise und Buildobjekte bei.
 
 ### Ältere Versionen
 
 | Version | Wichtigste Neuerungen |
 | --- | --- |
+| **v0.4.9** | Diagnose-Log mit Neustart-Hinweisen, getrennte Radar-Zusatzabfragen, gestufte Wetter-/VVO-Wiederholungen und Speichersperre während der Ortsnamensabfrage |
 | **v0.4.8** | Anbieterpausen, positionsgeprüfte Radar-Routen, Online-Ergänzung von Airline und Typ, Bodenstatus GND, Kartenkorrekturen und Teilaktualisierungen in weiteren Programmen |
 | **v0.4.7** | Einstellbare Zeitzonen, griechische und kyrillische Zeichen, differenziertere Wetterbilder sowie Verbesserungen bei Radar-Abrufen und der Anzeige veralteter Daten |
 | **v0.4.6** | Erweiterter lateinischer Zeichensatz, mehrteilige Flugrouten, Tracker-Footer und Verbesserungen am Webinterface |
@@ -119,8 +120,8 @@ Externe Dienste können Abrufe begrenzen. Bei HTTP 429 pausieren die betroffenen
 
 Unter **System → Diagnose** zeigt **Log laden** die letzten Ereignisse; **Log herunterladen** speichert sie als Textdatei. Nach einem Radar-Aussetzer oder einer fehlgeschlagenen Wetter-/VVO-Abfrage den Log möglichst direkt laden. Nach einem Reboot ist der vorherige vollständige Log verloren; Reset-Information und ein gültiger RTC-Marker können Hinweise erhalten. Der Log wird im RAM geführt und nicht fortlaufend in den Flash geschrieben.
 
-## Lizenz
-
 Hilfreich sind Firmwareversion, Gerät, betroffene Ansicht, Schritte zur Reproduktion sowie ein Foto oder der bereinigte Systemstatus. Keine WLAN-Passwörter oder API-Schlüssel veröffentlichen.
 
-Projektcode: **WTFPL**, entsprechend der mitgelieferten Lizenzdatei. Für Bibliotheken und externe Daten gelten die jeweiligen Bedingungen. Kartendaten: © OpenStreetMap-Mitwirkende. Dieses Projekt ist unabhängig von GeekMagic, VVO und den genannten Datenanbietern.
+## Lizenz
+
+Eigener Projektcode und Dokumentation: **MIT**, Copyright (c) 2026 du13500. Der Copyright- und Lizenzhinweis muss bei Weitergabe erhalten bleiben. Die Grundlage aus smalltv-mod von giovi321 wurde unter WTFPL veröffentlicht; der ursprüngliche Hinweis bleibt mitgeliefert. Für Bibliotheken und externe Daten gelten die jeweiligen Bedingungen. Kartendaten: © OpenStreetMap-Mitwirkende. Dieses Projekt ist unabhängig von GeekMagic, VVO und den genannten Datenanbietern.

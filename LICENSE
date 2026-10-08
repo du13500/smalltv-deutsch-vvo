@@ -1,56 +1,21 @@
-            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
-                    Version 2, December 2004
+MIT License
 
- Copyright (C) 2026 giovi321
+Copyright (c) 2026 du13500
 
- Everyone is permitted to copy and distribute verbatim or modified
- copies of this license document, and changing it is allowed as long
- as the name is changed.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
-   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  0. You just DO WHAT THE FUCK YOU WANT TO.
-
-
-SmallTV Deutsch/VVO - project licensing notice
-==============================================
-
-Modifications and additional code in SmallTV Deutsch/VVO:
-Copyright (C) 2026 du13500
-
-Unless a file explicitly states otherwise, the modifications and additional
-source code in this repository are also released under the WTFPL Version 2
-shown above. This permits free use, modification and redistribution of the
-project code, including commercial use.
-
-Third-party services and data
------------------------------
-
-The WTFPL applies to the project code. It does NOT grant rights to data,
-trademarks, content or services provided by third parties and accessed by the
-firmware at runtime.
-
-SmallTV Deutsch/VVO can access, among others:
-
-- Verkehrsverbund Oberelbe (VVO)
-- Open-Meteo
-- adsb.lol
-- adsbdb
-- optionally aviationstack
-- OpenStreetMap map tiles in the web interface
-- OpenStreetMap Nominatim for reverse geocoding
-
-Those services and data remain subject to their respective terms of use,
-licences, rate limits and attribution requirements. Some free services used by
-the default configuration are intended only for private/non-commercial use or
-otherwise restrict reuse of their data.
-
-Commercial use of the project code is therefore not the same as permission to
-commercially use every configured external data source. Anyone using,
-distributing or integrating this firmware commercially is responsible for
-obtaining suitable rights for the external services they actually use, or for
-replacing them with appropriately licensed alternatives.
-
-This project notice does not modify the WTFPL. It only clarifies that the
-project cannot license rights belonging to third parties.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
