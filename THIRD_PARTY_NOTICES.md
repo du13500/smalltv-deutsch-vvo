@@ -1,6 +1,6 @@
 # Herkunft, Bibliotheken und Lizenzhinweise
 
-Der eigene Projektcode und die Dokumentation von SmallTV Deutsch/VVO stehen ab v0.4.10 unter MIT. Copyright (c) 2026 du13500. Copyright- und Lizenzhinweis müssen bei Weitergabe erhalten bleiben. Eine sichtbare Namensnennung in Werbung oder auf dem Display wird dadurch nicht vorgeschrieben.
+Der eigene Projektcode und die Dokumentation von SmallTV Deutsch/VVO stehen ab v0.4.11 unter MIT. Copyright (c) 2026 du13500. Copyright- und Lizenzhinweis müssen bei Weitergabe erhalten bleiben. Eine sichtbare Namensnennung in Werbung oder auf dem Display wird dadurch nicht vorgeschrieben.
 
 Die Hardware-/Displaygrundlage stammt aus smalltv-mod von giovi321, veröffentlicht unter WTFPL v2. Der originale mitgelieferte Lizenzhinweis bleibt in LICENSES/smalltv-mod-WTFPL.txt erhalten. Die WTFPL erlaubt Weiterlizenzierung; zuvor veröffentlichte Fassungen behalten ihre bisherigen Nutzungsrechte.
 
