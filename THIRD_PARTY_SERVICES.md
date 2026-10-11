@@ -9,7 +9,7 @@ Bedingungen, Limits und Attributionspflichten gelten unabhängig davon.
 | Haltestellen und Abfahrten | [VVO](https://www.vvo-online.de/), [Impressum](https://www.vvo-online.de/de/impressum/index.cshtml) |
 | Wetter | [Open-Meteo](https://open-meteo.com/), [Bedingungen](https://open-meteo.com/en/terms) |
 | Ortssuche und Reverse-Geocoding | [Nominatim](https://nominatim.org/release-docs/latest/api/Overview/), [Nutzungsregeln](https://operations.osmfoundation.org/policies/nominatim/) |
-| Flugradar, Live-Telemetrie und Routen | [adsb.lol API](https://api.adsb.lol/docs) |
+| Flugradar, Live-Telemetrie und Routen | [adsb.lol API und Datenlizenz](https://www.adsb.lol/docs/open-data/api/) |
 | Routen-Fallback und einzelne Zwischenstopps | [adsbdb](https://www.adsbdb.com/), [Projektdokumentation](https://github.com/mrjackwills/adsbdb) |
 | Flugplandaten und Status im Tracker | [aviationstack](https://aviationstack.com/), [API-Dokumentation](https://docs.apilayer.com/aviationstack/docs/api-documentation) |
 | Karten und Attribution | [OpenStreetMap Copyright](https://www.openstreetmap.org/copyright), [Kachelserver-Regeln](https://operations.osmfoundation.org/policies/tiles/) |
@@ -41,3 +41,13 @@ Prüfstand: 6. Oktober 2026. Anbieter können APIs und Bedingungen ändern.
 ## Abrufverhalten ab v0.4.11
 
 Radarpositionen und Zusatzdaten werden getrennt geladen. Mehrteilige Routen bleiben erhalten, wenn die bestehende Positionsprüfung sie akzeptiert. Ein Start- oder Zielflughafen wird nicht allein aus der Nähe zu einem Flughafen abgeleitet. Die Quellen können weiterhin veraltete, unvollständige oder falsche Routen liefern.
+
+## Ergänzungen v0.4.14.5
+
+Die Browser-Ortssuche nutzt Nominatim direkt. Die öffentliche Instanz verlangt manuelle Auswahl, Identifikation der Anwendung, Attribution, Zwischenspeicherung und höchstens eine Anfrage pro Sekunde für die gesamte Anwendung. Die lokale Warteschlange ersetzt keine anwendungsweite Koordination mehrerer Browser. Der Dienst ist ohne Firmwarewechsel unter System austauschbar.
+
+Die adsb.lol-API-Dokumentation nennt ODbL 1.0 für ihre Daten. Die CC0-Angabe zu eingesendeten Feederdaten ist davon zu unterscheiden. Aus den öffentlichen API-Hinweisen lässt sich kein garantierter fester Abrufrhythmus ableiten. HTTP 429 und Retry-After werden respektiert; Verbindungsfehler sind keine bestätigte Anbieterpause.
+
+Open-Meteo erlaubt den kostenlosen Zugang für nichtkommerzielle Nutzung unter den veröffentlichten Grenzen; weitere Nutzung erfordert Prüfung des passenden Angebots. Die Code-Lizenz von adsbdb überträgt keine pauschalen Rechte an übernommenen Routendaten. Die Dokumentation nennt Einschränkungen für deren Veröffentlichung und Übernahme in andere Datenbanken.
+
+Anbieterinformationen am 11. Oktober 2026 geprüft. Maßgeblich bleiben die aktuellen Originalbedingungen. Links sind im Webinterface unter System zugänglich.

@@ -1,3 +1,14 @@
+# Hardwaretest v0.4.14.5
+
+1. Bei 1 % Helligkeit Counter 9s → 10s, 99s → 100s sowie einen Wechsel zum nächsten Flugzeug beobachten. Aufblitzen dokumentieren; Normal- und Nachtmodus weiterhin prüfen.
+2. Ortssuche und Kartenauswahl mehrfach bei Wetter und Radar, auch während Programmwechseln. Namen, Koordinaten und Speichern prüfen.
+3. Browser offline schalten, Freitextsuche und Öffnen der Karte auslösen. Roter Text „Internetverbindung erforderlich“. Anschließend online erneut suchen.
+4. Anbieterpause, echten Verbindungsfehler und erfolgreiche leere Radarantwort unterscheiden. Counter ein-/ausschalten und Einstellung nach Neustart prüfen.
+5. Airline nach fehlgeschlagenem Zusatzabruf und späterer Erholung beobachten. Fehlende Routen dürfen weiterhin N/A bleiben.
+6. System: Ortsdienst standardmäßig eingeklappt, Anbieterlinks unter Wartung öffnen.
+
+> Aktueller Stand: v0.4.14.5. Historische Angaben unten beziehen sich auf die jeweils genannten Builds.
+
 # Testplan v0.4.13
 
 ## Vorrangiger Hardwaretest
