@@ -1,3 +1,25 @@
+# Änderungen
+
+## v0.4.14.5
+
+- Unveränderte Helligkeitswerte setzen die PWM nicht erneut.
+- Airline-Cache speichert nur erfolgreich geladene Namen; Cache vor Speicher- und Pausenprüfung.
+- Doppelten Kartenhinweis entfernt, Offlinefeedback ergänzt.
+- Ortsdienst eingeklappt unter erweiterten Einstellungen; Dienste und Bedingungen unter Wartung.
+- Dokumentation auf Browser-Ortssuche, Anbieterpausen, Counter und Fehleranzeigen aktualisiert.
+
+## v0.4.14.4.2
+
+- Einheitlicher optionaler Abrufcounter für Live, letzten Stand und Anbieterpause, standardmäßig aktiv.
+
+## v0.4.14.4
+
+- Letztes Flugzeug bleibt während bestätigter Anbieterpause mit Altersanzeige erhalten.
+
+## v0.4.14.3
+
+- Ortssuche und Kartenauflösung in den Browser verlagert.
+
 ## v0.4.13
 
 - Geo prüft den freien Heap und den größten Speicherblock erneut unmittelbar vor dem HTTP-Abruf, nach Vorbereitung von LittleFS-Datei, URL, HTTP-Client und Headern. Eine nicht ausreichende Reserve führt zum kontrollierten Abbruch vor dem Verbindungsaufbau.

@@ -1,39 +1,22 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.13](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v0413.yml)
+[![Build SmallTV DD v0.4.14.5](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v04145.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v04145.yml)
 
-> 🟨 **v0.4.14 ff · Entwicklungsbuild**  
-> Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · aktuell bestehende Leistungsprobleme und Abstürze
+> 🟨 **v0.4.14.5 · Entwicklungsbuild**  
+> Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
 
-## v0.4.13
+## v0.4.14.5
 
-- Geo prüft den freien Heap und den größten Speicherblock erneut unmittelbar vor dem HTTP-Abruf, nach Vorbereitung von LittleFS-Datei, URL, HTTP-Client und Headern. Eine nicht ausreichende Reserve führt zum kontrollierten Abbruch vor dem Verbindungsaufbau.
-- Lokale URL-Kopien und die interne Suchtextkopie werden nach Übernahme durch HTTPClient freigegeben. Die Suche fordert keine ungenutzten Addressdetails mehr an; acht Treffer und deutsche Namensvarianten bleiben erhalten. Die Kartenauflösung fordert ihre benötigten Adressdaten weiterhin an.
-- Feste Diagnosebezeichnungen liegen im Flash. Der statische RAM-Bedarf sinkt gegenüber v0.4.12 um 484 Bytes. Das ist ein begrenzter Gewinn, keine Garantie für erfolgreiche Ortsabfragen in jedem Betriebszustand.
-- Neue Geo-Marker: Geo:Vorbereitung, Geo:Verbinden, Geo:Empfang und Geo:TLS-frei. Normale Fortschrittsmarker werden nicht als letzter Fehler gespeichert; sie bleiben als RTC-Marker auswertbar.
-- Der Empfangsschutz aus v0.4.12 bleibt bestehen: mindestens 3 KiB Rest-Heap, höchstens 48 KiB Antwort, begrenzte Schreibschritte und JSON erst nach TLS-Freigabe.
+- Helligkeit: Ein unveränderter PWM-Wert wird nicht erneut gesetzt. Das vermeidet unnötige Eingriffe in die Hintergrundbeleuchtung. Ob das beobachtete Aufblitzen bei 1 % damit vollständig verschwindet, muss am Gerät geprüft werden.
+- Airline-Namen: Fehlgeschlagene Abfragen werden nicht mehr als leeres Ergebnis für 30 Minuten gespeichert. Erfolgreich gespeicherte Namen bleiben auch während einer Abrufpause oder bei knappem Speicher verfügbar.
+- Ortssuche: Der zusätzliche dauerhafte Hinweis oberhalb der Karte entfällt. Bei erkanntem Offlinezustand erscheint beim Suchen oder Öffnen der Karte rot „Internetverbindung erforderlich“. Ein nicht erreichbarer Dienst wird weiterhin gesondert beschrieben.
+- System: Ortsdienst unter eingeklappten erweiterten Einstellungen; Dienste, Datenquellen und deren Bedingungen unterhalb der Wartungsschaltflächen.
 
-Hardwaretest offen. Der v0.4.12-Absturz ist durch die passende ELF als ungültiger Schreibzugriff innerhalb der ROM-Speicherkopierfunktion eingegrenzt, aber nicht vollständig erklärt. Wetter-/Radar-Abrufe, Anbieterpausen, Typanzeige und Programme bleiben erhalten.
-
-## Entwicklungsstand
-
-🟩 = im Praxistest bestätigt · 🟨 = neue Änderungen oder Tests offen · ⬜ = noch nicht vollständig getestet
-
-| Bereich | Stand |
-| --- | --- |
-| Einrichtung, Zeitzone, Nachtmodus und Zeichensatz | 🟩 In v0.4.7 auf echter Hardware bestätigt |
-| Teilaktualisierung bei Radar, Abfahrten und Countdowns | 🟩 In v0.4.8 auf echter Hardware bestätigt |
-| Wetter und VVO: Abrufe und Fehlererholung | 🟩 VVO einzeln und Programmwechsel in v0.4.10 stabil getestet; Wetter-Ortssuche v0.4.13 noch offen |
-| Flugradar | 🟩 v0.4.10 über 2 Stunden 49 Minuten ohne Neustart; 🟨 externe Routenqualität und neue Typprüfung weiter offen |
-| Diagnose-Log und Speichersperre | 🟩 Schutz in v0.4.10 praktisch beobachtet; 🟨 Kopieren und Geo-Puffer in v0.4.13 noch auf Hardware zu testen |
-| Wetterbilder | 🟨 Verschiedene Wetterlagen getestet; vollständiger Praxistest offen |
-| Flug-Tracker mit aviationstack | ⬜ Vollständiger Hardwaretest mit gültigem API-Schlüssel offen |
-
-Die Textampel beschreibt den Praxistest der Funktionen. Das Build-Badge oben zeigt separat das Ergebnis des GitHub-Workflows.
+Ortssuche und Radar wurden in den vorherigen Builds ab v0.4.14.3 im Praxistest als stabil gemeldet. Die Änderungen dieser Version benötigen noch einen Hardwaretest. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
 
 ## Unterstütztes Gerät
 
@@ -73,11 +56,11 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
 
-- `smalltv-deutsch-vvo-v0.4.13.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build-v0413.yml` als `.github/workflows/build-v0413.yml` ablegen.
+- `smalltv-deutsch-vvo-v0.4.14.5.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
+- `build-v04145.yml` als `.github/workflows/build-v04145.yml` ablegen.
 - Die separate README-ZIP entpacken und deren README sowie Lizenzunterlagen im Hauptverzeichnis ersetzen. Sie enthält auch `LICENSE`, `LICENSES`, `THIRD_PARTY_NOTICES.md` und `THIRD_PARTY_SERVICES.md`.
-- Unter **Actions** den Workflow **Build SmallTV DD v0.4.13** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build **smalltv-dd-v0.4.13-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.13-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+- Unter **Actions** den Workflow **Build SmallTV DD v0.4.14.5** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
+- Nach erfolgreichem Build **smalltv-dd-v0.4.14.5-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.14.5-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
 
 Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
 
@@ -94,7 +77,29 @@ Im Webinterface unter **System → Firmware-Update** die passende `.bin` auswäh
 
 Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung falsch oder unvollständig sein. Unpassende oder nicht verfügbare Routen werden nicht durch vermutete Flughäfen ersetzt. `N/A` bedeutet fehlende Information, `GND` einen ausdrücklich gemeldeten Bodenstatus. Höhenangaben stammen aus den verfügbaren Flugdaten und sind keine Höhe über dem Gelände.
 
-Externe Dienste können Abrufe begrenzen. Bei HTTP 429 pausieren die betroffenen ADS-B-Abfragen automatisch. Nach einer Drosselung gilt mindestens 15 Sekunden Abstand zwischen Positionsabrufen, bei wiederholter Drosselung mindestens 20 Sekunden. Der eingestellte Wert bleibt gespeichert; das höhere Mindestintervall gilt bis zehn Minuten ohne weitere Drosselung vergangen sind. Währenddessen entfallen zusätzliche adsb.lol-Routenabrufe. Das Webinterface zeigt das aktive Mindestintervall. Während einer Fehlerphase zeigt das Radar kurzzeitig **LETZTER STAND**; nach 30 Sekunden ohne neue Positionsdaten wird ein als veraltet markiertes Flugzeug entfernt. Ein eingestellter Aktualisierungstakt garantiert keine neuen Daten vom Anbieter.
+adsb.lol kann Abfragen vorübergehend begrenzen. Während einer bestätigten Anbieterpause bleibt das zuletzt empfangene Flugzeug stehen. Die Anzeige nennt die Zeit seit dem letzten erfolgreichen Positionsabruf. Das ausgewählte Aktualisierungsintervall verlängert sich nach HTTP 429 automatisch auf mindestens 15 Sekunden, bei wiederholter Begrenzung auf mindestens 20 Sekunden. Nach zehn Minuten ohne weitere Begrenzung gilt wieder der gespeicherte Wert. Die Wartezeit beginnt nach Abschluss des Abrufs; die Antwortdauer kommt hinzu. Zusätzliche adsb.lol-Routenabrufe pausieren während dieser Drosselung.
+
+### Radar-Footer und Fehlermeldungen
+
+| Anzeige | Bedeutung |
+| --- | --- |
+| `ADSB.LOL LIVE 4s` | Letzter erfolgreicher Positionsabruf vor vier Sekunden |
+| `LETZTER STAND 16s` | Vorherige Daten nach einem echten Abruffehler, vorübergehend weiter angezeigt |
+| `ABRUFPAUSE 46s` | Bestätigte Anbieterpause; Alter des letzten erfolgreichen Positionsabrufs, kein Countdown bis zum nächsten Abruf |
+| `KEIN FLUGZEUG` | Erfolgreiche Abfrage hat kein geeignetes Flugzeug geliefert |
+| `FLUGRADAR / keine aktuellen Daten`, `ABRUF FEHLGESCHLAGEN` | Abruf konnte keine verwendbaren Positionsdaten liefern und es gibt keinen noch gültigen bisherigen Stand |
+
+Der Abrufcounter lässt sich im Flugradar-Reiter deaktivieren und ist standardmäßig aktiviert. Nur die betroffene Footerfläche wird bei einem Sekundenwechsel aktualisiert. Die Uhrzeit steht rechts. Während blockierender Netzwerkoperationen können Sekundenupdates kurz stehen bleiben und anschließend zum tatsächlichen Alter springen. Zusatzdaten wie Airline und Route setzen das Alter nicht zurück. „LIVE“ beschreibt den Empfangsstand des Würfels, keine zugesicherte Aktualität der ursprünglichen Messung.
+
+Die rote Fehlermeldung ist keine Aussage, dass keine Flugzeuge fliegen. Ursachen können WLAN-/Verbindungsfehler, HTTP-Fehler, eine unvollständige oder ungültige Antwort, Speichermangel oder fehlende Koordinaten sein. HTTP 200 allein garantiert keine verwendbaren Daten. Nach einem echten Abruffehler wird ein vorhandener Stand nach 30 Sekunden ohne neue Positionsdaten entfernt. Fehler beim Laden von Zusatzdaten allein lösen diese Meldung nicht aus. Während einer bestätigten Anbieterpause bleibt ein vorhandenes Flugzeug erhalten; ohne zuvor empfangenes Flugzeug kann kein alter Stand angezeigt werden.
+
+### Ortssuche und Internetverbindung
+
+Freitextsuche und Ortsauflösung auf der Karte laufen über die Internetverbindung des Browsers. Der ESP8266 übernimmt die ausgewählten Koordinaten und Namen. Kartenkacheln kommen ebenfalls direkt zum Browser. Die Orte für Wetter und Radar bleiben unabhängig. Wiederholte Anfragen werden im Browser zwischengespeichert; schnelle Kartenauswahlen werden zusammengefasst und Anfragen nacheinander versendet.
+
+Unter System → Erweiterte Einstellungen kann ein Nominatim-kompatibler Ortsdienst für diesen Browser eingestellt werden. Die Standardadresse ist Nominatim von OpenStreetMap. Die Auswahl bleibt im Browser gespeichert. Der Offlinehinweis nutzt den vom Browser gemeldeten Verbindungszustand; eine gemeldete Onlineverbindung garantiert keine Erreichbarkeit eines externen Dienstes. Gültige Koordinaten können auch ohne ermittelten Ortsnamen gespeichert werden.
+
+Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und Datenquellen. Weitere Hinweise enthält `THIRD_PARTY_SERVICES.md`.
 
 ## Versionsgeschichte
 

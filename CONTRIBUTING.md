@@ -1,3 +1,5 @@
+> Aktueller Stand: v0.4.14.5. Historische Angaben unten beziehen sich auf die jeweils genannten Builds.
+
 # Mitmachen bei SmallTV Deutsch/VVO
 
 Danke für Fehlerberichte und Verbesserungsvorschläge. Dieses Projekt ist eine
@@ -10,7 +12,7 @@ und 240 × 240 Pixel ST7789**. Andere Geräte und Displayvarianten sind nicht
 getestet; Kompatibilität wird nicht zugesichert.
 
 Der aktuelle Quellstand liegt im Versionsarchiv
-`smalltv-deutsch-vvo-v0.4.13.zip`. Vor Änderungen dieses Archiv entpacken.
+`smalltv-deutsch-vvo-v0.4.14.5.zip`. Vor Änderungen dieses Archiv entpacken.
 Die noch vorhandenen Dateien des Ursprungsprojekts im Repository-Hauptverzeichnis
 sind nicht der Quellstand dieses Versionsbuilds. Kein automatischer Fork-Sync.
 
@@ -25,7 +27,7 @@ g++ -std=c++11 -Wall -Wextra -Werror tests/test_core.cpp -o /tmp/smalltv-test-co
 pio run -e smalltv_ultra
 ```
 
-Der GitHub-Workflow `.github/workflows/build-v0413.yml` baut ausschließlich dieses
+Der GitHub-Workflow `.github/workflows/build-v04145.yml` baut ausschließlich dieses
 Versionsarchiv. Änderungen am Quellcode müssen auch im Archiv enthalten sein.
 Die README ist die vollständige Benutzerdokumentation ohne Unterseiten.
 Weitere Dateien im Quellarchiv dienen Entwicklung und Validierung.
@@ -57,3 +59,7 @@ zugesagten Funktionsumfang. Neue größere Ideen zunächst diskutieren.
 
 Projektcode: [MIT](LICENSE). Für externe Daten, Bibliotheken und Dienste gelten
 ihre jeweiligen Bedingungen; siehe [Datenquellen](THIRD_PARTY_SERVICES.md).
+
+## Zusätzliche Prüfungen v0.4.14.5
+
+Nach Installation der gepinnten Bibliotheken auch `python3 tools/test_airline_cache.py` und `python3 tools/test_brightness.py` ausführen. Die Tests verwenden die Produktionsfunktionen mit kontrollierten HTTP-Antworten beziehungsweise Zeit- und PWM-Werten. Der Browser-Test prüft Offlinefeedback, eingeklappte erweiterte Einstellungen und Anbieterinformationen. Ein bestandener Test ersetzt keine Messung am Display.
