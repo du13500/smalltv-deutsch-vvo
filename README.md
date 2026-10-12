@@ -1,22 +1,22 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.14.5](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v04145.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build-v04145.yml)
+[![Build SmallTV DD v0.4.14.5.1](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
 
-> 🟨 **v0.4.14.5 · Entwicklungsbuild**  
+> 🟨 **v0.4.14.5.1 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
 
-## v0.4.14.5
+## v0.4.14.5.1
 
-- Helligkeit: Ein unveränderter PWM-Wert wird nicht erneut gesetzt. Das vermeidet unnötige Eingriffe in die Hintergrundbeleuchtung. Ob das beobachtete Aufblitzen bei 1 % damit vollständig verschwindet, muss am Gerät geprüft werden.
-- Airline-Namen: Fehlgeschlagene Abfragen werden nicht mehr als leeres Ergebnis für 30 Minuten gespeichert. Erfolgreich gespeicherte Namen bleiben auch während einer Abrufpause oder bei knappem Speicher verfügbar.
-- Ortssuche: Der zusätzliche dauerhafte Hinweis oberhalb der Karte entfällt. Bei erkanntem Offlinezustand erscheint beim Suchen oder Öffnen der Karte rot „Internetverbindung erforderlich“. Ein nicht erreichbarer Dienst wird weiterhin gesondert beschrieben.
-- System: Ortsdienst unter eingeklappten erweiterten Einstellungen; Dienste, Datenquellen und deren Bedingungen unterhalb der Wartungsschaltflächen.
+- VVO: Nur bei `ServiceError` mit `no serving lines found` steht mittig grau „Haltestelle wird nicht bedient“. Andere Fehler behalten ihre Anzeige. Haltestellenname oben, neutraler VVO-Footer unten.
+- Hintergrundbeleuchtung: Test der phasensynchronen PWM-Ansteuerung des vorhandenen ESP8266-Frameworks bei unveränderter Frequenz und Helligkeitseinstellung. Das Aufblitzen bestand unter v0.4.14.5 fort; eine vollständige Behebung durch diese Änderung ist noch nicht auf Hardware bestätigt.
+- Ein gemeinsamer Build-Workflow `build.yml`, der bei zukünftigen Versionen ersetzt wird. Die README löst keinen Firmwarebuild aus. Neue Läufe ersetzen einen noch laufenden Build desselben Branches.
+- Versionsgeschichte von v0.4.11 bis zum aktuellen Stand ergänzt. Drei Downloads: Quellarchiv, Workflowdatei und README.
 
-Ortssuche und Radar wurden in den vorherigen Builds ab v0.4.14.3 im Praxistest als stabil gemeldet. Die Änderungen dieser Version benötigen noch einen Hardwaretest. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
+Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Die Änderungen dieser Version benötigen einen Hardwaretest. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
 
 ## Unterstütztes Gerät
 
@@ -56,11 +56,15 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
 
-- `smalltv-deutsch-vvo-v0.4.14.5.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build-v04145.yml` als `.github/workflows/build-v04145.yml` ablegen.
-- Die separate README-ZIP entpacken und deren README sowie Lizenzunterlagen im Hauptverzeichnis ersetzen. Sie enthält auch `LICENSE`, `LICENSES`, `THIRD_PARTY_NOTICES.md` und `THIRD_PARTY_SERVICES.md`.
-- Unter **Actions** den Workflow **Build SmallTV DD v0.4.14.5** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build **smalltv-dd-v0.4.14.5-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.14.5-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+- `smalltv-deutsch-vvo-v0.4.14.5.1.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
+- `build.yml` als `.github/workflows/build.yml` ablegen.
+- Die einzelne `README.md` im Hauptverzeichnis ersetzen. Lizenztexte und weitere erforderliche Unterlagen bleiben im Quellarchiv enthalten.
+- Unter **Actions** den Workflow **Build SmallTV DD** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
+- Nach erfolgreichem Build **smalltv-dd-v0.4.14.5.1-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.14.5.1-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+
+**Einmalige Workflow-Bereinigung:** Die bisherigen Firmware-Workflows unter Actions öffnen und über das Menü mit den drei Punkten deaktivieren. Dazu gehören die alten versionsbezogenen Builds und gegebenenfalls der ursprüngliche Firmware-Loader. Alternativ deren YAML-Dateien aus `.github/workflows/` entfernen. Der neue Workflow deaktiviert alte Dateien nicht automatisch. Quellarchive und bisherige Build-Ergebnisse müssen dafür nicht gelöscht werden. Dokumentationsworkflows sind davon unabhängig.
+
+Bei folgenden Versionen dieselbe Datei `.github/workflows/build.yml` mit der neu gelieferten Workflowdatei ersetzen. Keine weiteren versionsbezogenen Workflowdateien hinzufügen. Der Workflow benennt seine Ergebnisse weiterhin nach der Firmwareversion.
 
 Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
 
@@ -102,6 +106,24 @@ Unter System → Erweiterte Einstellungen kann ein Nominatim-kompatibler Ortsdie
 Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und Datenquellen. Weitere Hinweise enthält `THIRD_PARTY_SERVICES.md`.
 
 ## Versionsgeschichte
+
+| Version | Änderungen |
+| --- | --- |
+| **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |
+| **v0.4.14.5** | Unveränderte PWM-Werte nicht erneut setzen; fehlerhafte leere Airline-Cacheeinträge vermeiden; Offlinehinweise; Ortsdienst einklappen und Anbieterinformationen unter System |
+| **v0.4.14.4.2** | Einheitlicher optionaler Abrufcounter für LIVE, LETZTER STAND und ABRUFPAUSE; standardmäßig aktiviert |
+| **v0.4.14.4.1** | Zeitangabe bei Anbieterpause links zum Statustext verschoben |
+| **v0.4.14.4** | Letztes Flugzeug während bestätigter Anbieterpause erhalten; Alter seit letztem erfolgreichen Positionsabruf anzeigen |
+| **v0.4.14.3** | Freitextsuche und Karten-Ortsauflösung in den Browser verlagert; Warteschlange, Cache und austauschbarer Ortsdienst |
+| **v0.4.14.2** | Geo-Empfang und Speicherbudget getrennt geprüft; TLS-Objekte vor JSON-Auswertung vollständig freigegeben; Ortsabfragen auf Hardware noch nicht zuverlässig |
+| **v0.4.14.1** | TLS-Speicherprüfung an tatsächliche Stackgröße und kleinere zusammenhängende Blockanforderung angepasst |
+| **v0.4.14** | Weitere gezielte Korrekturen am Geo-Empfang auf Basis von v0.4.13; Karten- und Freitextsuche blieben in den Hardwaretests problematisch |
+| **v0.4.13** | Zusätzliche Speicherprüfung vor Geo-Verbindung; Diagnosemarker erweitert; feste Diagnosebezeichnungen in Flash verlagert |
+| **v0.4.12** | Schreibkapazität und Fehler des Geo-Zwischenpuffers korrekt melden; Empfang begrenzen; stabile lesbare Flugzeugtypen einschließlich Embraer; VVO-Hinweis ausgeschrieben |
+| **v0.4.11** | Geo-Antwort zwischenspeichern und erst nach TLS-Freigabe auswerten; Flugzeugtyp plausibilisieren; letzter Fehler separat behalten; Programmauswahl neu geordnet; Standortname ohne Wechsel möglich |
+
+Die Geo-Korrekturen v0.4.11 bis v0.4.14.2 beseitigten nicht alle auf Hardware beobachteten Probleme. Erst die Verlagerung der Ortssuche in den Browser ab v0.4.14.3 wurde im Gespräch als stabil bestätigt. Die Tabelle beschreibt Änderungen, keine zugesicherte Fehlerfreiheit aller historischen Builds.
+
 
 ### v0.4.10
 
