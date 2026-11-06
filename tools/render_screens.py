@@ -241,23 +241,23 @@ int main(int argc, char** argv) {
   cfg.rotationMask = 0x1FF;
 
   // Abfahrten
-  cfg.mode = MODE_DEPARTURES; cfg.stopName = "Postplatz"; cfg.stopId = "33000037"; cfg.departureCount = 5;
-  dep("1", "Prohlis", 2); dep("2", "Kleinzschachwitz", 4, true); dep("4", "Radebeul West", 7);
-  dep("12", "Striesen", 11); dep("62", "Johannstadt", 14, false, true);
+  cfg.mode = MODE_DEPARTURES; cfg.stopName = "Hauptbahnhof"; cfg.stopId = "33000028"; cfg.departureCount = 5;
+  dep("S1", "Meißen Triebischtal", 1); dep("3", "Wilder Mann", 3); dep("RE50", "Leipzig Hbf", 6, true);
+  dep("8", "Hellerau", 9); dep("10", "Messe Dresden", 12, false, true);
   drawDepartures(); dump((out + "/abfahrten.ppm").c_str());
 
   // Wetter
-  cfg.mode = MODE_WEATHER; cfg.weatherCity = "Dresden"; cfg.weatherDisplayName = "";
-  wx.valid = true; wx.currentC = 11.6f; wx.highC = 12.1f; wx.lowC = 4.3f; wx.rainPct = 30; wx.code = 2; wx.isDay = true;
-  strlcpy(wx.sunrise, "07:12", sizeof wx.sunrise); strlcpy(wx.sunset, "16:28", sizeof wx.sunset);
+  cfg.mode = MODE_WEATHER; cfg.weatherCity = "Brooklyn"; cfg.weatherDisplayName = ""; cfg.weatherFahrenheit = true;
+  wx.valid = true; wx.currentC = 8.9f; wx.highC = 11.7f; wx.lowC = 5.6f; wx.rainPct = 70; wx.code = 61; wx.isDay = true;
+  strlcpy(wx.sunrise, "06:31", sizeof wx.sunrise); strlcpy(wx.sunset, "16:42", sizeof wx.sunset);
   drawWeather(); dump((out + "/wetter.ppm").c_str());
 
   // Flugradar
   cfg.mode = MODE_PLANE; cfg.planePlace = "Dresden-Klotzsche"; cfg.planeShowAge = true; cfg.planeShowPlace = false;
-  fl.valid = true; strlcpy(fl.hex, "3c4b2a", 8); strlcpy(fl.callsign, "DLH6CM", 12); strlcpy(fl.airline, "Lufthansa", 64);
-  strlcpy(fl.registration, "D-AIZW", 16); strlcpy(fl.typeCode, "A320", 8); strlcpy(fl.typeName, "Airbus A320", 80);
-  strlcpy(fl.origin, "FRA", 4); strlcpy(fl.destination, "DRS", 4); parseFlightRoute("FRA-DRS", fl.route);
-  fl.distanceKm = 7.8f; fl.altitudeFt = 6200; fl.altitudeKnown = true;
+  fl.valid = true; strlcpy(fl.hex, "896180", 8); strlcpy(fl.callsign, "UAE45", 12); strlcpy(fl.airline, "Emirates", 64);
+  strlcpy(fl.registration, "A6-EVK", 16); strlcpy(fl.typeCode, "A388", 8); strlcpy(fl.typeName, "Airbus A380-800", 80);
+  strlcpy(fl.origin, "DXB", 4); strlcpy(fl.destination, "FRA", 4); parseFlightRoute("DXB-FRA", fl.route);
+  fl.distanceKm = 11.4f; fl.altitudeFt = 37000; fl.altitudeKnown = true;
   drawPlane(); dump((out + "/flugradar.ppm").c_str());
 
   // Uhr
