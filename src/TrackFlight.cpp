@@ -1,3 +1,4 @@
+#include "Version.h"
 #include "RequestPolicy.h"
 #include "TrackFlight.h"
 #include "TrackerRoute.h"
@@ -141,7 +142,7 @@ bool trackedFlightFetchStatus(const String& apiKey, const String& flightNumber) 
 
   if (!http.begin(client, url)) { g_t.error = true; return false; }
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.8");
+  http.setUserAgent(FW_USER_AGENT);
   int code = http.GET();trace.http(code);
   if (code != HTTP_CODE_OK) { http.end(); g_t.error = true; return false; }
 
@@ -265,7 +266,7 @@ bool trackedFlightFetchLive() {
   url += urlEncode(String(g_t.flightIcao));
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  adsbLolPrepare(http, "SmallTV-DD/0.4.14.8");
+  adsbLolPrepare(http, FW_USER_AGENT);
   int code = http.GET();trace.http(code);
   serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());
   if (code != HTTP_CODE_OK) { http.end(); return false; }

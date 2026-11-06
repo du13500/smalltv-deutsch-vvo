@@ -1,6 +1,6 @@
 {
-  "name": "smalltv-deutsch-vvo-checks",
-  "version": "0.4.14.8",
+  "name": "pixelstop-checks",
+  "version": "0.5.0-dev",
   "private": true,
   "scripts": {
     "test:webui": "node tests/webui.cjs"

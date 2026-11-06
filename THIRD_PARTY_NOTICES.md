@@ -1,6 +1,6 @@
 # Herkunft, Bibliotheken und Lizenzhinweise
 
-Der eigene Projektcode und die Dokumentation von SmallTV Deutsch/VVO stehen ab v0.4.13 unter MIT. Copyright (c) 2026 du13500. Copyright- und Lizenzhinweis müssen bei Weitergabe erhalten bleiben. Eine sichtbare Namensnennung in Werbung oder auf dem Display wird dadurch nicht vorgeschrieben.
+Der eigene Projektcode und die Dokumentation von PixelStop stehen ab v0.4.13 unter MIT. Copyright (c) 2026 du13500. Copyright- und Lizenzhinweis müssen bei Weitergabe erhalten bleiben. Eine sichtbare Namensnennung in Werbung oder auf dem Display wird dadurch nicht vorgeschrieben.
 
 Die Hardware-/Displaygrundlage stammt aus smalltv-mod von giovi321, veröffentlicht unter WTFPL v2. Der originale mitgelieferte Lizenzhinweis bleibt in LICENSES/smalltv-mod-WTFPL.txt erhalten. Die WTFPL erlaubt Weiterlizenzierung; zuvor veröffentlichte Fassungen behalten ihre bisherigen Nutzungsrechte.
 
@@ -24,4 +24,4 @@ Dies ist eine dokumentierte Prüfung der Hauptbestandteile, keine vollständige 
 
 ## Daten und Dienste
 
-Die MIT-Lizenz gilt nicht für Wetter-, Verkehrs-, Flug- und Kartendaten, Marken oder die Dienste der Anbieter. Deren Nutzungsbedingungen, Abruflimits und Attributionspflichten gelten unabhängig. Maßgebliche Anbieter sind in THIRD_PARTY_SERVICES.md aufgeführt. Kartendaten: © OpenStreetMap-Mitwirkende. SmallTV Deutsch/VVO ist unabhängig von GeekMagic, VVO und den genannten Datenanbietern.
+Die MIT-Lizenz gilt nicht für Wetter-, Verkehrs-, Flug- und Kartendaten, Marken oder die Dienste der Anbieter. Deren Nutzungsbedingungen, Abruflimits und Attributionspflichten gelten unabhängig. Maßgebliche Anbieter sind in THIRD_PARTY_SERVICES.md aufgeführt. Kartendaten: © OpenStreetMap-Mitwirkende. PixelStop ist unabhängig von GeekMagic, VVO und den genannten Datenanbietern.

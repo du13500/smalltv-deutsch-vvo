@@ -1,8 +1,8 @@
-name: Build SmallTV DD
+name: Build PixelStop
 
 # Baut die Firmware direkt aus dem Repository.
 # - Jeder Push auf main und jeder Pull Request: Prüfungen + Firmware als Actions-Artefakt
-# - Tag vX.Y… (z. B. v0.4.14.6): zusätzlich GitHub Release mit .bin und Begleitpaket
+# - Tag vX.Y… (z. B. v0.5.0): zusätzlich GitHub Release mit .bin und Begleitpaket
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
   pull_request:
 
 concurrency:
-  group: smalltv-firmware-${{ github.ref }}
+  group: pixelstop-firmware-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       - name: Firmwareversion ermitteln
         id: version
         run: |
-          VERSION=$(sed -n 's/^#define FW_VERSION "\(.*\)"/\1/p' src/main.cpp)
+          VERSION=$(sed -n 's/^#define FW_VERSION "\(.*\)"/\1/p' src/Version.h)
           test -n "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/v* ]] && [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
@@ -49,15 +49,17 @@ jobs:
       - name: Quellen und Display prüfen
         run: |
           python3 tools/check.py
+          python3 tools/webui_en.py >/dev/null && git diff --exit-code src/webui_en.h
           python3 tools/test_radar.py
           python3 tools/test_policy.py
           python3 tools/test_chunked.py
+          python3 tools/test_destinations.py
           python3 tools/test_display.py
           python3 tools/test_brightness.py
           python3 tools/test_diagnostics.py
           python3 tools/test_enrichment.py
-          g++ -std=c++11 -Wall -Wextra -Werror tests/test_core.cpp -o /tmp/smalltv-core-test
-          /tmp/smalltv-core-test
+          g++ -std=c++11 -Wall -Wextra -Werror tests/test_core.cpp -o /tmp/pixelstop-core-test
+          /tmp/pixelstop-core-test
           node --check tests/webui.cjs
 
       - name: WebKit-Layoutprüfung
@@ -90,11 +92,11 @@ jobs:
           mkdir -p dist/firmware dist/begleitpaket
           [ -f build.log ] && cp build.log dist/begleitpaket/build.log
           if [ -f .pio/build/smalltv_ultra/firmware.bin ]; then
-            cp .pio/build/smalltv_ultra/firmware.bin "dist/firmware/smalltv-dd-v$V-firmware.bin"
-            cp .pio/build/smalltv_ultra/firmware.elf "dist/begleitpaket/smalltv-dd-v$V-firmware.elf"
+            cp .pio/build/smalltv_ultra/firmware.bin "dist/firmware/pixelstop-v$V-firmware.bin"
+            cp .pio/build/smalltv_ultra/firmware.elf "dist/begleitpaket/pixelstop-v$V-firmware.elf"
             cp LICENSE THIRD_PARTY_NOTICES.md RELINKING.md dist/begleitpaket/
             cp -r LICENSES dist/begleitpaket/
-            python3 tools/package_build_sources.py . "dist/begleitpaket/smalltv-dd-v$V-build-sources.tar.gz"
+            python3 tools/package_build_sources.py . "dist/begleitpaket/pixelstop-v$V-build-sources.tar.gz"
             (cd dist/firmware && sha256sum *.bin > sha256.txt)
           fi
 
@@ -102,7 +104,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smalltv-dd-v${{ steps.version.outputs.version }}-firmware
+          name: pixelstop-v${{ steps.version.outputs.version }}-firmware
           path: dist/firmware/
           if-no-files-found: warn
 
@@ -110,7 +112,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smalltv-dd-v${{ steps.version.outputs.version }}-begleitpaket
+          name: pixelstop-v${{ steps.version.outputs.version }}-begleitpaket
           path: dist/begleitpaket/
           if-no-files-found: warn
 
@@ -120,11 +122,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           V: ${{ steps.version.outputs.version }}
         run: |
-          (cd dist/begleitpaket && zip -qr "../smalltv-dd-v$V-begleitpaket.zip" .)
+          (cd dist/begleitpaket && zip -qr "../pixelstop-v$V-begleitpaket.zip" .)
           gh release create "$GITHUB_REF_NAME" \
-            "dist/firmware/smalltv-dd-v$V-firmware.bin" \
+            "dist/firmware/pixelstop-v$V-firmware.bin" \
             dist/firmware/sha256.txt \
-            "dist/smalltv-dd-v$V-begleitpaket.zip" \
-            --title "SmallTV DD v$V" \
+            "dist/pixelstop-v$V-begleitpaket.zip" \
+            --title "PixelStop v$V" \
             --generate-notes \
             --prerelease

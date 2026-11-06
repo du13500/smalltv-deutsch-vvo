@@ -1,3 +1,4 @@
+#include "Version.h"
 #include "Geo.h"
 #include "RequestPolicy.h"
 #include "NetworkGuard.h"
@@ -91,7 +92,7 @@ static int receiveGeo(String& url,GeoResponse& response,DiagRequest& trace,DiagO
   if(!geoReady()||!http.begin(client,url))return 0;
   url=String();
   http.addHeader("Accept","application/json");
-  http.setUserAgent("SmallTV-Deutsch-VVO/0.4.14.8 (github.com/du13500/smalltv-deutsch-vvo)");
+  http.setUserAgent(FW_USER_AGENT);
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   if(!geoHeapReady(op,true))return 0;
   trace.stage(DS_GEO_CONNECT);

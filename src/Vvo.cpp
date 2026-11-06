@@ -1,3 +1,4 @@
+#include "Version.h"
 #include "Vvo.h"
 #include "VvoResponse.h"
 #include <ESP8266WiFi.h>
@@ -106,7 +107,7 @@ bool vvoSearchStops(const String& query, String& outJson) {
                "&stopsOnly=true&regionalOnly=true&limit=8&format=json";
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.8");
+  http.setUserAgent(FW_USER_AGENT);
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();
@@ -173,7 +174,7 @@ bool vvoFetchDepartures(const String& stopId, uint8_t limit, uint8_t motMask) {
   if (!http.begin(client, url)) { g_error = true; return false; }
   http.addHeader("Content-Type", "application/json;charset=UTF-8");
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.8");
+  http.setUserAgent(FW_USER_AGENT);
 
   JsonDocument req(networkJsonAllocator());
   req["stopid"] = stopId;

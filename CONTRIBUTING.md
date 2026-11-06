@@ -1,6 +1,6 @@
 > Aktueller Stand: v0.4.14.5.1. Historische Angaben unten beziehen sich auf die jeweils genannten Builds.
 
-# Mitmachen bei SmallTV Deutsch/VVO
+# Mitmachen bei PixelStop
 
 Danke für Fehlerberichte und Verbesserungsvorschläge. Dieses Projekt ist eine
 eigenständige deutschsprachige Firmware auf Grundlage von smalltv-mod.
@@ -12,7 +12,7 @@ und 240 × 240 Pixel ST7789**. Andere Geräte und Displayvarianten sind nicht
 getestet; Kompatibilität wird nicht zugesichert.
 
 Der aktuelle Quellstand liegt im Versionsarchiv
-`smalltv-deutsch-vvo-v0.4.14.5.1.zip`. Vor Änderungen dieses Archiv entpacken.
+`pixelstop-v0.4.14.5.1.zip`. Vor Änderungen dieses Archiv entpacken.
 Die noch vorhandenen Dateien des Ursprungsprojekts im Repository-Hauptverzeichnis
 sind nicht der Quellstand dieses Versionsbuilds. Kein automatischer Fork-Sync.
 

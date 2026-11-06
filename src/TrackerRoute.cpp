@@ -1,3 +1,4 @@
+#include "Version.h"
 #include "RequestPolicy.h"
 #include "TrackerRoute.h"
 #include "RadarPolicy.h"
@@ -53,7 +54,7 @@ static bool lookupRouteAdsbLol(const char* callsign, float lat, float lon, char 
   if (!http.begin(client, "https://api.adsb.lol/api/0/routeset")) return false;
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
-  adsbLolPrepare(http, "SmallTV-DD/0.4.14.8");
+  adsbLolPrepare(http, FW_USER_AGENT);
 
   JsonDocument req(networkJsonAllocator());
   JsonArray planes = req["planes"].to<JsonArray>();
@@ -107,7 +108,7 @@ static bool lookupRouteAdsbDb(const char* callsign, char origin[4], char destina
   url += callsign;
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.8");
+  http.setUserAgent(FW_USER_AGENT);
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();trace.http(code);
