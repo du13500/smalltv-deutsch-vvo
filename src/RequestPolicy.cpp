@@ -47,5 +47,12 @@ void serviceResponse(RequestService service,int code,const char* retryAfter) {
       c.limitedAt=millis(); c.minInterval=c.failures?20000UL:15000UL;
     }
     if(c.failures<5)c.failures++;
+  } else if(code==401||code==403||code==426){
+    // Rejected request (missing/invalid key, outdated protocol): asking again
+    // every few seconds cannot help and only burns memory and quota.
+    c.started=millis();c.duration=deniedBackoffMs(c.failures);
+    if(c.failures<5)c.failures++;
   } else if(code>=200&&code<300){c.duration=0;if(!serviceMinIntervalMs(service))c.failures=0;}
 }
+
+void serviceClear(RequestService service) { cooldowns[service] = Cooldown(); }

@@ -92,7 +92,7 @@ TrackedFlightSnapshot data={};FlightSnapshot plane={};FlightSnapshot lastPlaneRe
 const TrackedFlightSnapshot& trackedFlightData(){return data;}
 const FlightSnapshot& flightData(){return plane;}
 uint32_t clockMs=100000,lastOkMs=65000;bool providerPaused=false;
-uint32_t millis(){return clockMs;}uint32_t flightLastOkMs(){return lastOkMs;}bool flightProviderPaused(){return providerPaused;}
+uint32_t millis(){return clockMs;}uint32_t flightLastOkMs(){return lastOkMs;}bool flightProviderPaused(){return providerPaused;}static int lastHttp=0;int flightLastHttp(){return lastHttp;}static bool adsbLolAccessDenied(int c){return c==401||c==403||c==426;}
 String trackedFlightDuration(const TrackedFlightSnapshot&){return "01:30";}
 void clearDraws(){draws.clear();rects.clear();circles.clear();lines.clear();fullScreens=0;footer="not drawn";}
 '''

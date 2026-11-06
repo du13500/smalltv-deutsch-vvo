@@ -5,6 +5,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include "NetworkJson.h"
+#include "AdsbLol.h"
 #include "NetworkGuard.h"
 #include <ctype.h>
 #include <math.h>
@@ -140,7 +141,7 @@ bool trackedFlightFetchStatus(const String& apiKey, const String& flightNumber) 
 
   if (!http.begin(client, url)) { g_t.error = true; return false; }
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.6");
+  http.setUserAgent("SmallTV-DD/0.4.14.7");
   int code = http.GET();trace.http(code);
   if (code != HTTP_CODE_OK) { http.end(); g_t.error = true; return false; }
 
@@ -258,15 +259,13 @@ bool trackedFlightFetchLive() {
   BearSSL::WiFiClientSecure client;
   makeSecure(client, &g_liveSession);
   HTTPClient http;
-  http.useHTTP10(true);
   http.setReuse(false);
   http.setTimeout(9000);
   String url = F("https://api.adsb.lol/v2/callsign/");
   url += urlEncode(String(g_t.flightIcao));
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.6");
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
+  adsbLolPrepare(http, "SmallTV-DD/0.4.14.7");
   int code = http.GET();trace.http(code);
   serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());
   if (code != HTTP_CODE_OK) { http.end(); return false; }
@@ -280,7 +279,7 @@ bool trackedFlightFetchLive() {
   f["t"] = true;
   f["lat"] = true;f["lon"] = true;
   JsonDocument doc(networkJsonAllocator());
-  trace.stage(DS_JSON);if(!jsonFilterReady(filter,trace)){http.end();client.stop();return false;}auto err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
+  trace.stage(DS_JSON);if(!jsonFilterReady(filter,trace)){http.end();client.stop();return false;}AdsbLolBody liveBody(http);auto err = deserializeJson(doc, liveBody, DeserializationOption::Filter(filter));
   logJsonError(trace,err); filter.clear(); http.end(); client.stop();
   if (err) return false;
 

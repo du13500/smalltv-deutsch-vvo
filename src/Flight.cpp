@@ -9,6 +9,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include "NetworkJson.h"
+#include "AdsbLol.h"
 #include <math.h>
 
 static FlightSnapshot g_f = {};
@@ -110,10 +111,10 @@ static bool lookupRouteAdsbLol(const FlightSnapshot& f,RoutePoint pos,Enrichment
   if(serviceWaitMs(SERVICE_ADSB_LOL)||serviceMinIntervalMs(SERVICE_ADSB_LOL)||!tlsHeapReady(adsbLolRx()))return false;
   DiagRequest trace(D_RADAR_ROUTE);diagLookup(f.hex,f.callsign);trace.stage(DS_TLS);
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_routeSession,adsbLolRx());
-  HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
+  HTTPClient http;http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,"https://api.adsb.lol/api/0/routeset"))return false;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
-  http.addHeader("Content-Type","application/json");http.setUserAgent("SmallTV-DD/0.4.14.6");
+  adsbLolPrepare(http,"SmallTV-DD/0.4.14.7");
+  http.addHeader("Content-Type","application/json");
   JsonDocument request(networkJsonAllocator());JsonObject plane=request["planes"].to<JsonArray>().add<JsonObject>();
   plane["callsign"]=f.callsign;plane["lat"]=pos.lat;plane["lng"]=pos.lon;
   if(request.overflowed()){trace.stage(DS_JSON_MEMORY);http.end();return false;}
@@ -125,7 +126,7 @@ static bool lookupRouteAdsbLol(const FlightSnapshot& f,RoutePoint pos,Enrichment
   JsonDocument filter(networkJsonAllocator());JsonObject item=filter.to<JsonArray>().add<JsonObject>();
   item["callsign"]=true;item["plausible"]=true;item["_airport_codes_iata"]=true;
   JsonObject ap=item["_airports"].to<JsonArray>().add<JsonObject>();ap["lat"]=true;ap["lon"]=true;
-  trace.stage(DS_JSON);JsonDocument doc(networkJsonAllocator());if(!jsonFilterReady(filter,trace)){http.end();client.stop();return false;}auto err=deserializeJson(doc,http.getStream(),DeserializationOption::Filter(filter));logJsonError(trace,err); filter.clear(); http.end(); client.stop();
+  trace.stage(DS_JSON);JsonDocument doc(networkJsonAllocator());if(!jsonFilterReady(filter,trace)){http.end();client.stop();return false;}AdsbLolBody routeBody(http);auto err=deserializeJson(doc,routeBody,DeserializationOption::Filter(filter));logJsonError(trace,err); filter.clear(); http.end(); client.stop();
   if(err||!doc.is<JsonArray>()||!doc.size())return false;
   JsonObjectConst r=doc[0];
   if(strcmp(r["callsign"]|"",f.callsign)||!r["plausible"].is<bool>()||!r["plausible"].as<bool>())return false;
@@ -145,7 +146,7 @@ static bool lookupMetadata(const FlightSnapshot& f,RoutePoint pos,Enrichment& ou
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,url))return false;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.6");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.7");
   int code=http.GET();trace.http(code);g_routeHttp=code;serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return false;}
   JsonDocument filter(networkJsonAllocator());filter["response"]["aircraft"]["type"]=true;filter["response"]["aircraft"]["icao_type"]=true;
@@ -199,7 +200,7 @@ static void lookupAirline(const FlightSnapshot& f,Enrichment& out) {
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,String("https://api.adsbdb.com/v0/airline/")+prefix))return;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.6");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.7");
   int code=http.GET();trace.http(code);serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return;}
   JsonDocument filter(networkJsonAllocator());filter["response"][0]["name"]=true;filter["response"][0]["icao"]=true;
@@ -345,7 +346,6 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     BearSSL::WiFiClientSecure client;
     makeSecure(client, &g_adsbSession, rx);
     HTTPClient http;
-    http.useHTTP10(true);
     http.setTimeout(5000);
     http.setReuse(false);
 
@@ -355,14 +355,13 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     url += String(radiusNm);
     if (!http.begin(client, url)) return flightFailure("Verbindung fehlgeschlagen");
     http.addHeader("Accept", "application/json");
-    http.setUserAgent("SmallTV-DD/0.4.14.6");
+    adsbLolPrepare(http, "SmallTV-DD/0.4.14.7");
 
-    const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
     int code = http.GET();trace.http(code);
     serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());
   if(serviceWaitMs(SERVICE_ADSB_LOL))diagEvent(D_RADAR,DS_WAIT,code,serviceWaitMs(SERVICE_ADSB_LOL));
     g_lastHttp = code;
-    if (code != HTTP_CODE_OK) { http.end(); const bool paused=(code==429||code==503)&&serviceWaitMs(SERVICE_ADSB_LOL);return flightFailure(paused?"Abrufpause: Anbieter":(code < 0 ? "Verbindung fehlgeschlagen" : "HTTP-Fehler"),paused); }
+    if (code != HTTP_CODE_OK) { http.end(); client.stop(); const bool paused=(code==429||code==503)&&serviceWaitMs(SERVICE_ADSB_LOL);return flightFailure(adsbLolAccessDenied(code)?"Zugriff abgelehnt":(paused?"Abrufpause: Anbieter":(code < 0 ? "Verbindung fehlgeschlagen" : "HTTP-Fehler")),paused); }
 
     JsonDocument filter(networkJsonAllocator());
     JsonObject f = filter["ac"][0].to<JsonObject>();
@@ -371,7 +370,8 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     JsonDocument doc(networkJsonAllocator());
     trace.stage(DS_JSON);
     if(!jsonFilterReady(filter,trace)){http.end();client.stop();return flightFailure("JSON-Speicher knapp");}
-    auto err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
+    AdsbLolBody body(http);
+    auto err = deserializeJson(doc, body, DeserializationOption::Filter(filter));
     logJsonError(trace,err); filter.clear(); http.end(); client.stop();
     if (err) return flightFailure("JSON-Fehler");
 

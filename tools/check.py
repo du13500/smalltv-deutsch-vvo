@@ -4,8 +4,8 @@ from pathlib import Path
 import subprocess,tempfile,re
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/main.cpp').read_text()
-assert '#define FW_VERSION "0.4.14.6"' in s
-assert '>v0.4.14.6</span>' in s
+assert '#define FW_VERSION "0.4.14.7"' in s
+assert '>v0.4.14.7</span>' in s
 for name in ['README.md','LICENSE','CONTRIBUTING.md','THIRD_PARTY_SERVICES.md','ROADMAP.md','TESTPLAN.md','CHANGELOG.md']:
  assert (root/name).is_file(),name
 html=s.split('R"HTML(',1)[1].split(')HTML"',1)[0]
@@ -18,7 +18,7 @@ assert ui_zones==header_zones, 'UI and firmware time-zone choices differ'
 assert len(ui_zones)==50
 readme=(root/'README.md').read_text()
 # README describes this release and the shared workflow.
-badge='[![Build SmallTV DD v0.4.14.6](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)'
+badge='[![Build SmallTV DD v0.4.14.7](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)'
 assert badge in readme, 'Current GitHub build badge missing'
 assert not re.search(r'https?://|\]\(|<a\b',readme.replace(badge,'')), 'README links are limited to the build badge'
 ids=re.findall(r'\bid="([^"${]+)"',html)
