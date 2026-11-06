@@ -1,8 +1,0 @@
-{
-  "_comment": "Example symbol list for .github/scripts/fetch-quotes.mjs, the fetcher behind the firmware's 'GitHub' ticker source: one static JSON file per listing key, meant to be published to a 'data' branch and served at raw.githubusercontent.com/<owner>/<repo>/data/quotes/<key>.json, a host even the ESP8266 can reach over its older static-RSA HTTPS. This repo does not run the publishing workflow; copy the script and the example workflow from the docs (reference/data-sources) into your own fork to use it. On the device, set a ticker's source to 'GitHub' and its symbol to the listing key. Keys use the cash.ch form valor-marketId-currencyId; the example below is a placeholder.",
-  "range": "6mo",
-  "points": 48,
-  "symbols": [
-    { "key": "123456789-246-333", "name": "Example instrument" }
-  ]
-}

@@ -1,3 +1,10 @@
+## v0.4.14.5.1
+
+- Exakte VVO-Antwort ServiceError / no serving lines found neutral darstellen; übrige Fehler unverändert.
+- Phasensynchrone PWM-Ansteuerung des vorhandenen Frameworks zum Hardwaretest gegen Aufblitzen.
+- Gemeinsamer Build-Workflow mit gezielten Auslösern und Abbruch überholter Builds.
+- README-Versionsgeschichte ergänzt; README einzeln liefern.
+
 # Änderungen
 
 ## v0.4.14.5

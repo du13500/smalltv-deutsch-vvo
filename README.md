@@ -54,19 +54,15 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 ## Firmware über GitHub bauen
 
-Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
+Der Quellcode liegt direkt im Repository (`src/`, `tools/`, `tests/`, `platformio.ini`). Der Workflow `.github/workflows/build.yml` baut ihn automatisch:
 
-- `smalltv-deutsch-vvo-v0.4.14.5.1.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build.yml` als `.github/workflows/build.yml` ablegen.
-- Die einzelne `README.md` im Hauptverzeichnis ersetzen. Lizenztexte und weitere erforderliche Unterlagen bleiben im Quellarchiv enthalten.
-- Unter **Actions** den Workflow **Build SmallTV DD** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build **smalltv-dd-v0.4.14.5.1-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.14.5.1-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+- **Push auf `main` oder Pull Request:** Alle Prüfungen laufen, die fertige Firmware liegt anschließend unter **Actions** als Artefakt `smalltv-dd-v<Version>-firmware`.
+- **Neue Version veröffentlichen:** `FW_VERSION` in `src/main.cpp` anpassen, committen und einen passenden Tag setzen, z. B. `v0.4.14.6`. Der Workflow erstellt dann ein **GitHub Release** mit BIN-Datei, Prüfsumme und Begleitpaket (Buildlog, ELF, Lizenztexte, Quellen und Buildobjekte). Tag und `FW_VERSION` müssen übereinstimmen.
+- **Manuell:** Unter **Actions → Build SmallTV DD → Run workflow**.
 
-**Einmalige Workflow-Bereinigung:** Die bisherigen Firmware-Workflows unter Actions öffnen und über das Menü mit den drei Punkten deaktivieren. Dazu gehören die alten versionsbezogenen Builds und gegebenenfalls der ursprüngliche Firmware-Loader. Alternativ deren YAML-Dateien aus `.github/workflows/` entfernen. Der neue Workflow deaktiviert alte Dateien nicht automatisch. Quellarchive und bisherige Build-Ergebnisse müssen dafür nicht gelöscht werden. Dokumentationsworkflows sind davon unabhängig.
+Lokal baut `pio run -e smalltv_ultra` dieselbe Firmware nach `.pio/build/smalltv_ultra/firmware.bin`.
 
-Bei folgenden Versionen dieselbe Datei `.github/workflows/build.yml` mit der neu gelieferten Workflowdatei ersetzen. Keine weiteren versionsbezogenen Workflowdateien hinzufügen. Der Workflow benennt seine Ergebnisse weiterhin nach der Firmwareversion.
-
-Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
+Ältere Versionsarchive und versionsbezogene Workflows bis v0.4.14.5.1 sind in der Git-Historie erhalten.
 
 ## Updates
 
