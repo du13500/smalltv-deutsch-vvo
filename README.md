@@ -1,13 +1,21 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.14.7](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
+[![Build SmallTV DD v0.4.14.8](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
 
-> 🟨 **v0.4.14.7 · Entwicklungsbuild**  
+> 🟨 **v0.4.14.8 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
+
+## v0.4.14.8
+
+- **Radar fragt nur noch, wenn es zu sehen ist:** Positionen und Routen werden abgerufen, solange das Flugradar auf dem Display steht, und einmal in den letzten 10 Sekunden vor dem Wechsel dorthin. Während Abfahrten, Wetter oder andere Programme laufen, gehen keine adsb.lol-Anfragen mehr raus.
+- **Tagesbudget ohne Schlüssel:** Der Würfel zählt seine adsb.lol-Anfragen pro Tag (UTC) und plant mit 450 statt der von adsb.lol genannten 500, als Reserve. Das Aktualisierungsintervall wird bei Bedarf automatisch so gestreckt, dass das Budget bis Tagesende reicht; dabei wird berücksichtigt, welchen Anteil der Rotation das Radar sichtbar ist. Routenabfragen bei adsb.lol entfallen, wenn weniger als 40 Anfragen übrig sind. Mit Schlüssel gilt keine Begrenzung.
+- **Systemstatus** zeigt die heutigen adsb.lol-Anfragen und das aktuelle Budget-Intervall.
+
+Der Zähler liegt nur im Arbeitsspeicher; nach einem Neustart beginnt er bei null. Der Hardwaretest steht aus.
 
 ## v0.4.14.7
 
@@ -112,6 +120,7 @@ Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und 
 
 | Version | Änderungen |
 | --- | --- |
+| **v0.4.14.8**   | Radar-Abfragen nur bei sichtbarem Radar plus Vorabruf; Tagesbudget mit automatischer Intervallstreckung ohne Schlüssel |
 | **v0.4.14.7**   | adsb.lol über HTTP/1.1 mit Chunk-Entpacker; lange Pause bei 401/403/426 statt Reboot-Schleife; optionaler adsb.lol-Schlüssel; Intervalle 1 und 3 min |
 | **v0.4.14.6**   | Hintergrundbeleuchtung mit 300 Hz und 1023 Stufen gegen Aufblitzen bei 1 %; Quellcode direkt im Repository, Releases über Tags |
 | **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |

@@ -22,7 +22,8 @@ struct FlightSnapshot {
 };
 
 void flightReset();
-bool flightPollDue(uint16_t pollSec);
+// visibleShare: fraction of the time the radar is on screen (for the daily budget).
+bool flightPollDue(uint16_t pollSec, float visibleShare = 1.0f);
 bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm);
 const FlightSnapshot& flightData();
 uint32_t flightLastOkMs();
