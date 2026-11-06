@@ -1,0 +1,11 @@
+{
+  "name": "smalltv-deutsch-vvo-checks",
+  "version": "0.4.14.6",
+  "private": true,
+  "scripts": {
+    "test:webui": "node tests/webui.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
