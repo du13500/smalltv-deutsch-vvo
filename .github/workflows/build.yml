@@ -49,6 +49,7 @@ jobs:
       - name: Quellen und Display prüfen
         run: |
           python3 tools/check.py
+          python3 tools/webui_en.py >/dev/null && git diff --exit-code src/webui_en.h
           python3 tools/test_radar.py
           python3 tools/test_policy.py
           python3 tools/test_chunked.py

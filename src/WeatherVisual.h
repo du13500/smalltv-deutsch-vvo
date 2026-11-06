@@ -39,3 +39,41 @@ static inline WeatherVisual weatherVisual(int code) {
     default: return {WX_CLOUD,0,"WETTER"};
   }
 }
+
+// English labels, kept in flash on the device (PSTR); German stays above.
+#ifndef PSTR
+#define PSTR(x) (x)
+#endif
+#ifndef PGM_P
+#define PGM_P const char*
+#endif
+static inline PGM_P weatherLabelEn(int code) {
+  switch (code) {
+    case 0: return PSTR("CLEAR");
+    case 1: return PSTR("MAINLY CLEAR");
+    case 2: return PSTR("PARTLY CLOUDY");
+    case 3: return PSTR("OVERCAST");
+    case 45: return PSTR("FOG");
+    case 48: return PSTR("RIME FOG");
+    case 51: return PSTR("LIGHT DRIZZLE");
+    case 53: return PSTR("DRIZZLE");
+    case 55: return PSTR("DENSE DRIZZLE");
+    case 56: case 57: return PSTR("FREEZING DRIZZLE");
+    case 61: return PSTR("LIGHT RAIN");
+    case 63: return PSTR("RAIN");
+    case 65: return PSTR("HEAVY RAIN");
+    case 66: case 67: return PSTR("FREEZING RAIN");
+    case 71: return PSTR("LIGHT SNOW");
+    case 73: return PSTR("SNOW");
+    case 75: return PSTR("HEAVY SNOW");
+    case 77: return PSTR("SNOW GRAINS");
+    case 80: return PSTR("LIGHT SHOWERS");
+    case 81: return PSTR("SHOWERS");
+    case 82: return PSTR("HEAVY SHOWERS");
+    case 85: return PSTR("LIGHT SNOW SHOWERS");
+    case 86: return PSTR("HEAVY SNOW SHOWERS");
+    case 95: return PSTR("THUNDERSTORM");
+    case 96: case 99: return PSTR("THUNDERSTORM, HAIL");
+    default: return PSTR("WEATHER");
+  }
+}
