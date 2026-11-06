@@ -3,6 +3,9 @@
 ## v0.5.1-dev
 
 - **Ortsname bei Fahrtzielen:** Der Ort einer Haltestelle kommt jetzt aus der VVO-Suche und wird gespeichert. Bisher galt das erste Wort des Haltestellennamens als Ort; bei „S-Bahnhof Reick“ wurde so „S-Bahnhof“ als Ort angenommen, „Dresden Flughafen“ blieb ungekürzt und der Titel lautete nur „Reick“. Ohne gespeicherten Ort gilt weiter Dresden. Wer die Haltestelle vor v0.5.1 gewählt hat, sucht sie einmal neu aus, damit auch Haltestellen außerhalb Dresdens den richtigen Ort bekommen.
+- **3-Tage-Vorhersage:** Die Wetteransicht wechselt alle 8 Sekunden zwischen heute und den nächsten drei Tagen (Wochentag, Symbol, Höchst-/Tiefstwert, Regen). Abschaltbar im Wetter-Reiter.
+- **Webinterface aufgeräumt:** Reiter in einer wischbaren Zeile, Rotation einzeilig mit Knopf ▶ „Jetzt anzeigen“, roter Punkt am Speichern-Knopf bei ungespeicherten Änderungen, Koordinaten und lange Hinweise eingeklappt, inaktive Countdowns eingeklappt, Links im Akzentgelb.
+- **Arbeitsspeicher:** etwa 3 KB fester Texte und Tabellen (Webserver-Antworten, Airline- und Flugzeugtypnamen, deutsche Wetterbezeichnungen) liegen jetzt im Flash.
 
 ## v0.5.0-dev
 

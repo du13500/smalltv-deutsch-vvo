@@ -4,7 +4,7 @@ Stand: 06.11.2026. Erledigtes steht in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Nächste Prüfungen auf dem Gerät
 
-- **v0.5.0-dev:** Sprachumschaltung (Display und Webinterface), abgekürzte Fahrtziele und Ortsname weglassen, Startbildschirm, Setup-WLAN „PixelStop-Setup“; Flash- und RAM-Belegung aus `build.log` notieren.
+- **v0.5.1-dev:** 3-Tage-Vorhersage (Seitenwechsel, Wochentage, Fahrenheit), „Jetzt anzeigen“, ungespeichert-Hinweis, Haltestelle neu wählen und Ortsnamen prüfen (z. B. S-Bahnhof Reick).
 - **Flugradar:** Langzeittest über mehrere Tage mit Rotation; Anfragezähler „adsb.lol heute“ beobachten. Budgetwerte (`src/RadarBudget.h`) anpassen, sobald adsb.lol genaue Zahlen nennt (Limit, Reset-Zeitpunkt, Zählung von Fehlern und Routen). Freien Speicher während der Abfrage im Blick behalten (ca. 5 KB bei 4-KB-TLS-Puffer).
 - **Wetter:** Exception 29 beim Programmwechsel ist seit den Speicherkorrekturen nicht wieder aufgetreten; im Langzeittest weiter beobachten.
 - **Zeitzone, Sommerzeit, Nachtmodus:** gezielt prüfen, spätestens bei der Zeitumstellung Ende März.
@@ -16,8 +16,8 @@ Stand: 06.11.2026. Erledigtes steht in [`CHANGELOG.md`](CHANGELOG.md).
 
 | Version | Inhalt |
 | --- | --- |
-| **v0.5.0** | PixelStop, Deutsch/Englisch, Fahrtziele, neue README – nach dem Hardwaretest taggen |
-| **v0.5.1** | Webinterface aufräumen: Rotation einzeilig, Reiterleiste in einer Zeile, Hinweis auf ungespeicherte Änderungen, Erklärtexte einklappbar, Countdowns kompakter, Koordinaten unter „Erweitert“; Knopf „Jetzt anzeigen“ je Programm; 3-Tage-Vorhersage |
+| **v0.5.0** | PixelStop, Deutsch/Englisch, Fahrtziele, neue README – auf Hardware bestätigt |
+| **v0.5.1** | Webinterface aufgeräumt, „Jetzt anzeigen“, 3-Tage-Vorhersage, Ort der Haltestelle aus der VVO-Suche, Texte im Flash – in Arbeit, nach dem Hardwaretest taggen |
 | **v0.5.2** | Warnungen: Bevölkerungsschutz (NINA) und DWD-Wetterwarnungen, einzeln aktivierbar, regional gefiltert, mehrere nacheinander; optional Unterbrechung der Rotation |
 | **v0.6.0** | Abfahrten über Anbieter: VVO, Transitous (deutschlandweit inkl. Bahn), danach weitere Verbünde; Haltestellensuche im Browser |
 | **v0.7.0** | Optionaler moderner Anzeigestil mit echten Schriften und neuem Layout, vorher als Entwurf mit `tools/render_screens.py` |
@@ -28,6 +28,8 @@ Stand: 06.11.2026. Erledigtes steht in [`CHANGELOG.md`](CHANGELOG.md).
 - **Fotos** (einzelne JPGs aus dem Dateisystem), eventuell eigene Wetterbilder.
 - **Eigene Ersetzungen für Fahrtziele** im Webinterface.
 - **Englische Diagnosetexte.**
+- **Variante „Wetter & Uhr“** aus demselben Code: ohne Abfahrten, Radar und Tracker, dafür eine moderne Wetterkachel mit Meteocons (MIT) losgelöst vom Pixel-Design.
+- **Titelbild für README und GitHub-Vorschau** (KI-Motiv war technisch nicht stimmig, vorerst zurückgestellt).
 - **ESP32-Umbau** des SmallTV mit vorhandenem Display als Experiment (Pinbelegung, Stromversorgung, Platz, Portierung).
 
 ## Bewusst verworfen
