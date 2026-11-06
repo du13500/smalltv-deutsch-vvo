@@ -6,6 +6,7 @@ root=Path(__file__).resolve().parents[1]
 test=r'''
 #include "RequestPolicy.h"
 #include "RoutePolicy.h"
+#include "RadarBudget.h"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -36,6 +37,12 @@ int main(){
  serviceResponse(SERVICE_WEATHER,403,"");assert(serviceWaitMs(SERVICE_WEATHER)==2400000);
  serviceResponse(SERVICE_WEATHER,426,"");assert(serviceWaitMs(SERVICE_WEATHER)==2400000);
  serviceResponse(SERVICE_WEATHER,200,"");assert(!serviceWaitMs(SERVICE_WEATHER));
+ assert(radarBudgetIntervalMs(0,450,86400,1.0f)==192000);
+ assert(radarBudgetIntervalMs(0,450,86400,0.2f)==38400);
+ assert(radarBudgetIntervalMs(440,450,3600,1.0f)==360000);
+ assert(radarBudgetIntervalMs(450,450,3600,1.0f)==3660000);
+ assert(radarBudgetIntervalMs(0,450,86400,0.0f)==192000);
+ assert(radarBudgetIntervalMs(0,450,999999,1.0f)==192000);
  RoutePoint drs={51.134,13.768},fra={50.038,8.562},fmo={52.134,7.685},wro={51.103,16.886},ayt={36.899,30.801},dus={51.29,6.767},muc={48.354,11.786};
  RoutePoint wrong1[]={wro,fra},wrong2[]={fra,fmo},wrong3[]={ayt,dus};
  assert(!routePositionPlausible(drs,wrong1,2,true,false,0));
@@ -46,7 +53,7 @@ int main(){
  assert(!routePositionPlausible({0,0},valid,2,false,true,33000));
  RoutePoint dateline[]={{0,170},{0,-170}};assert(routePositionPlausible({0,180},dateline,2,false,true,33000));
  RoutePoint invalid[]={{NAN,0},drs};assert(!routePositionPlausible(drs,invalid,2,false,false,0));
- puts("Retry-After, progressive/shared cooldowns, clock wrap, denied-request pauses and DRS route regressions: OK");
+ puts("Retry-After, progressive/shared cooldowns, clock wrap, denied-request pauses, daily budget and DRS route regressions: OK");
 }
 '''
 with tempfile.TemporaryDirectory() as t:

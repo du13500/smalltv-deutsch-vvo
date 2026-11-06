@@ -7,6 +7,12 @@
 
 # Änderungen
 
+## v0.4.14.8
+
+- Radar- und Routenabfragen nur, solange das Radar sichtbar ist, plus Vorabruf 10 s vor dem Wechsel.
+- Tagesbudget (450 Anfragen/UTC-Tag) ohne Schlüssel; Intervall wird anhand des sichtbaren Radaranteils gestreckt, Routen bei knappem Budget übersprungen.
+- Anfragezähler und Budget-Intervall im Systemstatus.
+
 ## v0.4.14.7
 
 - adsb.lol-Abfragen über HTTP/1.1 statt HTTP/1.0 (Server antwortete mit 426); Chunked-Antworten werden beim Lesen entpackt.

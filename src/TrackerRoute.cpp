@@ -53,7 +53,7 @@ static bool lookupRouteAdsbLol(const char* callsign, float lat, float lon, char 
   if (!http.begin(client, "https://api.adsb.lol/api/0/routeset")) return false;
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
-  adsbLolPrepare(http, "SmallTV-DD/0.4.14.7");
+  adsbLolPrepare(http, "SmallTV-DD/0.4.14.8");
 
   JsonDocument req(networkJsonAllocator());
   JsonArray planes = req["planes"].to<JsonArray>();
@@ -107,7 +107,7 @@ static bool lookupRouteAdsbDb(const char* callsign, char origin[4], char destina
   url += callsign;
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.7");
+  http.setUserAgent("SmallTV-DD/0.4.14.8");
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();trace.http(code);

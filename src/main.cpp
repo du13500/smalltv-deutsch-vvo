@@ -40,7 +40,7 @@
 #define TFT_H    240
 
 #define FW_NAME    "SmallTV DD"
-#define FW_VERSION "0.4.14.7"
+#define FW_VERSION "0.4.14.8"
 // Backlight PWM (since v0.4.14.6, against flashes at 1 % brightness)
 #define BL_PWM_FREQ 300
 #define BL_PWM_RANGE 1023
@@ -188,7 +188,7 @@ nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
 button.action,a.action{display:inline-block;border:0;border-radius:10px;background:var(--accent);color:#111;padding:11px 15px;font-family:inherit;font-size:14px;line-height:1.3;font-weight:750;text-decoration:none;min-height:42px}button.sec,a.sec{background:var(--card2);color:var(--text)}button.danger{background:var(--red);color:#111}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.serviceList{padding-left:20px}.serviceList li{margin:12px 0;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:750}details h3{margin-top:16px}.sticky{position:sticky;bottom:10px;padding-top:12px}.sticky button{width:100%;font-size:16px}#saveBtn:disabled{background:#45494f;color:#aeb3ba;cursor:wait}.status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;color:#cdd2d8}.pickres{display:block;width:100%;text-align:left;margin:6px 0;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--card2);color:var(--text)}input[type=range]{padding:4px}input[type=color]{padding:3px;height:44px}.val{color:var(--accent);font-weight:700}.hidden{display:none}.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}.check{display:flex;align-items:center;gap:8px;background:#1d2024;border:1px solid var(--border);border-radius:9px;padding:9px;color:var(--text);margin:0}.check input{width:auto;margin:0}.modeRow{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;border-bottom:1px solid var(--border);padding:8px 0}.modeRow:last-child{border-bottom:0}.modeLeft{display:flex;align-items:center;gap:9px}.modeLeft input{width:auto}.wifirow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.sig{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);float:right}.ok{color:var(--green)}.err{color:var(--red)}.mapwrap{margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#16181b}.map{height:300px;width:100%}.mapnote{padding:8px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}.footer{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;padding:18px 6px 6px}.footer a{color:var(--muted)}.toast{position:fixed;z-index:9999;top:18px;left:50%;transform:translate(-50%,-18px);opacity:0;pointer-events:none;min-width:220px;max-width:min(90vw,520px);padding:14px 18px;border-radius:12px;font-weight:800;text-align:center;box-shadow:0 8px 28px #0008;transition:opacity .18s ease,transform .18s ease}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.ok{background:var(--green);color:#0b1a10}.toast.err{background:var(--red);color:#200}.toast.warn{background:var(--accent);color:#111}.subhead{font-size:13px;font-weight:400;color:var(--muted);margin:18px 0 5px}.depblock{transition:opacity .15s ease}.depblock.disabled{opacity:.42}.depblock.disabled label{color:var(--muted)}select:disabled,input:disabled{cursor:not-allowed;opacity:.58}
 @media(max-width:560px){nav{grid-template-columns:repeat(3,1fr)}.row,.colorrow,.modeRow,.wifirow{grid-template-columns:1fr}.triple{grid-template-columns:repeat(3,1fr)}.checks{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
-<div class="head"><h1>SmallTV Deutsch/VVO</h1><span class="chip">v0.4.14.7</span></div>
+<div class="head"><h1>SmallTV Deutsch/VVO</h1><span class="chip">v0.4.14.8</span></div>
 <nav><button class="tab on" data-p="anzeige">Anzeige</button><button class="tab" data-p="abfahrten">Abfahrten</button><button class="tab" data-p="wetter">Wetter</button><button class="tab" data-p="flugradar">Flugradar</button><button class="tab" data-p="flugtracker">Flug-Tracker</button><button class="tab" data-p="countdown">Countdown</button><button class="tab" data-p="system">System</button></nav>
 
 <section id="anzeige" class="page on">
@@ -275,7 +275,7 @@ function syncGeoLanguage(source){const v=$(source).checked;$('weatherGeoGerman')
 function signalBars(r){return r>=-50?'▁▂▄▆█':r>=-60?'▁▂▄▆':r>=-70?'▁▂▄':r>=-80?'▁▂':'▁'}
 async function scanWifi(){showBox('wifiResults','suche WLAN-Netze…');try{let d=await fetchJson('/api/wifi/scan'),best=new Map();(d.networks||[]).forEach(n=>{if(!n.ssid)return;let o=best.get(n.ssid);if(!o||n.rssi>o.rssi)best.set(n.ssid,n)});let a=[...best.values()].sort((x,y)=>y.rssi-x.rssi);if(!a.length){showBox('wifiResults','Keine WLAN-Netze gefunden.');return}$('wifiResults').innerHTML=a.map((n,i)=>`<button class="pickres" type="button" data-i="${i}">${n.open?'○':'●'} ${n.ssid}<span class="sig">${signalBars(n.rssi)} ${n.rssi} dBm</span></button>`).join('');$('wifiResults').querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{$('ssid').value=a[i].ssid;showBox('wifiResults','Ausgewählt: '+a[i].ssid)}))}catch(e){showBox('wifiResults',friendly(e),true)}}
 async function save(){if(saving||geoBusy||geoPending.weather||geoPending.plane)return;let mask=0,rotationSec=[];for(let i=0;i<9;i++){if($(`modeOn${i}`).checked)mask|=1<<i;rotationSec.push(+$(`modeSec${i}`).value)}if(!mask){toast('Bitte mindestens ein Programm für die Anzeige auswählen.','warn',3500);return}let mot=($('motTrain').checked?1:0)|($('motSuburban').checked?2:0)|($('motTram').checked?4:0)|($('motBus').checked?8:0)|($('motCable').checked?16:0)|($('motFerry').checked?32:0)|($('motTaxi').checked?64:0);if(!mot){toast('Bitte mindestens ein Verkehrsmittel auswählen.','warn',3500);return}let [wlat,wlon]=coords('weather'),[plat,plon]=coords('plane');if(!Number.isFinite(wlat)||wlat<-90||wlat>90||!Number.isFinite(wlon)||wlon<-180||wlon>180){toast('Bitte gültige Wetter-Koordinaten eingeben.','warn',3500);return}if(!Number.isFinite(plat)||plat<-90||plat>90||!Number.isFinite(plon)||plon<-180||plon>180){toast('Bitte gültige Flugradar-Koordinaten eingeben.','warn',3500);return}let o={ssid:$('ssid').value,pass:$('pass').value,hostname:$('hostname').value,rotationMask:mask,rotationSec,brightness:+$('brightness').value,timeZone:$('timeZone').value,nightEnabled:$('nightEnabled').checked,nightStart:mins($('nightStart').value),nightEnd:mins($('nightEnd').value),nightBrightness:+$('nightBrightness').value,stopName:$('stopName').value,stopId:$('stopId').value,departureCount:+$('departureCount').value,departurePoll:+$('departurePoll').value,vvoMotMask:mot,departureCompactDestinations:$('departureCompactDestinations').checked,weatherCity:$('weatherCity').value,weatherDisplayName:$('weatherDisplayName').value,weatherLat:wlat,weatherLon:wlon,weatherPoll:+$('weatherPoll').value,weatherTempColor:$('weatherTempColor').checked,weatherFahrenheit:$('weatherUnit').value==='F',geoGermanNames:$('weatherGeoGerman').checked,planePlace:$('planePlace').value,planeDisplayName:$('planeDisplayName').value,planeLat:plat,planeLon:plon,planeRadiusKm:+$('planeRadiusKm').value,planePoll:+$('planePoll').value,planeShowAge:$('planeShowAge').checked,planeShowPlace:$('planeShowPlace').checked,planePlaceToggleSec:+$('planePlaceToggleSec').value,trackedFlightNo:$('trackedFlightNo').value,aviationstackKey:$('aviationstackKey').value,adsbLolKey:$('adsbLolKey').value,trackerStatusPollMin:+$('trackerStatusPollMin').value,countdowns:[0,1,2,3].map(countdownPayload)};saving=true;updateSaveGate();try{let r=await fetchJson('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});toast(r.reboot?'Gespeichert · SmallTV startet neu':'✓ Einstellungen gespeichert','ok',r.reboot?5500:2200);if(r.reboot)setTimeout(()=>location.reload(),7000);else await load()}catch(e){toast(friendly(e),'err',4200)}finally{saving=false;updateSaveGate()}}
-async function statusNow(){try{let s=await fetchJson('/api/status');$('status').textContent=`Firmware: ${s.fw} ${s.version}\nNetz: ${s.ssid||'-'}\nIP: ${s.ip}\nRSSI: ${s.rssi} dBm\nFreier Heap: ${s.heap} B (${s.maxBlock} B größter Block)\nFlugradar: ${s.flightStage||'-'}${s.flightHttp?` · HTTP ${s.flightHttp}`:''}${s.flightTlsRx?` · TLS RX ${s.flightTlsRx} B`:''}${s.flightTlsMinBlock?` · Blockbedarf ${s.flightTlsMinBlock} B`:''}${s.flightWaitSec?` · Pause ${s.flightWaitSec} s`:''}${s.flightMinIntervalSec?` · Mindestintervall ${s.flightMinIntervalSec} s`:''}\nRadar-Route: ${s.routeStatus||'-'} · ${s.routeSource||'-'}${s.routeHttp?` · HTTP ${s.routeHttp}`:''}\nUptime: ${s.uptime}s\nTracker: ${s.trackerValid?'Daten vorhanden':(s.trackerError?'Fehler':'bereit')}`}catch(e){$('status').textContent='SmallTV derzeit nicht erreichbar.'}}
+async function statusNow(){try{let s=await fetchJson('/api/status');$('status').textContent=`Firmware: ${s.fw} ${s.version}\nNetz: ${s.ssid||'-'}\nIP: ${s.ip}\nRSSI: ${s.rssi} dBm\nFreier Heap: ${s.heap} B (${s.maxBlock} B größter Block)\nFlugradar: ${s.flightStage||'-'}${s.flightHttp?` · HTTP ${s.flightHttp}`:''}${s.flightTlsRx?` · TLS RX ${s.flightTlsRx} B`:''}${s.flightTlsMinBlock?` · Blockbedarf ${s.flightTlsMinBlock} B`:''}${s.flightWaitSec?` · Pause ${s.flightWaitSec} s`:''}${s.flightMinIntervalSec?` · Mindestintervall ${s.flightMinIntervalSec} s`:''}\nadsb.lol heute: ${s.adsbToday} Anfragen${s.adsbKey?' · mit Schlüssel':` von 450 · Tagesbudget-Intervall ${s.adsbBudgetSec} s`}\nRadar-Route: ${s.routeStatus||'-'} · ${s.routeSource||'-'}${s.routeHttp?` · HTTP ${s.routeHttp}`:''}\nUptime: ${s.uptime}s\nTracker: ${s.trackerValid?'Daten vorhanden':(s.trackerError?'Fehler':'bereit')}`}catch(e){$('status').textContent='SmallTV derzeit nicht erreichbar.'}}
 async function reboot(){toast('SmallTV startet neu…','ok',5000);try{await fetch('/api/reboot',{method:'POST'})}catch(e){}setTimeout(()=>location.reload(),6000)}
 async function copyLog(){
 try{const r=await fetch('/api/log');if(!r.ok)throw new Error();const text=await r.text();$('diagnosticLog').textContent=text;
@@ -411,6 +411,26 @@ static uint8_t firstEnabledMode() {
 static uint8_t nextEnabledMode(uint8_t current) {
   for(uint8_t step=1;step<=9;step++) { uint8_t m=(current+step)%9; if(modeEnabled(m)) return m; }
   return current;
+}
+
+// Radar requests run only while the radar is on screen, plus a short
+// prefetch before the rotation switches to it, so a fresh aircraft is ready.
+static const uint32_t RADAR_PREFETCH_MS = 10000UL;
+static bool radarActive() {
+  if(!modeEnabled(MODE_PLANE)) return false;
+  if(cfg.mode==MODE_PLANE) return true;
+  if(enabledModeCount()<=1||nextEnabledMode(cfg.mode)!=MODE_PLANE) return false;
+  uint32_t stayMs=(uint32_t)max((uint16_t)5,cfg.rotationSec[cfg.mode])*1000UL;
+  uint32_t shown=(uint32_t)(millis()-lastModeSwitchMs);
+  return shown+RADAR_PREFETCH_MS>=stayMs;
+}
+// Share of the rotation the radar is visible; used to spread the daily budget.
+static float radarVisibleShare() {
+  if(enabledModeCount()<=1) return 1.0f;
+  uint32_t total=0;
+  for(uint8_t i=0;i<9;i++) if(modeEnabled(i)) total+=max((uint16_t)5,cfg.rotationSec[i]);
+  uint32_t radar=max((uint16_t)5,cfg.rotationSec[MODE_PLANE])+RADAR_PREFETCH_MS/1000UL;
+  return total?min(1.0f,(float)radar/(float)total):1.0f;
 }
 
 // ---- local config ------------------------------------------------------------
@@ -1213,7 +1233,7 @@ static void apiCountdown() {
 
 static void apiStatus() {
   JsonDocument d;d["fw"]=FW_NAME;d["version"]=FW_VERSION;d["ssid"]=apMode?"SmallTV-Setup":WiFi.SSID();d["ip"]=apMode?WiFi.softAPIP().toString():WiFi.localIP().toString();d["rssi"]=apMode?0:WiFi.RSSI();d["heap"]=ESP.getFreeHeap();d["uptime"]=millis()/1000;
-  d["maxBlock"]=ESP.getMaxFreeBlockSize();d["vvoCount"]=vvoCount();d["vvoError"]=vvoError();d["weatherValid"]=weatherData().valid;d["weatherError"]=weatherData().error;d["flightValid"]=flightData().valid;d["flightError"]=flightData().error;d["flightStage"]=flightStageName();d["flightHttp"]=flightLastHttp();d["flightTlsRx"]=flightTlsRx();d["flightTlsMinBlock"]=flightTlsMinBlock();d["flightWaitSec"]=flightWaitSec();d["flightMinIntervalSec"]=serviceMinIntervalMs(SERVICE_ADSB_LOL)/1000;d["routeStatus"]=flightRouteStatus();d["routeSource"]=flightRouteSource();d["routeHttp"]=flightRouteHttp();d["flightAgeSec"]=flightLastOkMs()?(millis()-flightLastOkMs())/1000:0;d["trackerValid"]=trackedFlightData().valid;d["trackerError"]=trackedFlightData().error;sendJson(d);
+  d["maxBlock"]=ESP.getMaxFreeBlockSize();d["vvoCount"]=vvoCount();d["vvoError"]=vvoError();d["weatherValid"]=weatherData().valid;d["weatherError"]=weatherData().error;d["flightValid"]=flightData().valid;d["flightError"]=flightData().error;d["flightStage"]=flightStageName();d["flightHttp"]=flightLastHttp();d["flightTlsRx"]=flightTlsRx();d["flightTlsMinBlock"]=flightTlsMinBlock();d["flightWaitSec"]=flightWaitSec();d["flightMinIntervalSec"]=serviceMinIntervalMs(SERVICE_ADSB_LOL)/1000;d["adsbToday"]=adsbLolRequestsToday();d["adsbKey"]=adsbLolHasKey();d["adsbBudgetSec"]=adsbLolBudgetIntervalMs(radarVisibleShare())/1000;d["routeStatus"]=flightRouteStatus();d["routeSource"]=flightRouteSource();d["routeHttp"]=flightRouteHttp();d["flightAgeSec"]=flightLastOkMs()?(millis()-flightLastOkMs())/1000:0;d["trackerValid"]=trackedFlightData().valid;d["trackerError"]=trackedFlightData().error;sendJson(d);
 }
 
 static void apiVvoSearch() {
@@ -1362,9 +1382,9 @@ void loop() {
         vvoFetchDepartures(cfg.stopId,cfg.departureCount,cfg.vvoMotMask);if(cfg.mode==MODE_DEPARTURES)drawDepartures(false);ran=true;
       }else if(task==1&&modeEnabled(MODE_WEATHER)&&weatherPollDue(cfg.weatherPoll)){
         weatherFetch(cfg.weatherLat,cfg.weatherLon,cfg.timeZone.c_str());if(cfg.mode==MODE_WEATHER)drawWeather(false);ran=true;
-      }else if(task==2&&modeEnabled(MODE_PLANE)&&flightPollDue(cfg.planePoll)){
+      }else if(task==2&&radarActive()&&flightPollDue(cfg.planePoll,radarVisibleShare())){
         flightFetch(cfg.planeLat,cfg.planeLon,cfg.planeRadiusKm);if(cfg.mode==MODE_PLANE)drawPlane(false);ran=true;
-      }else if(task==3&&modeEnabled(MODE_PLANE)&&flightEnrichmentDue()){
+      }else if(task==3&&radarActive()&&flightEnrichmentDue()){
         flightEnrich();if(cfg.mode==MODE_PLANE)drawPlane(false);ran=true;
       }else if(cfg.mode==MODE_TRACKED_FLIGHT&&cfg.trackedFlightNo.length()&&cfg.aviationstackKey.length()){
         if(task==4&&trackedFlightStatusPollDue(cfg.trackerStatusPollMin)){trackedFlightFetchStatus(cfg.aviationstackKey,cfg.trackedFlightNo);trackedFlightFetchRoute();drawTrackedFlight(false);ran=true;}

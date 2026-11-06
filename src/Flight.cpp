@@ -108,12 +108,12 @@ static RoutePoint jsonPoint(JsonObjectConst o,const char* latKey,const char* lon
 }
 
 static bool lookupRouteAdsbLol(const FlightSnapshot& f,RoutePoint pos,Enrichment& out) {
-  if(serviceWaitMs(SERVICE_ADSB_LOL)||serviceMinIntervalMs(SERVICE_ADSB_LOL)||!tlsHeapReady(adsbLolRx()))return false;
+  if(adsbLolBudgetLow()||serviceWaitMs(SERVICE_ADSB_LOL)||serviceMinIntervalMs(SERVICE_ADSB_LOL)||!tlsHeapReady(adsbLolRx()))return false;
   DiagRequest trace(D_RADAR_ROUTE);diagLookup(f.hex,f.callsign);trace.stage(DS_TLS);
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_routeSession,adsbLolRx());
   HTTPClient http;http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,"https://api.adsb.lol/api/0/routeset"))return false;
-  adsbLolPrepare(http,"SmallTV-DD/0.4.14.7");
+  adsbLolPrepare(http,"SmallTV-DD/0.4.14.8");
   http.addHeader("Content-Type","application/json");
   JsonDocument request(networkJsonAllocator());JsonObject plane=request["planes"].to<JsonArray>().add<JsonObject>();
   plane["callsign"]=f.callsign;plane["lat"]=pos.lat;plane["lng"]=pos.lon;
@@ -146,7 +146,7 @@ static bool lookupMetadata(const FlightSnapshot& f,RoutePoint pos,Enrichment& ou
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,url))return false;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.7");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.8");
   int code=http.GET();trace.http(code);g_routeHttp=code;serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return false;}
   JsonDocument filter(networkJsonAllocator());filter["response"]["aircraft"]["type"]=true;filter["response"]["aircraft"]["icao_type"]=true;
@@ -200,7 +200,7 @@ static void lookupAirline(const FlightSnapshot& f,Enrichment& out) {
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,String("https://api.adsbdb.com/v0/airline/")+prefix))return;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.7");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.8");
   int code=http.GET();trace.http(code);serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return;}
   JsonDocument filter(networkJsonAllocator());filter["response"][0]["name"]=true;filter["response"][0]["icao"]=true;
@@ -271,12 +271,14 @@ void flightReset() {
   g_stage = "bereit";
 }
 
-bool flightPollDue(uint16_t pollSec) {
+bool flightPollDue(uint16_t pollSec, float visibleShare) {
   if(serviceWaitMs(SERVICE_ADSB_LOL))return false;
   if (!g_hasPolled) return true;
   uint32_t interval=(uint32_t)pollSec*1000UL;
   uint32_t minimum=serviceMinIntervalMs(SERVICE_ADSB_LOL);
   if(interval<minimum)interval=minimum;
+  uint32_t budget=adsbLolBudgetIntervalMs(visibleShare);
+  if(interval<budget)interval=budget;
   return (uint32_t)(millis()-g_lastPollMs)>=interval;
 }
 
@@ -355,7 +357,7 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     url += String(radiusNm);
     if (!http.begin(client, url)) return flightFailure("Verbindung fehlgeschlagen");
     http.addHeader("Accept", "application/json");
-    adsbLolPrepare(http, "SmallTV-DD/0.4.14.7");
+    adsbLolPrepare(http, "SmallTV-DD/0.4.14.8");
 
     int code = http.GET();trace.http(code);
     serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());
