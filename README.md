@@ -1,22 +1,20 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.14.5.1](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
+[![Build SmallTV DD v0.4.14.6](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
 
-> 🟨 **v0.4.14.5.1 · Entwicklungsbuild**  
+> 🟨 **v0.4.14.6 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
 
-## v0.4.14.5.1
+## v0.4.14.6
 
-- VVO: Nur bei `ServiceError` mit `no serving lines found` steht mittig grau „Haltestelle wird nicht bedient“. Andere Fehler behalten ihre Anzeige. Haltestellenname oben, neutraler VVO-Footer unten.
-- Hintergrundbeleuchtung: Test der phasensynchronen PWM-Ansteuerung des vorhandenen ESP8266-Frameworks bei unveränderter Frequenz und Helligkeitseinstellung. Das Aufblitzen bestand unter v0.4.14.5 fort; eine vollständige Behebung durch diese Änderung ist noch nicht auf Hardware bestätigt.
-- Ein gemeinsamer Build-Workflow `build.yml`, der bei zukünftigen Versionen ersetzt wird. Die README löst keinen Firmwarebuild aus. Neue Läufe ersetzen einen noch laufenden Build desselben Branches.
-- Versionsgeschichte von v0.4.11 bis zum aktuellen Stand ergänzt. Drei Downloads: Quellarchiv, Workflowdatei und README.
+- Hintergrundbeleuchtung: PWM-Frequenz von 1 kHz auf 300 Hz gesenkt und Auflösung von 255 auf 1023 Stufen erhöht. Bei 1 % ist die Hintergrundbeleuchtung damit pro Periode rund 33 µs statt rund 8 µs eingeschaltet. Kurze Interrupt-Verzögerungen durch WLAN, TLS oder Flash-Zugriffe sollen dadurch nicht mehr als Aufblitzen sichtbar sein. Der Hardwaretest steht aus.
+- Repository: Der Quellcode liegt jetzt direkt im Repository statt in Versionsarchiven. Der Workflow baut bei jedem Push und erstellt bei einem Versions-Tag ein GitHub Release.
 
-Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Die Änderungen dieser Version benötigen einen Hardwaretest. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
+Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
 
 ## Unterstütztes Gerät
 
@@ -54,19 +52,15 @@ Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld b
 
 ## Firmware über GitHub bauen
 
-Dieser Entwicklungsstand wird als Versionsarchiv geliefert:
+Der Quellcode liegt direkt im Repository (`src/`, `tools/`, `tests/`, `platformio.ini`). Der Workflow `.github/workflows/build.yml` baut ihn automatisch:
 
-- `smalltv-deutsch-vvo-v0.4.14.5.1.zip` unverändert in das Hauptverzeichnis des Repositorys hochladen.
-- `build.yml` als `.github/workflows/build.yml` ablegen.
-- Die einzelne `README.md` im Hauptverzeichnis ersetzen. Lizenztexte und weitere erforderliche Unterlagen bleiben im Quellarchiv enthalten.
-- Unter **Actions** den Workflow **Build SmallTV DD** öffnen und ausführen, falls er nicht bereits automatisch gestartet wurde.
-- Nach erfolgreichem Build **smalltv-dd-v0.4.14.5.1-firmware** herunterladen und die BIN flashen. **smalltv-dd-v0.4.14.5.1-begleitpaket** enthält separat Buildlog, ELF, Lizenztexte sowie Quellen und Buildobjekte.
+- **Push auf `main` oder Pull Request:** Alle Prüfungen laufen, die fertige Firmware liegt anschließend unter **Actions** als Artefakt `smalltv-dd-v<Version>-firmware`.
+- **Neue Version veröffentlichen:** `FW_VERSION` in `src/main.cpp` anpassen, committen und einen passenden Tag setzen, z. B. `v0.4.14.6`. Der Workflow erstellt dann ein **GitHub Release** mit BIN-Datei, Prüfsumme und Begleitpaket (Buildlog, ELF, Lizenztexte, Quellen und Buildobjekte). Tag und `FW_VERSION` müssen übereinstimmen.
+- **Manuell:** Unter **Actions → Build SmallTV DD → Run workflow**.
 
-**Einmalige Workflow-Bereinigung:** Die bisherigen Firmware-Workflows unter Actions öffnen und über das Menü mit den drei Punkten deaktivieren. Dazu gehören die alten versionsbezogenen Builds und gegebenenfalls der ursprüngliche Firmware-Loader. Alternativ deren YAML-Dateien aus `.github/workflows/` entfernen. Der neue Workflow deaktiviert alte Dateien nicht automatisch. Quellarchive und bisherige Build-Ergebnisse müssen dafür nicht gelöscht werden. Dokumentationsworkflows sind davon unabhängig.
+Lokal baut `pio run -e smalltv_ultra` dieselbe Firmware nach `.pio/build/smalltv_ultra/firmware.bin`.
 
-Bei folgenden Versionen dieselbe Datei `.github/workflows/build.yml` mit der neu gelieferten Workflowdatei ersetzen. Keine weiteren versionsbezogenen Workflowdateien hinzufügen. Der Workflow benennt seine Ergebnisse weiterhin nach der Firmwareversion.
-
-Der Workflow baut den Inhalt des Versionsarchivs. Änderungen an anderen, älteren Quelldateien im Repository werden dadurch nicht automatisch Teil dieses Builds.
+Ältere Versionsarchive und versionsbezogene Workflows bis v0.4.14.5.1 sind in der Git-Historie erhalten.
 
 ## Updates
 
@@ -109,6 +103,7 @@ Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und 
 
 | Version | Änderungen |
 | --- | --- |
+| **v0.4.14.6**   | Hintergrundbeleuchtung mit 300 Hz und 1023 Stufen gegen Aufblitzen bei 1 %; Quellcode direkt im Repository, Releases über Tags |
 | **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |
 | **v0.4.14.5** | Unveränderte PWM-Werte nicht erneut setzen; fehlerhafte leere Airline-Cacheeinträge vermeiden; Offlinehinweise; Ortsdienst einklappen und Anbieterinformationen unter System |
 | **v0.4.14.4.2** | Einheitlicher optionaler Abrufcounter für LIVE, LETZTER STAND und ABRUFPAUSE; standardmäßig aktiviert |
