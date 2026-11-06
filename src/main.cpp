@@ -904,7 +904,7 @@ static void drawWeather(bool force=true) {
   uint16_t color=cfg.weatherTempColor?weatherTempColor565(w.currentC):C_WHITE;
   bool tempChanged=visibleCenter(2,temp,88,6,color,88,48);
   visibleText(3,weatherUnit(),176,103,2,cfg.weatherTempColor?color:C_GRAY,176,103,36,16,tempChanged);
-  String label=cfg.lang==LANG_EN?String(FPSTR(weatherLabelEn(w.code))):String(weatherLabel(w.code));visibleCenter(4,label,142,textW(label,2)<=224?2:1,C_WHITE,140,19);
+  String label=cfg.lang==LANG_EN?String(FPSTR(weatherLabelEn(w.code))):String(FPSTR(weatherLabel(w.code)));visibleCenter(4,label,142,textW(label,2)<=224?2:1,C_WHITE,140,19);
   String hi="H "+String((int)lroundf(displayTempValue(w.highC)))+weatherUnit();
   String lo=TR("T ","L ")+String((int)lroundf(displayTempValue(w.lowC)))+weatherUnit();
   visibleText(5,hi,18,169,2,C_GRAY,8,166,112,24);
@@ -1243,9 +1243,9 @@ static void apiGetConfig() {
 }
 
 static void apiPostConfig() {
-  if(!server.hasArg("plain")){server.send(400,"application/json","{\"ok\":false,\"error\":\"Keine Daten empfangen.\"}");return;}
-  JsonDocument d;if(deserializeJson(d,server.arg("plain"))){server.send(400,"application/json","{\"ok\":false,\"error\":\"Einstellungen konnten nicht gelesen werden.\"}");return;}
-  if(d["timeZone"].is<const char*>() && timeZoneIndex(d["timeZone"].as<const char*>())<0){server.send(400,"application/json","{\"ok\":false,\"error\":\"Unbekannte Zeitzone.\"}");return;}
+  if(!server.hasArg("plain")){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Keine Daten empfangen.\"}"));return;}
+  JsonDocument d;if(deserializeJson(d,server.arg("plain"))){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Einstellungen konnten nicht gelesen werden.\"}"));return;}
+  if(d["timeZone"].is<const char*>() && timeZoneIndex(d["timeZone"].as<const char*>())<0){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Unbekannte Zeitzone.\"}"));return;}
   Settings previous=cfg; String oldSsid=cfg.ssid,oldHost=cfg.hostname,oldTracked=cfg.trackedFlightNo,oldKey=cfg.aviationstackKey,oldAdsbKey=cfg.adsbLolKey;
   if(d["ssid"].is<const char*>())cfg.ssid=d["ssid"].as<String>();
   if(d["pass"].is<const char*>()){String x=d["pass"].as<String>();if(x.length())cfg.pass=x;}
@@ -1290,7 +1290,7 @@ static void apiPostConfig() {
   JsonArrayConst a=d["countdowns"].as<JsonArrayConst>();if(!a.isNull())for(uint8_t i=0;i<4&&i<a.size();i++){updateCountdownSettings(a[i].as<JsonObjectConst>(),cfg.countdown[i]);if(cfg.countdown[i].active&&cfg.countdown[i].type==COUNTDOWN_DAYS){int32_t dd=0;if(countdownDayDifference(cfg.countdown[i].targetDate,dd)){uint32_t av=dd<0?(uint32_t)(-(int64_t)dd):(uint32_t)dd;cfg.countdown[i].dayDigits=max(cfg.countdown[i].dayDigits,max((uint8_t)3,decimalDigits(av)));}}}
   d.clear();
   diagEvent(D_CONFIG,DS_BEGIN);
-  if(!saveConfig()){diagEvent(D_CONFIG,DS_FAILED);cfg=previous;server.send(500,"application/json","{\"ok\":false,\"error\":\"Einstellungen konnten nicht gespeichert werden.\"}");return;}diagEvent(D_CONFIG,DS_DONE);applyTimeZone();applyBrightness();if(oldAdsbKey!=cfg.adsbLolKey){adsbLolSetKey(cfg.adsbLolKey);serviceClear(SERVICE_ADSB_LOL);flightReset();}
+  if(!saveConfig()){diagEvent(D_CONFIG,DS_FAILED);cfg=previous;server.send_P(500,"application/json",PSTR("{\"ok\":false,\"error\":\"Einstellungen konnten nicht gespeichert werden.\"}"));return;}diagEvent(D_CONFIG,DS_DONE);applyTimeZone();applyBrightness();if(oldAdsbKey!=cfg.adsbLolKey){adsbLolSetKey(cfg.adsbLolKey);serviceClear(SERVICE_ADSB_LOL);flightReset();}
   uint16_t activated=cfg.rotationMask & ~previous.rotationMask;
   if(previous.stopId!=cfg.stopId||previous.departureCount!=cfg.departureCount||previous.vvoMotMask!=cfg.vvoMotMask||(activated&(1U<<MODE_DEPARTURES)))vvoReset();
   if(previous.weatherLat!=cfg.weatherLat||previous.weatherLon!=cfg.weatherLon||previous.timeZone!=cfg.timeZone||(activated&(1U<<MODE_WEATHER)))weatherReset();
@@ -1302,30 +1302,30 @@ static void apiPostConfig() {
 // Shows a view right away (web interface "▶"); the rotation continues from it.
 static void apiShow() {
   JsonDocument d;
-  if(!server.hasArg("plain")||deserializeJson(d,server.arg("plain"))){server.send(400,"application/json","{\"ok\":false,\"error\":\"Ungültige Daten.\"}");return;}
+  if(!server.hasArg("plain")||deserializeJson(d,server.arg("plain"))){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Ungültige Daten.\"}"));return;}
   int mode=d["mode"]|-1;
-  if(mode<0||mode>MODE_COUNTDOWN4){server.send(400,"application/json","{\"ok\":false,\"error\":\"Unbekanntes Programm.\"}");return;}
-  server.send(200,"application/json","{\"ok\":true}");
+  if(mode<0||mode>MODE_COUNTDOWN4){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Unbekanntes Programm.\"}"));return;}
+  server.send_P(200,"application/json",PSTR("{\"ok\":true}"));
   cfg.mode=(uint8_t)mode;lastModeSwitchMs=millis();drawActive();
 }
 
 static void apiCountdown() {
-  if(!server.hasArg("plain")){server.send(400,"application/json","{\"ok\":false,\"error\":\"Keine Daten empfangen.\"}");return;}
-  JsonDocument d;if(deserializeJson(d,server.arg("plain"))){server.send(400,"application/json","{\"ok\":false,\"error\":\"Ungültige Daten.\"}");return;}
-  int slot=d["slot"]|-1;if(slot<0||slot>3){server.send(400,"application/json","{\"ok\":false,\"error\":\"Ungültiger Countdown-Slot.\"}");return;}
+  if(!server.hasArg("plain")){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Keine Daten empfangen.\"}"));return;}
+  JsonDocument d;if(deserializeJson(d,server.arg("plain"))){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Ungültige Daten.\"}"));return;}
+  int slot=d["slot"]|-1;if(slot<0||slot>3){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Ungültiger Countdown-Slot.\"}"));return;}
   Settings previous=cfg; CountdownSlot& c=cfg.countdown[slot];updateCountdownSettings(d.as<JsonObjectConst>(),c);String action=d["action"]|"";
   if(action=="stop"){c.active=false;}
   else if(action=="start"){
     if(c.type==COUNTDOWN_DAYS){
-      int32_t diff=0;if(!countdownDayDifference(c.targetDate,diff)){server.send(409,"application/json","{\"ok\":false,\"error\":\"Zieltag fehlt oder Uhrzeit ist noch nicht synchronisiert\"}");return;}
+      int32_t diff=0;if(!countdownDayDifference(c.targetDate,diff)){server.send_P(409,"application/json",PSTR("{\"ok\":false,\"error\":\"Zieltag fehlt oder Uhrzeit ist noch nicht synchronisiert\"}"));return;}
       uint32_t a=diff<0?(uint32_t)(-(int64_t)diff):(uint32_t)diff;c.dayDigits=max((uint8_t)3,decimalDigits(a));c.active=true;c.targetEpoch=0;
     } else {
-      time_t now=time(nullptr);if(now<1609459200){server.send(409,"application/json","{\"ok\":false,\"error\":\"Uhrzeit ist noch nicht synchronisiert\"}");return;}
-      if(c.durationSec==0){server.send(400,"application/json","{\"ok\":false,\"error\":\"Dauer muss größer als 0 sein.\"}");return;}
+      time_t now=time(nullptr);if(now<1609459200){server.send_P(409,"application/json",PSTR("{\"ok\":false,\"error\":\"Uhrzeit ist noch nicht synchronisiert\"}"));return;}
+      if(c.durationSec==0){server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Dauer muss größer als 0 sein.\"}"));return;}
       c.targetEpoch=(uint32_t)now+c.durationSec;c.active=true;
     }
-  } else {server.send(400,"application/json","{\"ok\":false,\"error\":\"Unbekannte Aktion.\"}");return;}
-  if(!saveConfig()){cfg=previous;server.send(500,"application/json","{\"ok\":false,\"error\":\"Countdown konnte nicht gespeichert werden.\"}");return;}if(countdownSlotFromMode(cfg.mode)==slot)drawCountdown((uint8_t)slot);server.send(200,"application/json","{\"ok\":true}");
+  } else {server.send_P(400,"application/json",PSTR("{\"ok\":false,\"error\":\"Unbekannte Aktion.\"}"));return;}
+  if(!saveConfig()){cfg=previous;server.send_P(500,"application/json",PSTR("{\"ok\":false,\"error\":\"Countdown konnte nicht gespeichert werden.\"}"));return;}if(countdownSlotFromMode(cfg.mode)==slot)drawCountdown((uint8_t)slot);server.send_P(200,"application/json",PSTR("{\"ok\":true}"));
 }
 
 static void apiStatus() {
@@ -1334,36 +1334,36 @@ static void apiStatus() {
 }
 
 static void apiVvoSearch() {
-  if(apMode||WiFi.status()!=WL_CONNECTED){server.send(503,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Kein Internetzugang.\"}");return;}
-  String q=server.arg("q");q.trim();if(q.length()<2){server.send(400,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Suchbegriff zu kurz.\"}");return;}
-  String out;if(!vvoSearchStops(q,out)){server.send(502,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"VVO-Suche fehlgeschlagen.\"}");return;}server.send(200,"application/json; charset=utf-8",out);
+  if(apMode||WiFi.status()!=WL_CONNECTED){server.send_P(503,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Kein Internetzugang.\"}"));return;}
+  String q=server.arg("q");q.trim();if(q.length()<2){server.send_P(400,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Suchbegriff zu kurz.\"}"));return;}
+  String out;if(!vvoSearchStops(q,out)){server.send_P(502,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"VVO-Suche fehlgeschlagen.\"}"));return;}server.send(200,"application/json; charset=utf-8",out);
 }
 
 static void apiGeoSearch() {
-  if(apMode||WiFi.status()!=WL_CONNECTED){server.send(503,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Kein Internetzugang.\"}");return;}
+  if(apMode||WiFi.status()!=WL_CONNECTED){server.send_P(503,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Kein Internetzugang.\"}"));return;}
   String q=server.arg("q");q.trim();
-  if(q.length()<2){server.send(400,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Suchbegriff zu kurz.\"}");return;}
-  if(serviceWaitMs(SERVICE_GEO)){server.send(429,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Ortsdienst pausiert nach zu vielen Anfragen. Bitte später erneut versuchen.\"}");return;}
+  if(q.length()<2){server.send_P(400,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Suchbegriff zu kurz.\"}"));return;}
+  if(serviceWaitMs(SERVICE_GEO)){server.send_P(429,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Ortsdienst pausiert nach zu vielen Anfragen. Bitte später erneut versuchen.\"}"));return;}
   String out;
   bool german=server.arg("german")=="1";
-  if(!geoSearchPlaces(q,german,out)){server.send(502,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Ortssuche fehlgeschlagen.\"}");return;}
+  if(!geoSearchPlaces(q,german,out)){server.send_P(502,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Ortssuche fehlgeschlagen.\"}"));return;}
   server.send(200,"application/json; charset=utf-8",out);
 }
 
 static void apiGeoReverse() {
-  if(apMode||WiFi.status()!=WL_CONNECTED){server.send(503,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Kein Internetzugang.\"}");return;}
+  if(apMode||WiFi.status()!=WL_CONNECTED){server.send_P(503,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Kein Internetzugang.\"}"));return;}
   float lat=server.arg("lat").toFloat(),lon=server.arg("lon").toFloat();
-  if(lat<-90||lat>90||lon<-180||lon>180){server.send(400,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Ungültige Koordinaten.\"}");return;}
-  if(serviceWaitMs(SERVICE_GEO)){server.send(429,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Ortsdienst pausiert nach zu vielen Anfragen. Bitte später erneut versuchen.\"}");return;}
+  if(lat<-90||lat>90||lon<-180||lon>180){server.send_P(400,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Ungültige Koordinaten.\"}"));return;}
+  if(serviceWaitMs(SERVICE_GEO)){server.send_P(429,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Ortsdienst pausiert nach zu vielen Anfragen. Bitte später erneut versuchen.\"}"));return;}
   String out;
   bool german=server.arg("german")=="1";
-  if(!geoReversePlace(lat,lon,german,out)){server.send(502,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"Ortsname konnte nicht ermittelt werden.\"}");return;}
+  if(!geoReversePlace(lat,lon,german,out)){server.send_P(502,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"Ortsname konnte nicht ermittelt werden.\"}"));return;}
   server.send(200,"application/json; charset=utf-8",out);
 }
 
 static void apiWifiScan() {
   int n=WiFi.scanNetworks(false,false);
-  if(n<0){server.send(500,"application/json; charset=utf-8","{\"ok\":false,\"error\":\"WLAN-Suche fehlgeschlagen.\"}");return;}
+  if(n<0){server.send_P(500,"application/json; charset=utf-8",PSTR("{\"ok\":false,\"error\":\"WLAN-Suche fehlgeschlagen.\"}"));return;}
   JsonDocument d; d["ok"]=true; JsonArray a=d["networks"].to<JsonArray>();
   for(int i=0;i<n;i++){
     String ssid=WiFi.SSID(i); if(!ssid.length())continue;
@@ -1379,7 +1379,7 @@ class LogResponse : public Print {
 static void apiLog(){
  server.sendHeader("Cache-Control","no-store");
  if(server.hasArg("download"))server.sendHeader("Content-Disposition","attachment; filename=pixelstop-log.txt");
- server.setContentLength(CONTENT_LENGTH_UNKNOWN);server.send(200,"text/plain; charset=utf-8","");
+ server.setContentLength(CONTENT_LENGTH_UNKNOWN);server.send_P(200,"text/plain; charset=utf-8",PSTR(""));
  LogResponse response;diagPrint(response);server.sendContent("");deferBackgroundNetwork();
 }
 static void setupWeb() {
@@ -1387,8 +1387,8 @@ static void setupWeb() {
   server.on("/",HTTP_GET,[]{server.send_P(200,"text/html; charset=utf-8",WEBUI);});
   server.on("/i18n/en.json",HTTP_GET,[]{server.sendHeader("Cache-Control","max-age=86400");server.send_P(200,"application/json; charset=utf-8",WEBUI_EN);});
   server.on("/api/config",HTTP_GET,apiGetConfig);server.on("/api/config",HTTP_POST,apiPostConfig);server.on("/api/countdown",HTTP_POST,apiCountdown);server.on("/api/show",HTTP_POST,apiShow);server.on("/api/status",HTTP_GET,apiStatus);server.on("/api/vvo/search",HTTP_GET,apiVvoSearch);server.on("/api/geo/search",HTTP_GET,apiGeoSearch);server.on("/api/geo/reverse",HTTP_GET,apiGeoReverse);server.on("/api/wifi/scan",HTTP_GET,apiWifiScan);
-  server.on("/api/reboot",HTTP_POST,[]{server.send(200,"application/json","{\"ok\":true}");diagEvent(D_REBOOT,DS_BEGIN);delay(300);ESP.restart();});updater.setup(&server,"/update");
-  server.onNotFound([](){if(apMode){server.sendHeader("Location","http://192.168.4.1/",true);server.send(302,"text/plain","");}else server.send(404,"text/plain","Nicht gefunden");});server.begin();
+  server.on("/api/reboot",HTTP_POST,[]{server.send_P(200,"application/json",PSTR("{\"ok\":true}"));diagEvent(D_REBOOT,DS_BEGIN);delay(300);ESP.restart();});updater.setup(&server,"/update");
+  server.onNotFound([](){if(apMode){server.sendHeader("Location","http://192.168.4.1/",true);server.send_P(302,"text/plain",PSTR(""));}else server.send_P(404,"text/plain",PSTR("Nicht gefunden"));});server.begin();
 }
 
 // ---- setup / loop ------------------------------------------------------------

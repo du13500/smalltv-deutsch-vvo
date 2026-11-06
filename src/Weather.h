@@ -22,4 +22,4 @@ bool weatherPollDue(uint16_t pollSec);
 bool weatherFetch(float lat, float lon, const char* timeZone = "Europe/Berlin");
 const WeatherSnapshot& weatherData();
 uint32_t weatherLastOkMs();
-const char* weatherLabel(int code);
+const char* weatherLabel(int code); // flash string: use FPSTR()
