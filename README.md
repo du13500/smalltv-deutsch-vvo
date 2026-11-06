@@ -1,13 +1,21 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.14.6](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
+[![Build SmallTV DD v0.4.14.7](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
 
-> 🟨 **v0.4.14.6 · Entwicklungsbuild**  
+> 🟨 **v0.4.14.7 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
+
+## v0.4.14.7
+
+- **Flugradar repariert:** adsb.lol lehnt seit Herbst 2026 Anfragen im alten HTTP/1.0 mit `HTTP 426` ab. Alle adsb.lol-Abfragen (Radar, Routen, Flug-Tracker) nutzen jetzt HTTP/1.1. Stückweise übertragene Antworten (`chunked`) werden direkt beim Lesen entpackt, ohne zusätzlichen Speicherpuffer.
+- **Keine Reboot-Schleife mehr bei abgelehnten Anfragen:** Bei `HTTP 401`, `403` oder `426` pausiert der jeweilige Dienst 10, dann 20, dann 40 Minuten, statt alle paar Sekunden neu zu fragen. Das Display zeigt „ADSB.LOL / Zugriff abgelehnt“ mit dem HTTP-Code.
+- **Optionaler adsb.lol-Schlüssel** im Flugradar-Reiter. Er wird als `x-api-key` mitgeschickt. Ohne Schlüssel begrenzt adsb.lol die Anfragen pro Tag und Internetanschluss; dafür gibt es neue Aktualisierungsintervalle von 1 und 3 Minuten.
+
+Der Hardwaretest steht aus.
 
 ## v0.4.14.6
 
@@ -71,6 +79,7 @@ Im Webinterface unter **System → Firmware-Update** die passende `.bin` auswäh
 - **VVO** liefert Abfahrten, **Open-Meteo** das Wetter.
 - **OpenStreetMap / Nominatim** liefert Kartendaten und Ortsnamen. Gewässernamen werden übernommen, soweit die Ortsabfrage sie liefert; eine weltweite Gewässerabdeckung wird nicht zugesichert.
 - **adsb.lol** liefert Radarpositionen, **adsb.lol und adsbdb** ergänzen Routen. **adsbdb** ergänzt verfügbare Airline- und Flugzeugtypenamen; lokale Bezeichnungen dienen als Rückfall.
+- **adsb.lol** begrenzt Anfragen ohne Schlüssel pro Tag und Internetanschluss. Ein eigener Schlüssel kann im Flugradar-Reiter eingetragen werden.
 - **aviationstack** liefert die Flugplandaten des optionalen Flug-Trackers. Dafür ist ein eigener Schlüssel erforderlich; Tarif und Abrufkontingent bestimmen die Nutzungsmöglichkeiten.
 
 Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung falsch oder unvollständig sein. Unpassende oder nicht verfügbare Routen werden nicht durch vermutete Flughäfen ersetzt. `N/A` bedeutet fehlende Information, `GND` einen ausdrücklich gemeldeten Bodenstatus. Höhenangaben stammen aus den verfügbaren Flugdaten und sind keine Höhe über dem Gelände.
@@ -103,6 +112,7 @@ Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und 
 
 | Version | Änderungen |
 | --- | --- |
+| **v0.4.14.7**   | adsb.lol über HTTP/1.1 mit Chunk-Entpacker; lange Pause bei 401/403/426 statt Reboot-Schleife; optionaler adsb.lol-Schlüssel; Intervalle 1 und 3 min |
 | **v0.4.14.6**   | Hintergrundbeleuchtung mit 300 Hz und 1023 Stufen gegen Aufblitzen bei 1 %; Quellcode direkt im Repository, Releases über Tags |
 | **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |
 | **v0.4.14.5** | Unveränderte PWM-Werte nicht erneut setzen; fehlerhafte leere Airline-Cacheeinträge vermeiden; Offlinehinweise; Ortsdienst einklappen und Anbieterinformationen unter System |
