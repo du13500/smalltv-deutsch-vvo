@@ -30,6 +30,8 @@ struct FakeWifi { int state=WL_CONNECTED;int status(){return state;} } WiFi;
 uint32_t serviceWaitMs(int){return 0;}
 static uint32_t minimumInterval=0;
 uint32_t serviceMinIntervalMs(int){return minimumInterval;}
+static uint32_t budgetInterval=0;static float lastShare=0;
+uint32_t adsbLolBudgetIntervalMs(float share){lastShare=share;return budgetInterval;}
 const int SERVICE_ADSB_LOL=0;
 struct Snapshot {bool valid,error;} g_f={};
 static uint32_t g_lastPollMs=0,g_lastOkMs=0,g_firstFailureMs=0;
@@ -51,8 +53,9 @@ tests='''int main(){
  g_f.valid=true;g_f.error=false;g_lastOkMs=10000;clockMs=15000;
  ESP.block=6000;assert(!flightFetch(51,13,25));assert(requests==3&&probes==3);
  assert(g_f.valid&&g_f.error);assert(!strcmp(g_stage,"übersprungen: Heap"));
- assert(!flightPollDue(5));clockMs=20001;assert(flightPollDue(5));
- minimumInterval=15000;clockMs=29999;assert(!flightPollDue(5));clockMs=30000;assert(flightPollDue(5));minimumInterval=0;
+ assert(!flightPollDue(5,1.0f));clockMs=20001;assert(flightPollDue(5,1.0f));
+ minimumInterval=15000;clockMs=29999;assert(!flightPollDue(5,1.0f));clockMs=30000;assert(flightPollDue(5,1.0f));minimumInterval=0;
+ budgetInterval=12000;clockMs=26999;assert(!flightPollDue(5,0.25f)&&lastShare==0.25f);clockMs=27000;assert(flightPollDue(5,0.25f));budgetInterval=0;
  clockMs=39999;assert(!flightExpire());clockMs=40000;assert(flightExpire());assert(!g_f.valid&&g_f.error);assert(!flightExpire());
  ESP.heap=25768;ESP.block=13192;g_adsbLolRx=512;assert(flightFetch(51,13,25));
  g_f={true,false};flightSuccess();assert(!g_consecutiveFailures&&g_lastOkMs==40000);

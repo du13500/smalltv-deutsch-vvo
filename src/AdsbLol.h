@@ -10,6 +10,12 @@
 void adsbLolSetKey(const String& key);
 bool adsbLolHasKey();
 
+// Daily request budget without a key (see RadarBudget.h). Every prepared
+// request counts, including failed ones.
+uint16_t adsbLolRequestsToday();
+uint32_t adsbLolBudgetIntervalMs(float visibleShare);
+bool adsbLolBudgetLow();
+
 // Call after http.begin(): HTTP/1.1, optional x-api-key, collected headers.
 void adsbLolPrepare(HTTPClient& http, const char* userAgent);
 
