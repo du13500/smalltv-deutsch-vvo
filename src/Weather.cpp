@@ -1,3 +1,4 @@
+#include "Version.h"
 #include "Weather.h"
 #include "WeatherVisual.h"
 #include <ESP8266WiFi.h>
@@ -76,7 +77,7 @@ bool weatherFetch(float lat, float lon, const char* timeZone) {
 
   if (!http.begin(client, url)) { g_w.error = true; return false; }
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.8");
+  http.setUserAgent(FW_USER_AGENT);
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();

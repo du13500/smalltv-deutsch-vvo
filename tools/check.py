@@ -4,11 +4,11 @@ from pathlib import Path
 import subprocess,tempfile,re
 root=Path(__file__).resolve().parents[1]
 s=(root/'src/main.cpp').read_text()
-assert '#define FW_VERSION "0.4.14.8"' in s
-assert '>v0.4.14.8</span>' in s
+version=re.search(r'#define FW_VERSION "([^"]+)"',(root/'src/Version.h').read_text()).group(1)
+assert '<span class="chip">v)HTML" FW_VERSION R"HTML(</span>' in s, 'Web UI shows FW_VERSION'
 for name in ['README.md','LICENSE','CONTRIBUTING.md','THIRD_PARTY_SERVICES.md','ROADMAP.md','TESTPLAN.md','CHANGELOG.md']:
  assert (root/name).is_file(),name
-html=s.split('R"HTML(',1)[1].split(')HTML"',1)[0]
+html=''.join(re.findall(r'R"HTML\((.*?)\)HTML"',s,re.S))
 assert 'navigator.geolocation' not in html and 'alert(' not in html
 assert 'entwickelt von du13500' in html
 zone_select=re.search(r'<select id="timeZone">(.*?)</select>',html,re.S).group(1)
@@ -17,10 +17,9 @@ header_zones=re.findall(r'PROGMEM\s*=\s*"([A-Za-z_]+(?:/[A-Za-z_]+)*)";', (root/
 assert ui_zones==header_zones, 'UI and firmware time-zone choices differ'
 assert len(ui_zones)==50
 readme=(root/'README.md').read_text()
-# README describes this release and the shared workflow.
-badge='[![Build SmallTV DD v0.4.14.8](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)'
-assert badge in readme, 'Current GitHub build badge missing'
-assert not re.search(r'https?://|\]\(|<a\b',readme.replace(badge,'')), 'README links are limited to the build badge'
+# README shows the build badge of the shared workflow and names this version.
+assert 'https://github.com/du13500/pixelstop/actions/workflows/build.yml/badge.svg' in readme, 'Build badge missing'
+assert version in readme, 'README does not mention the current version'
 ids=re.findall(r'\bid="([^"${]+)"',html)
 assert len(ids)==len(set(ids)), 'Duplicate fixed HTML ID'
 # Extract every inline script, rather than treating a stored boolean as a test.

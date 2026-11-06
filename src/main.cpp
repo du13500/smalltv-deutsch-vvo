@@ -39,8 +39,7 @@
 #define TFT_W    240
 #define TFT_H    240
 
-#define FW_NAME    "SmallTV DD"
-#define FW_VERSION "0.4.14.8"
+#include "Version.h"
 // Backlight PWM (since v0.4.14.6, against flashes at 1 % brightness)
 #define BL_PWM_FREQ 300
 #define BL_PWM_RANGE 1023
@@ -88,7 +87,7 @@ struct CountdownSlot {
 struct Settings {
   String ssid;
   String pass;
-  String hostname = "smalltv-dd";
+  String hostname = "pixelstop";
 
   uint8_t mode = MODE_DEPARTURES; // current runtime view
   uint16_t rotationMask = (1U << MODE_DEPARTURES);
@@ -180,7 +179,7 @@ static Arduino_GFX* gfx = nullptr;
 static const char WEBUI[] PROGMEM = R"HTML(
 <!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SmallTV Deutsch/VVO</title>
+<title>PixelStop</title>
 <style>
 :root{--bg:#17191c;--card:#24272b;--card2:#2e3237;--text:#f4f4f4;--muted:#aeb4bb;--accent:#f3ce00;--red:#ff5d56;--green:#5dd78b;--border:#3b4047}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:760px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}h1{font-size:24px;margin:0}.chip{font-size:12px;color:#111;background:var(--accent);padding:6px 9px;border-radius:99px;font-weight:700}
@@ -188,7 +187,7 @@ nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
 button.action,a.action{display:inline-block;border:0;border-radius:10px;background:var(--accent);color:#111;padding:11px 15px;font-family:inherit;font-size:14px;line-height:1.3;font-weight:750;text-decoration:none;min-height:42px}button.sec,a.sec{background:var(--card2);color:var(--text)}button.danger{background:var(--red);color:#111}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.serviceList{padding-left:20px}.serviceList li{margin:12px 0;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:750}details h3{margin-top:16px}.sticky{position:sticky;bottom:10px;padding-top:12px}.sticky button{width:100%;font-size:16px}#saveBtn:disabled{background:#45494f;color:#aeb3ba;cursor:wait}.status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;color:#cdd2d8}.pickres{display:block;width:100%;text-align:left;margin:6px 0;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--card2);color:var(--text)}input[type=range]{padding:4px}input[type=color]{padding:3px;height:44px}.val{color:var(--accent);font-weight:700}.hidden{display:none}.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}.check{display:flex;align-items:center;gap:8px;background:#1d2024;border:1px solid var(--border);border-radius:9px;padding:9px;color:var(--text);margin:0}.check input{width:auto;margin:0}.modeRow{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;border-bottom:1px solid var(--border);padding:8px 0}.modeRow:last-child{border-bottom:0}.modeLeft{display:flex;align-items:center;gap:9px}.modeLeft input{width:auto}.wifirow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.sig{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);float:right}.ok{color:var(--green)}.err{color:var(--red)}.mapwrap{margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#16181b}.map{height:300px;width:100%}.mapnote{padding:8px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}.footer{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;padding:18px 6px 6px}.footer a{color:var(--muted)}.toast{position:fixed;z-index:9999;top:18px;left:50%;transform:translate(-50%,-18px);opacity:0;pointer-events:none;min-width:220px;max-width:min(90vw,520px);padding:14px 18px;border-radius:12px;font-weight:800;text-align:center;box-shadow:0 8px 28px #0008;transition:opacity .18s ease,transform .18s ease}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.ok{background:var(--green);color:#0b1a10}.toast.err{background:var(--red);color:#200}.toast.warn{background:var(--accent);color:#111}.subhead{font-size:13px;font-weight:400;color:var(--muted);margin:18px 0 5px}.depblock{transition:opacity .15s ease}.depblock.disabled{opacity:.42}.depblock.disabled label{color:var(--muted)}select:disabled,input:disabled{cursor:not-allowed;opacity:.58}
 @media(max-width:560px){nav{grid-template-columns:repeat(3,1fr)}.row,.colorrow,.modeRow,.wifirow{grid-template-columns:1fr}.triple{grid-template-columns:repeat(3,1fr)}.checks{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
-<div class="head"><h1>SmallTV Deutsch/VVO</h1><span class="chip">v0.4.14.8</span></div>
+<div class="head"><h1>PixelStop</h1><span class="chip">v)HTML" FW_VERSION R"HTML(</span></div>
 <nav><button class="tab on" data-p="anzeige">Anzeige</button><button class="tab" data-p="abfahrten">Abfahrten</button><button class="tab" data-p="wetter">Wetter</button><button class="tab" data-p="flugradar">Flugradar</button><button class="tab" data-p="flugtracker">Flug-Tracker</button><button class="tab" data-p="countdown">Countdown</button><button class="tab" data-p="system">System</button></nav>
 
 <section id="anzeige" class="page on">
@@ -209,13 +208,13 @@ button.action,a.action{display:inline-block;border:0;border-radius:10px;backgrou
 <section id="countdown" class="page"><p class="hint">Vier dauerhaft gespeicherte Slots. Tages-Countdowns sind reine Kalendertage; Zeit-Countdowns laufen nach Null automatisch mit Plus weiter.</p><div id="countdownSlots"></div></section>
 
 <section id="system" class="page"><div class="card"><h2>WLAN</h2><div class="actions"><button class="action sec" type="button" id="wifiScanBtn">Netzwerke suchen</button></div><div id="wifiResults"></div><label>SSID</label><input id="ssid" autocomplete="off"><label>Passwort</label><input id="pass" type="password" placeholder="leer = gespeichertes Passwort behalten"><label>Hostname</label><input id="hostname"></div><div class="card"><h2>Status</h2><div id="status" class="status">lade…</div></div><div class="card"><h2>Diagnose</h2><div class="actions"><button class="action sec" type="button" id="logBtn">Log laden</button><button class="action sec" type="button" id="logCopyBtn">Log kopieren</button></div><pre id="diagnosticLog" class="status" style="overflow-wrap:anywhere">Noch nicht geladen.</pre></div><div class="card"><details id="geoAdvanced"><summary>Erweiterte Einstellungen</summary><h3>Ortsdienst</h3><p class="mini">Ortsauswahl über die Internetverbindung dieses Browsers. © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap-Mitwirkende</a>. <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a>: nur manuelle Auswahl, höchstens eine Anfrage pro Sekunde für die Anwendung.</p><label>Adresse des Ortsdienstes</label><input id="geoProviderUrl" type="url"><p class="mini">Nominatim-kompatibler Dienst. Gilt für diesen Browser.</p><button class="action sec" type="button" id="geoProviderBtn">Ortsdienst übernehmen</button></details></div><div class="card"><h2>Wartung</h2><a class="action sec" href="/update">Firmware-Update</a> <button class="action sec" type="button" id="rebootBtn">Neustart</button></div><div class="card" id="serviceInfo"><h2>Dienste und Datenquellen</h2><p class="mini">Für die verwendeten Dienste gelten die Bedingungen der jeweiligen Anbieter. Daten und Verfügbarkeit können eingeschränkt sein.</p><ul class="serviceList"><li><strong>Abfahrten</strong><br>Verkehrsverbund Oberelbe (VVO) · <a href="https://www.vvo-online.de/de/impressum/index.cshtml" target="_blank" rel="noopener">Anbieterinformationen</a></li><li><strong>Wetter</strong><br>Open-Meteo · <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Radarpositionen und Routen</strong><br>adsb.lol · <a href="https://www.adsb.lol/docs/open-data/api/" target="_blank" rel="noopener">API und Datenlizenz</a></li><li><strong>Zusatzdaten und Routen</strong><br>adsbdb · <a href="https://github.com/mrjackwills/adsbdb#readme" target="_blank" rel="noopener">Dokumentation und Datenbedingungen</a></li><li><strong>Flug-Tracker</strong><br>aviationstack · <a href="https://aviationstack.com/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Ortsnamen</strong><br>Nominatim / OpenStreetMap · <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Karten</strong><br>OpenStreetMap · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Copyright und Datenlizenz</a></li><li><strong>Kartenkacheln</strong><br>OpenStreetMap-Kachelserver · <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Kartenbibliothek</strong><br>Leaflet / unpkg · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Projektinformationen</a></li><li><strong>Uhrzeit</strong><br>NTP Pool / Cloudflare · <a href="https://www.ntppool.org/en/use.html" target="_blank" rel="noopener">Nutzungshinweise</a></li></ul><p class="mini">Nominatim: nur manuelle Ortssuche, höchstens eine Anfrage pro Sekunde für die Anwendung; Suchergebnisse werden zwischengespeichert. Open-Meteo: die kostenlose API ist für nichtkommerzielle Nutzung vorgesehen. aviationstack benötigt einen eigenen API-Schlüssel und unterliegt dessen Tarifgrenzen.</p><p class="mini">adsbdb nennt gesonderte Weiterverwendungsbedingungen für Routendaten. Links und Bedingungen zuletzt geprüft am 11.10.2026.</p></div></section>
-<div class="sticky"><button class="action" type="button" id="saveBtn">Einstellungen speichern</button></div><footer class="footer">SmallTV Deutsch/VVO · entwickelt von du13500 · <a href="https://github.com/du13500/smalltv-deutsch-vvo" target="_blank" rel="noopener">GitHub</a></footer></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div class="sticky"><button class="action" type="button" id="saveBtn">Einstellungen speichern</button></div><footer class="footer">PixelStop · entwickelt von du13500 · <a href="https://github.com/du13500/pixelstop" target="_blank" rel="noopener">GitHub</a></footer></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,Number(n)||0));
 const modeNames=['Abfahrten','Wetter','Flugradar','Uhr','Flug-Tracker','Countdown 1','Countdown 2','Countdown 3','Countdown 4'];
 const modeDefaults=[30,20,20,15,20,20,20,20,20];
-function friendly(e){if(e&&e.userMessage)return e.userMessage;if(e instanceof TypeError||String(e).includes('fetch'))return 'Verbindung zum SmallTV fehlgeschlagen. Ist der Würfel eingeschaltet und mit dem WLAN verbunden?';return e?.message||'Unbekannter Fehler.'}
-async function fetchJson(url,opt){let r;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);try{r=await fetch(url,{...opt,signal:controller.signal})}catch(e){let x=new Error();x.userMessage='Verbindung zum SmallTV fehlgeschlagen. Ist der Würfel eingeschaltet und mit dem WLAN verbunden?';throw x}finally{clearTimeout(timer)}let d={};try{d=await r.json()}catch(e){}if(!r.ok||d.ok===false){let x=new Error();x.userMessage=d.error||('Anfrage fehlgeschlagen ('+r.status+').');throw x}return d}
+function friendly(e){if(e&&e.userMessage)return e.userMessage;if(e instanceof TypeError||String(e).includes('fetch'))return 'Verbindung zum Würfel fehlgeschlagen. Ist der Würfel eingeschaltet und mit dem WLAN verbunden?';return e?.message||'Unbekannter Fehler.'}
+async function fetchJson(url,opt){let r;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);try{r=await fetch(url,{...opt,signal:controller.signal})}catch(e){let x=new Error();x.userMessage='Verbindung zum Würfel fehlgeschlagen. Ist der Würfel eingeschaltet und mit dem WLAN verbunden?';throw x}finally{clearTimeout(timer)}let d={};try{d=await r.json()}catch(e){}if(!r.ok||d.ok===false){let x=new Error();x.userMessage=d.error||('Anfrage fehlgeschlagen ('+r.status+').');throw x}return d}
 function showBox(id,msg,err=false){const span=document.createElement('span');span.className='hint '+(err?'err':'');span.textContent=msg;$(id).replaceChildren(span)}
 let toastTimer;function toast(msg,type='ok',ms=2200){const t=$('toast');clearTimeout(toastTimer);t.textContent=msg;t.className='toast '+type+' show';toastTimer=setTimeout(()=>t.classList.remove('show'),ms)}
 const maps={weather:null,plane:null},markers={weather:null,plane:null};let leafletPromise=null;
@@ -245,7 +244,7 @@ async function browserGeo(point,kind){
  const key=u.href,cached=geoCache.get(key);if(cached&&Date.now()-cached.time<86400000)return cached.data;
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);let r,d;
  try{
-  r=await fetch(u.href,{mode:'cors',credentials:'omit',signal:controller.signal,referrer:new URL('/smalltv-deutsch-vvo/',location.href).href,referrerPolicy:'unsafe-url'});
+  r=await fetch(u.href,{mode:'cors',credentials:'omit',signal:controller.signal,referrer:new URL('/pixelstop/',location.href).href,referrerPolicy:'unsafe-url'});
   if(r.status===429||r.status===503){const retry=r.headers.get('Retry-After'),seconds=Number(retry),date=Date.parse(retry);geoPauseUntil=Date.now()+Math.max(60000,Number.isFinite(seconds)?seconds*1000:Number.isFinite(date)?date-Date.now():0);throw new Error('Der Ortsdienst bittet um eine Pause. Bitte später erneut versuchen.')}
   if(r.status===404&&!search)d={};else{if(!r.ok)throw new Error('Ortsdienst antwortet mit HTTP '+r.status+'.');d=await r.json();if(d.error)throw new Error(d.error)}
  }catch(e){if(navigator.onLine===false)throw geoOfflineError();if(!r||e.name==='AbortError')throw new Error('Ortsdienst nicht erreichbar. Internetverbindung des Browsers prüfen.');throw e}finally{clearTimeout(timer)}
@@ -276,7 +275,7 @@ function signalBars(r){return r>=-50?'▁▂▄▆█':r>=-60?'▁▂▄▆':r>=
 async function scanWifi(){showBox('wifiResults','suche WLAN-Netze…');try{let d=await fetchJson('/api/wifi/scan'),best=new Map();(d.networks||[]).forEach(n=>{if(!n.ssid)return;let o=best.get(n.ssid);if(!o||n.rssi>o.rssi)best.set(n.ssid,n)});let a=[...best.values()].sort((x,y)=>y.rssi-x.rssi);if(!a.length){showBox('wifiResults','Keine WLAN-Netze gefunden.');return}$('wifiResults').innerHTML=a.map((n,i)=>`<button class="pickres" type="button" data-i="${i}">${n.open?'○':'●'} ${n.ssid}<span class="sig">${signalBars(n.rssi)} ${n.rssi} dBm</span></button>`).join('');$('wifiResults').querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{$('ssid').value=a[i].ssid;showBox('wifiResults','Ausgewählt: '+a[i].ssid)}))}catch(e){showBox('wifiResults',friendly(e),true)}}
 async function save(){if(saving||geoBusy||geoPending.weather||geoPending.plane)return;let mask=0,rotationSec=[];for(let i=0;i<9;i++){if($(`modeOn${i}`).checked)mask|=1<<i;rotationSec.push(+$(`modeSec${i}`).value)}if(!mask){toast('Bitte mindestens ein Programm für die Anzeige auswählen.','warn',3500);return}let mot=($('motTrain').checked?1:0)|($('motSuburban').checked?2:0)|($('motTram').checked?4:0)|($('motBus').checked?8:0)|($('motCable').checked?16:0)|($('motFerry').checked?32:0)|($('motTaxi').checked?64:0);if(!mot){toast('Bitte mindestens ein Verkehrsmittel auswählen.','warn',3500);return}let [wlat,wlon]=coords('weather'),[plat,plon]=coords('plane');if(!Number.isFinite(wlat)||wlat<-90||wlat>90||!Number.isFinite(wlon)||wlon<-180||wlon>180){toast('Bitte gültige Wetter-Koordinaten eingeben.','warn',3500);return}if(!Number.isFinite(plat)||plat<-90||plat>90||!Number.isFinite(plon)||plon<-180||plon>180){toast('Bitte gültige Flugradar-Koordinaten eingeben.','warn',3500);return}let o={ssid:$('ssid').value,pass:$('pass').value,hostname:$('hostname').value,rotationMask:mask,rotationSec,brightness:+$('brightness').value,timeZone:$('timeZone').value,nightEnabled:$('nightEnabled').checked,nightStart:mins($('nightStart').value),nightEnd:mins($('nightEnd').value),nightBrightness:+$('nightBrightness').value,stopName:$('stopName').value,stopId:$('stopId').value,departureCount:+$('departureCount').value,departurePoll:+$('departurePoll').value,vvoMotMask:mot,departureCompactDestinations:$('departureCompactDestinations').checked,weatherCity:$('weatherCity').value,weatherDisplayName:$('weatherDisplayName').value,weatherLat:wlat,weatherLon:wlon,weatherPoll:+$('weatherPoll').value,weatherTempColor:$('weatherTempColor').checked,weatherFahrenheit:$('weatherUnit').value==='F',geoGermanNames:$('weatherGeoGerman').checked,planePlace:$('planePlace').value,planeDisplayName:$('planeDisplayName').value,planeLat:plat,planeLon:plon,planeRadiusKm:+$('planeRadiusKm').value,planePoll:+$('planePoll').value,planeShowAge:$('planeShowAge').checked,planeShowPlace:$('planeShowPlace').checked,planePlaceToggleSec:+$('planePlaceToggleSec').value,trackedFlightNo:$('trackedFlightNo').value,aviationstackKey:$('aviationstackKey').value,adsbLolKey:$('adsbLolKey').value,trackerStatusPollMin:+$('trackerStatusPollMin').value,countdowns:[0,1,2,3].map(countdownPayload)};saving=true;updateSaveGate();try{let r=await fetchJson('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});toast(r.reboot?'Gespeichert · SmallTV startet neu':'✓ Einstellungen gespeichert','ok',r.reboot?5500:2200);if(r.reboot)setTimeout(()=>location.reload(),7000);else await load()}catch(e){toast(friendly(e),'err',4200)}finally{saving=false;updateSaveGate()}}
 async function statusNow(){try{let s=await fetchJson('/api/status');$('status').textContent=`Firmware: ${s.fw} ${s.version}\nNetz: ${s.ssid||'-'}\nIP: ${s.ip}\nRSSI: ${s.rssi} dBm\nFreier Heap: ${s.heap} B (${s.maxBlock} B größter Block)\nFlugradar: ${s.flightStage||'-'}${s.flightHttp?` · HTTP ${s.flightHttp}`:''}${s.flightTlsRx?` · TLS RX ${s.flightTlsRx} B`:''}${s.flightTlsMinBlock?` · Blockbedarf ${s.flightTlsMinBlock} B`:''}${s.flightWaitSec?` · Pause ${s.flightWaitSec} s`:''}${s.flightMinIntervalSec?` · Mindestintervall ${s.flightMinIntervalSec} s`:''}\nadsb.lol heute: ${s.adsbToday} Anfragen${s.adsbKey?' · mit Schlüssel':` von 450 · Tagesbudget-Intervall ${s.adsbBudgetSec} s`}\nRadar-Route: ${s.routeStatus||'-'} · ${s.routeSource||'-'}${s.routeHttp?` · HTTP ${s.routeHttp}`:''}\nUptime: ${s.uptime}s\nTracker: ${s.trackerValid?'Daten vorhanden':(s.trackerError?'Fehler':'bereit')}`}catch(e){$('status').textContent='SmallTV derzeit nicht erreichbar.'}}
-async function reboot(){toast('SmallTV startet neu…','ok',5000);try{await fetch('/api/reboot',{method:'POST'})}catch(e){}setTimeout(()=>location.reload(),6000)}
+async function reboot(){toast('PixelStop startet neu…','ok',5000);try{await fetch('/api/reboot',{method:'POST'})}catch(e){}setTimeout(()=>location.reload(),6000)}
 async function copyLog(){
 try{const r=await fetch('/api/log');if(!r.ok)throw new Error();const text=await r.text();$('diagnosticLog').textContent=text;
 if(window.isSecureContext&&navigator.clipboard){try{await navigator.clipboard.writeText(text);toast('Log kopiert','ok',2200);return}catch(e){}}
@@ -1096,13 +1095,13 @@ static void startAP() {
   WiFi.mode(WIFI_AP_STA);
   IPAddress ip(192,168,4,1);
   WiFi.softAPConfig(ip,ip,IPAddress(255,255,255,0));
-  WiFi.softAP("SmallTV-Setup");
+  WiFi.softAP("PixelStop-Setup");
   dns.start(53,"*",ip);
 
   gfx->fillScreen(C_BLACK);
   centerText("SETUP", 55, 4, C_YELLOW);
   centerText("WLAN:", 105, 2, C_GRAY);
-  centerText("SmallTV-Setup", 128, 2, C_WHITE);
+  centerText("PixelStop-Setup", 128, 2, C_WHITE);
   centerText("192.168.4.1", 174, 2, C_GREEN);
 }
 
@@ -1232,7 +1231,7 @@ static void apiCountdown() {
 }
 
 static void apiStatus() {
-  JsonDocument d;d["fw"]=FW_NAME;d["version"]=FW_VERSION;d["ssid"]=apMode?"SmallTV-Setup":WiFi.SSID();d["ip"]=apMode?WiFi.softAPIP().toString():WiFi.localIP().toString();d["rssi"]=apMode?0:WiFi.RSSI();d["heap"]=ESP.getFreeHeap();d["uptime"]=millis()/1000;
+  JsonDocument d;d["fw"]=FW_NAME;d["version"]=FW_VERSION;d["ssid"]=apMode?"PixelStop-Setup":WiFi.SSID();d["ip"]=apMode?WiFi.softAPIP().toString():WiFi.localIP().toString();d["rssi"]=apMode?0:WiFi.RSSI();d["heap"]=ESP.getFreeHeap();d["uptime"]=millis()/1000;
   d["maxBlock"]=ESP.getMaxFreeBlockSize();d["vvoCount"]=vvoCount();d["vvoError"]=vvoError();d["weatherValid"]=weatherData().valid;d["weatherError"]=weatherData().error;d["flightValid"]=flightData().valid;d["flightError"]=flightData().error;d["flightStage"]=flightStageName();d["flightHttp"]=flightLastHttp();d["flightTlsRx"]=flightTlsRx();d["flightTlsMinBlock"]=flightTlsMinBlock();d["flightWaitSec"]=flightWaitSec();d["flightMinIntervalSec"]=serviceMinIntervalMs(SERVICE_ADSB_LOL)/1000;d["adsbToday"]=adsbLolRequestsToday();d["adsbKey"]=adsbLolHasKey();d["adsbBudgetSec"]=adsbLolBudgetIntervalMs(radarVisibleShare())/1000;d["routeStatus"]=flightRouteStatus();d["routeSource"]=flightRouteSource();d["routeHttp"]=flightRouteHttp();d["flightAgeSec"]=flightLastOkMs()?(millis()-flightLastOkMs())/1000:0;d["trackerValid"]=trackedFlightData().valid;d["trackerError"]=trackedFlightData().error;sendJson(d);
 }
 
@@ -1281,7 +1280,7 @@ class LogResponse : public Print {
 };
 static void apiLog(){
  server.sendHeader("Cache-Control","no-store");
- if(server.hasArg("download"))server.sendHeader("Content-Disposition","attachment; filename=smalltv-v041451-log.txt");
+ if(server.hasArg("download"))server.sendHeader("Content-Disposition","attachment; filename=pixelstop-log.txt");
  server.setContentLength(CONTENT_LENGTH_UNKNOWN);server.send(200,"text/plain; charset=utf-8","");
  LogResponse response;diagPrint(response);server.sendContent("");deferBackgroundNetwork();
 }
@@ -1311,7 +1310,7 @@ void setup() {
   gfx->setRotation(0);
   gfx->setTextWrap(false);
   gfx->fillScreen(C_BLACK);
-  centerText("SmallTV DD",82,3,C_YELLOW);
+  centerText(FW_NAME,82,3,C_YELLOW);
   centerText(FW_VERSION,118,2,C_GRAY);
 
   loadConfig();

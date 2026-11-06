@@ -1,8 +1,9 @@
 const {webkit,chromium}=require('playwright');
 const fs=require('fs');const path=require('path');const assert=require('assert');
 const source=fs.readFileSync(path.join(__dirname,'../src/main.cpp'),'utf8');
-const html=source.split('R"HTML(')[1].split(')HTML"')[0];
-const fixture={ssid:'Testnetz',hostname:'smalltv-dd',timeZone:'Europe/Berlin',stopName:'Pohlandplatz',stopId:'fixture',weatherCity:'Dresden',weatherLat:51,weatherLon:13,planePlace:'Dresden',planeLat:51,planeLon:13,nightStart:1320,nightEnd:420,nightEnabled:true,brightness:70,nightBrightness:12,rotationMask:1,rotationSec:[30,20,20,15,20,20,20,20,20],departureCount:4,departurePoll:30,weatherPoll:600,planeRadiusKm:25,planePoll:10,planePlaceToggleSec:10,trackerStatusPollMin:15,vvoMotMask:127,countdowns:[]};
+const version=(fs.readFileSync(path.join(__dirname,'../src/Version.h'),'utf8').match(/FW_VERSION "([^"]+)"/)||[])[1];
+const html=[...source.matchAll(/R"HTML\(([\s\S]*?)\)HTML"/g)].map(m=>m[1]).join('').replace(/(<span class="chip">v)(<\/span>)/,`$1${version}$2`);
+const fixture={ssid:'Testnetz',hostname:'pixelstop',timeZone:'Europe/Berlin',stopName:'Pohlandplatz',stopId:'fixture',weatherCity:'Dresden',weatherLat:51,weatherLon:13,planePlace:'Dresden',planeLat:51,planeLon:13,nightStart:1320,nightEnd:420,nightEnabled:true,brightness:70,nightBrightness:12,rotationMask:1,rotationSec:[30,20,20,15,20,20,20,20,20],departureCount:4,departurePoll:30,weatherPoll:600,planeRadiusKm:25,planePoll:10,planePlaceToggleSec:10,trackerStatusPollMin:15,vvoMotMask:127,countdowns:[]};
 (async()=>{
  const engine=process.env.SMALLTV_BROWSER==='chromium'?chromium:webkit;
  const browser=await engine.launch({headless:true,...(process.env.SMALLTV_WEBKIT_EXECUTABLE?{executablePath:process.env.SMALLTV_WEBKIT_EXECUTABLE}:{})});
@@ -73,7 +74,7 @@ const fixture={ssid:'Testnetz',hostname:'smalltv-dd',timeZone:'Europe/Berlin',st
     await page.route('http://smalltv.test/api/geo/**',()=>{throw new Error('Geo must not use the ESP8266 HTTP endpoints')});
     await page.route('https://nominatim.openstreetmap.org/reverse**',async r=>{
      const u=new URL(r.request().url());requests.push(u);
-     assert.match((await r.request().allHeaders()).referer,/\/smalltv-deutsch-vvo\//,'Browser request must identify the application');
+     assert.match((await r.request().allHeaders()).referer,/\/pixelstop\//,'Browser request must identify the application');
      if(requests.length===1)await new Promise(resolve=>{releaseFirst=resolve});
      const name=requests.length===1?'OLD':'北京';
      return r.fulfill({headers:{'Access-Control-Allow-Origin':'*'},contentType:'application/json',body:JSON.stringify({ok:true,name})});
