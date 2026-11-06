@@ -80,7 +80,8 @@ EXACT = {
  "Stunden : Minuten : Sekunden": "Hours : Minutes : Seconds", "Minuten : Sekunden": "Minutes : Seconds", "Zieltag": "Target date",
  "Stunden": "Hours", "Minuten": "Minutes", "Sekunden": "Seconds", "Countdown-Farbe": "Countdown colour", "Farbe": "Colour",
  "inaktiv": "inactive", "aktiv": "active", "Start / aktivieren": "Start / activate", "Stoppen": "Stop", "z. B. URLAUB": "e.g. VACATION",
- "Countdown gestartet": "Countdown started", "Countdown gestoppt": "Countdown stopped",
+ "Countdown gestartet": "Countdown started",
+ "Jetzt anzeigen": "Show now", "Wird jetzt angezeigt": "Showing now", "Koordinaten": "Coordinates", "ⓘ Mehr dazu": "ⓘ More info", "Countdown gestoppt": "Countdown stopped",
  # System
  "Netzwerke suchen": "Scan networks", "SSID": "SSID", "Passwort": "Password", "Hostname": "Hostname",
  "leer = gespeichertes Passwort behalten": "empty = keep stored password", "Log laden": "Load log", "Log kopieren": "Copy log",
