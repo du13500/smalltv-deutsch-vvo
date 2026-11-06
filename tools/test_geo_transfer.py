@@ -9,6 +9,7 @@ transfer=core[core.index('size_t\nStream::SendGenericPeekBuffer'):core.index('\n
 source=(root/'src/Geo.cpp').read_text()
 buffer=source[source.index('class GeoResponse'):source.index('\nstatic BearSSL::Session')]
 stub=r'''
+#define FW_USER_AGENT "PixelStop/test"
 #include <cassert>
 #include <string>
 #include <cstring>
