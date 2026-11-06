@@ -1,5 +1,9 @@
 # Änderungen
 
+## v0.5.1-dev
+
+- **Ortsname bei Fahrtzielen:** Der Ort einer Haltestelle kommt jetzt aus der VVO-Suche und wird gespeichert. Bisher galt das erste Wort des Haltestellennamens als Ort; bei „S-Bahnhof Reick“ wurde so „S-Bahnhof“ als Ort angenommen, „Dresden Flughafen“ blieb ungekürzt und der Titel lautete nur „Reick“. Ohne gespeicherten Ort gilt weiter Dresden. Wer die Haltestelle vor v0.5.1 gewählt hat, sucht sie einmal neu aus, damit auch Haltestellen außerhalb Dresdens den richtigen Ort bekommen.
+
 ## v0.5.0-dev
 
 - **Neuer Name: PixelStop.** Repository, Firmware-Name, Setup-WLAN (`PixelStop-Setup`), Standard-Hostname (`pixelstop`), User-Agent und Dateinamen. Gespeicherte Hostnamen bleiben erhalten.

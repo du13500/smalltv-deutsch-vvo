@@ -6,7 +6,7 @@
 Bought as a small Wi-Fi cube with a rather modest stock firmware – and from day one with the plan to turn it into something of my own.
 
 [![Build](https://github.com/du13500/pixelstop/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/pixelstop/actions/workflows/build.yml)
-![Version](https://img.shields.io/badge/version-v0.5.0--dev-orange)
+![Version](https://img.shields.io/badge/version-v0.5.1--dev-orange)
 ![Hardware](https://img.shields.io/badge/hardware-ESP8266%20%C2%B7%20SmallTV--Ultra-blue)
 ![Hardware test](https://img.shields.io/badge/hardware%20test-v0.5.0%20pending-yellow)
 ![Hobby project](https://img.shields.io/badge/hobby%20project-non--commercial-lightgrey)
@@ -40,7 +40,7 @@ Plus night mode, brightness down to 1 %, place search with a map, Greek and Cyri
 | <img src="docs/screens/en/abfahrten.png" width="260" alt="Departures"><br><sub><b>Departures</b> · Dresden Hauptbahnhof with a delay (yellow) and a cancellation (✕)</sub> | <img src="docs/screens/en/wetter.png" width="260" alt="Weather"><br><sub><b>Weather</b> · Brooklyn in °F</sub> | <img src="docs/screens/en/flugradar.png" width="260" alt="Flight radar"><br><sub><b>Flight radar</b> · Emirates A380 from Dubai to Frankfurt</sub> |
 | <img src="docs/screens/en/flugtracker.png" width="260" alt="Flight tracker"><br><sub><b>Flight tracker</b> · one flight with scheduled and actual times</sub> | <img src="docs/screens/en/uhr.png" width="260" alt="Clock"><br><sub><b>Clock</b> · with time zone</sub> | <img src="docs/screens/en/countdown-tage.png" width="260" alt="Countdown"><br><sub><b>Countdown</b> · in days or as a timer</sub> |
 
-## Status: v0.5.0-dev
+## Status: v0.5.1-dev
 
 | Area | Status |
 | --- | --- |

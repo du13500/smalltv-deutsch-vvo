@@ -6,7 +6,7 @@
 Gekauft als kleiner WLAN-Würfel mit eher bescheidener Werksfirmware – und von Anfang an mit dem Plan, etwas Eigenes daraus zu machen.
 
 [![Build](https://github.com/du13500/pixelstop/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/pixelstop/actions/workflows/build.yml)
-![Version](https://img.shields.io/badge/version-v0.5.0--dev-orange)
+![Version](https://img.shields.io/badge/version-v0.5.1--dev-orange)
 ![Hardware](https://img.shields.io/badge/hardware-ESP8266%20%C2%B7%20SmallTV--Ultra-blue)
 ![Hardwaretest](https://img.shields.io/badge/hardwaretest-v0.5.0%20offen-yellow)
 ![Hobbyprojekt](https://img.shields.io/badge/hobbyprojekt-nicht%20kommerziell-lightgrey)
@@ -40,7 +40,7 @@ Dazu kommen Nachtmodus, Helligkeit ab 1 %, Ortssuche mit Karte, griechische und 
 | <img src="docs/screens/abfahrten.png" width="260" alt="Abfahrten"><br><sub><b>Abfahrten</b> · Dresden Hauptbahnhof, mit Verspätung (gelb) und Ausfall (✕)</sub> | <img src="docs/screens/wetter.png" width="260" alt="Wetter"><br><sub><b>Wetter</b> · Brooklyn in °F</sub> | <img src="docs/screens/flugradar.png" width="260" alt="Flugradar"><br><sub><b>Flugradar</b> · Emirates A380 von Dubai nach Frankfurt</sub> |
 | <img src="docs/screens/flugtracker.png" width="260" alt="Flug-Tracker"><br><sub><b>Flug-Tracker</b> · ein Flug mit Plan- und Ist-Zeiten</sub> | <img src="docs/screens/uhr.png" width="260" alt="Uhr"><br><sub><b>Uhr</b> · mit Zeitzone</sub> | <img src="docs/screens/countdown-tage.png" width="260" alt="Countdown"><br><sub><b>Countdown</b> · in Tagen oder als Timer</sub> |
 
-## Entwicklungsstand: v0.5.0-dev
+## Entwicklungsstand: v0.5.1-dev
 
 | Bereich | Stand |
 | --- | --- |

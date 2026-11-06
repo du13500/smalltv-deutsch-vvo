@@ -69,7 +69,7 @@ template<class T>T constrain(T x,T a,T b){return max(a,min(b,x));}
 const int COUNTDOWN_DAYS=0;
 struct CountdownSlot{String title,titleColor="#ffffff",countColor="#ffffff";uint8_t type=1;};
 enum Language:uint8_t{LANG_DE=0,LANG_EN=1};
-struct Settings{uint8_t lang=LANG_DE;String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
+struct Settings{uint8_t lang=LANG_DE;String stopPlace;String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
 static String tr(PGM_P de,PGM_P en){return String(cfg.lang==LANG_EN?en:de);}
 #define TR(de,en) tr(PSTR(de),PSTR(en))
 String lastCountdownRendered[4];uint8_t departurePage=0;
@@ -195,6 +195,12 @@ int main(){
  weather.rainPct=20;clearDraws();drawWeather(false);assert(fullScreens==0&&draws.size()==1&&draws[0].text=="REGEN 20%");
  weather.error=true;clearDraws();drawWeather(false);assert(fullScreens==0&&footer=="LIVE / LETZTER STAND");
  // Departures: unchanged response stays, minutes alone redraw one field.
+ cfg.stopName="S-Bahnhof Reick";cfg.stopPlace="Dresden";
+ assert(departureText("Dresden Flughafen",true)=="Flughafen");
+ assert(departureText(cfg.stopName.c_str(),false)=="S-Bahnhof Reick");
+ cfg.stopPlace="";assert(departureText("Dresden Flughafen",true)=="Flughafen");
+ cfg.stopPlace="Pirna";assert(departureText("Pirna Copitz",true)=="Copitz"&&departureText("Dresden Hauptbahnhof",true)=="Dresden Hbf");
+ cfg.stopPlace="";cfg.stopName="Freital, Bahnhof";assert(departureText("Freital Deuben",true)=="Deuben");
  cfg.stopId="123";cfg.stopName="Haltestelle";departureN=2;
  strcpy(departures[0].line,"4");strcpy(departures[0].direction,"Laubegast");departures[0].minutes=3;
  strcpy(departures[1].line,"65");strcpy(departures[1].direction,"Heidenau");departures[1].minutes=8;
