@@ -6,6 +6,7 @@ root=Path(__file__).resolve().parents[1];source=(root/'src/Flight.cpp').read_tex
 a=source.index('static void lookupAirline(');b=source.index('\nstatic void enrichFlight',a)
 code=r'''
 #include <ArduinoJson.h>
+#define FW_USER_AGENT "PixelStop/test"
 #include <cassert>
 #include <cstring>
 #include <string>

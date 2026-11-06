@@ -11,6 +11,7 @@ code=r'''
 #include <ArduinoJson.h>
 #include <cstring>
 #include <cstdlib>
+#define FW_USER_AGENT "PixelStop/test"
 #include <cassert>
 #include <cstdint>
 #include <ctime>
