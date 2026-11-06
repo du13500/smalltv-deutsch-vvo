@@ -7,6 +7,12 @@
 
 # Änderungen
 
+## v0.4.14.7
+
+- adsb.lol-Abfragen über HTTP/1.1 statt HTTP/1.0 (Server antwortete mit 426); Chunked-Antworten werden beim Lesen entpackt.
+- 401/403/426 lösen eine lange Pause (10/20/40 min) statt schneller Wiederholungen aus; eigene Displaymeldung.
+- Optionaler adsb.lol-Schlüssel (`x-api-key`); Radar-Intervalle 1 und 3 min.
+
 ## v0.4.14.6
 
 - Hintergrundbeleuchtung: PWM 300 Hz statt 1 kHz und 1023 statt 255 Stufen; längere Einschaltpulse bei 1 % gegen Aufblitzen.

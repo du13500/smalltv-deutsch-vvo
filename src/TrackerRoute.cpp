@@ -6,6 +6,7 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include "NetworkJson.h"
+#include "AdsbLol.h"
 #include <math.h>
 
 static uint16_t g_adsbLolRx = 0;
@@ -47,13 +48,12 @@ static bool lookupRouteAdsbLol(const char* callsign, float lat, float lon, char 
   BearSSL::WiFiClientSecure client;
   makeSecure(client, &routeSession, rx);
   HTTPClient http;
-  http.useHTTP10(true);
   http.setTimeout(9000);
   http.setReuse(false);
   if (!http.begin(client, "https://api.adsb.lol/api/0/routeset")) return false;
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.6");
+  adsbLolPrepare(http, "SmallTV-DD/0.4.14.7");
 
   JsonDocument req(networkJsonAllocator());
   JsonArray planes = req["planes"].to<JsonArray>();
@@ -65,7 +65,6 @@ static bool lookupRouteAdsbLol(const char* callsign, float lat, float lon, char 
   serializeJson(req, body);
 
   if(serviceWaitMs(SERVICE_ADSB_LOL)){http.end();return false;}
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.POST(body);
   req.clear(); body = String();trace.http(code);
   serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());
@@ -78,7 +77,8 @@ static bool lookupRouteAdsbLol(const char* callsign, float lat, float lon, char 
   JsonDocument doc(networkJsonAllocator());
   trace.stage(DS_JSON);
   if(!jsonFilterReady(filter,trace)){http.end();client.stop();return false;}
-  auto err = deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter));
+  AdsbLolBody routeBody(http);
+  auto err = deserializeJson(doc, routeBody, DeserializationOption::Filter(filter));
   logJsonError(trace,err); filter.clear(); http.end(); client.stop();
   if (err || !doc.is<JsonArrayConst>() || doc.as<JsonArrayConst>().size() == 0) return false;
 
@@ -107,7 +107,7 @@ static bool lookupRouteAdsbDb(const char* callsign, char origin[4], char destina
   url += callsign;
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.6");
+  http.setUserAgent("SmallTV-DD/0.4.14.7");
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();trace.http(code);
