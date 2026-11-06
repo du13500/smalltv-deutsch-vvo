@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" width="40" height="20">
+<title>English</title>
+<defs>
+<clipPath id="uk"><path d="M0,0 L60,30 H0 Z"/></clipPath>
+<clipPath id="us"><path d="M0,0 H60 V30 Z"/></clipPath>
+<clipPath id="ukc"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>
+<polygon id="s" points="0,-0.62 0.18,-0.19 0.59,-0.19 0.26,0.07 0.38,0.5 0,0.24 -0.38,0.5 -0.26,0.07 -0.59,-0.19 -0.18,-0.19" fill="#fff"/>
+</defs>
+<g clip-path="url(#uk)">
+<rect width="60" height="30" fill="#012169"/>
+<path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+<path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#ukc)" stroke="#C8102E" stroke-width="4"/>
+<path d="M30,0 V30 M0,15 H60" stroke="#fff" stroke-width="10"/>
+<path d="M30,0 V30 M0,15 H60" stroke="#C8102E" stroke-width="6"/>
+</g>
+<g clip-path="url(#us)">
+<g transform="translate(60,0) scale(-1,1)">
+<rect width="60" height="30" fill="#fff"/>
+<rect y="0.000" width="60" height="2.308" fill="#B22234"/><rect y="4.615" width="60" height="2.308" fill="#B22234"/><rect y="9.231" width="60" height="2.308" fill="#B22234"/><rect y="13.846" width="60" height="2.308" fill="#B22234"/><rect y="18.462" width="60" height="2.308" fill="#B22234"/><rect y="23.077" width="60" height="2.308" fill="#B22234"/><rect y="27.692" width="60" height="2.308" fill="#B22234"/>
+<rect width="24" height="16.154" fill="#3C3B6E"/>
+<use href="#s" x="2.00" y="1.62"/><use href="#s" x="6.00" y="1.62"/><use href="#s" x="10.00" y="1.62"/><use href="#s" x="14.00" y="1.62"/><use href="#s" x="18.00" y="1.62"/><use href="#s" x="22.00" y="1.62"/><use href="#s" x="4.00" y="3.23"/><use href="#s" x="8.00" y="3.23"/><use href="#s" x="12.00" y="3.23"/><use href="#s" x="16.00" y="3.23"/><use href="#s" x="20.00" y="3.23"/><use href="#s" x="2.00" y="4.85"/><use href="#s" x="6.00" y="4.85"/><use href="#s" x="10.00" y="4.85"/><use href="#s" x="14.00" y="4.85"/><use href="#s" x="18.00" y="4.85"/><use href="#s" x="22.00" y="4.85"/><use href="#s" x="4.00" y="6.46"/><use href="#s" x="8.00" y="6.46"/><use href="#s" x="12.00" y="6.46"/><use href="#s" x="16.00" y="6.46"/><use href="#s" x="20.00" y="6.46"/><use href="#s" x="2.00" y="8.08"/><use href="#s" x="6.00" y="8.08"/><use href="#s" x="10.00" y="8.08"/><use href="#s" x="14.00" y="8.08"/><use href="#s" x="18.00" y="8.08"/><use href="#s" x="22.00" y="8.08"/><use href="#s" x="4.00" y="9.69"/><use href="#s" x="8.00" y="9.69"/><use href="#s" x="12.00" y="9.69"/><use href="#s" x="16.00" y="9.69"/><use href="#s" x="20.00" y="9.69"/><use href="#s" x="2.00" y="11.31"/><use href="#s" x="6.00" y="11.31"/><use href="#s" x="10.00" y="11.31"/><use href="#s" x="14.00" y="11.31"/><use href="#s" x="18.00" y="11.31"/><use href="#s" x="22.00" y="11.31"/><use href="#s" x="4.00" y="12.92"/><use href="#s" x="8.00" y="12.92"/><use href="#s" x="12.00" y="12.92"/><use href="#s" x="16.00" y="12.92"/><use href="#s" x="20.00" y="12.92"/><use href="#s" x="2.00" y="14.54"/><use href="#s" x="6.00" y="14.54"/><use href="#s" x="10.00" y="14.54"/><use href="#s" x="14.00" y="14.54"/><use href="#s" x="18.00" y="14.54"/><use href="#s" x="22.00" y="14.54"/>
+</g>
+</g>
+<path d="M0,0 L60,30" stroke="#fff" stroke-width="0.8"/>
+<rect x="0.25" y="0.25" width="59.5" height="29.5" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="0.5"/>
+</svg>
