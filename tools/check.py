@@ -54,7 +54,7 @@ for m in re.findall(r'`((?:[^`\\]|\\.)*)`',js):
  for t in re.findall(r'placeholder="([^"$]+)"',m):need.add(t)
 for l in re.findall(r"'((?:[^'\\\n]|\\.)*)'",js):
  if re.search(r'[A-Za-zÄÖÜäöüß]{3,}',l) and (' ' in l.strip() or re.search('[äöüÄÖÜß]',l)) and '<' not in l and 'http' not in l and '${' not in l:need.add(l)
-neutral=re.compile(r'^(\d+ (s|min|km)|[A-Z][a-z]+/[A-Za-z_/]+|UTC|GitHub|PixelStop|v|[A-Za-z. /]+ ·|Deutsch|English| show|hint |toast |SSID|Bus|Hostname)$')
+neutral=re.compile(r'^(\d+ (s|min|km)|[A-Z][a-z]+/[A-Za-z_/]+|UTC|GitHub|PixelStop|v|[A-Za-z. /-]+ ·|Deutsch|English| show|hint |toast |SSID|Bus|Hostname)$')
 known=set(W.EXACT)|set(W.FRAGMENTS)|set(W.LINES)
 missing=[n for n in sorted(need) if n not in ui_zones and not neutral.match(n) and n not in known and not any(n.startswith(p) for p in W.PREFIX)]
 assert not missing, 'Missing English web texts: '+repr(missing)

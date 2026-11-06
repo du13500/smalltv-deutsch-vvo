@@ -1,178 +1,139 @@
-# SmallTV Deutsch/VVO
+# 🚏 PixelStop
 
-[![Build SmallTV DD v0.4.14.8](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
+<a href="README.en.md"><img src="docs/flags/en.svg" height="14" alt=""> <b>English version →</b></a>
 
-> 🟨 **v0.4.14.8 · Entwicklungsbuild**  
-> Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
+**Abfahrten, Wetter, Flugradar, Uhr und Countdowns für den GeekMagic SmallTV-Ultra.**
+Gekauft als kleiner WLAN-Würfel mit eher bescheidener Werksfirmware – und von Anfang an mit dem Plan, etwas Eigenes daraus zu machen.
 
-**Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
+[![Build](https://github.com/du13500/pixelstop/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/pixelstop/actions/workflows/build.yml)
+![Version](https://img.shields.io/badge/version-v0.5.0--dev-orange)
+![Hardware](https://img.shields.io/badge/hardware-ESP8266%20%C2%B7%20SmallTV--Ultra-blue)
+![Hardwaretest](https://img.shields.io/badge/hardwaretest-v0.5.0%20offen-yellow)
+![Hobbyprojekt](https://img.shields.io/badge/hobbyprojekt-nicht%20kommerziell-lightgrey)
+![Lizenz](https://img.shields.io/badge/lizenz-MIT-green)
+![Mission](https://img.shields.io/badge/mission-Know%20before%20you%20go-ff5d56)
 
-Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
+<p align="center"><img src="docs/screens/uebersicht.png" alt="Alle Ansichten von PixelStop auf einen Blick" width="880"></p>
+<p align="center"><sub>Alle Bilder sind echte Ausgaben der Firmware mit Beispieldaten, erzeugt mit <code>tools/render_screens.py</code>.</sub></p>
 
-## v0.4.14.8
+## Was ist PixelStop?
 
-- **Radar fragt nur noch, wenn es zu sehen ist:** Positionen und Routen werden abgerufen, solange das Flugradar auf dem Display steht, und einmal in den letzten 10 Sekunden vor dem Wechsel dorthin. Während Abfahrten, Wetter oder andere Programme laufen, gehen keine adsb.lol-Anfragen mehr raus.
-- **Tagesbudget ohne Schlüssel:** Der Würfel zählt seine adsb.lol-Anfragen pro Tag (UTC) und plant mit 450 statt der von adsb.lol genannten 500, als Reserve. Das Aktualisierungsintervall wird bei Bedarf automatisch so gestreckt, dass das Budget bis Tagesende reicht; dabei wird berücksichtigt, welchen Anteil der Rotation das Radar sichtbar ist. Routenabfragen bei adsb.lol entfallen, wenn weniger als 40 Anfragen übrig sind. Mit Schlüssel gilt keine Begrenzung.
-- **Systemstatus** zeigt die heutigen adsb.lol-Anfragen und das aktuelle Budget-Intervall.
+PixelStop ist eine eigene, deutschsprachige (und englische) Firmware für den **GeekMagic SmallTV-Ultra**, einen 240 × 240-Pixel-Würfel mit ESP8266. Nach der Einrichtung braucht er nur USB-Strom und WLAN – **kein eigener Server, kein Raspberry Pi**. Alle Einstellungen laufen über ein Webinterface im Browser.
 
-Der Zähler liegt nur im Arbeitsspeicher; nach einem Neustart beginnt er bei null. Der Hardwaretest steht aus.
+Der Würfel zeigt im Wechsel oder dauerhaft:
 
-## v0.4.14.7
+| Ansicht | Was du siehst |
+| --- | --- |
+| **Abfahrten** | Live-Abfahrten einer Haltestelle des Verkehrsverbunds Oberelbe (VVO): Linie, Ziel, Minuten, Verspätungen und Ausfälle; bis zu zehn Abfahrten auf zwei Seiten, Filter nach Verkehrsmittel |
+| **Wetter** | Aktuelle Temperatur, Wetterbild für Tag und Nacht, Höchst- und Tiefstwert, Regenwahrscheinlichkeit, Sonnenauf- und -untergang; °C oder °F |
+| **Flugradar** | Das nächste Flugzeug im gewählten Umkreis: Callsign, Airline, Route, Typ, Kennzeichen, Entfernung und Höhe |
+| **Uhr** | Uhrzeit und Datum mit wählbarer Zeitzone |
+| **Flug-Tracker** | Ein bestimmter Flug mit Plan- und Ist-Zeiten und Live-Höhe (eigener aviationstack-Schlüssel nötig) |
+| **Countdown 1–4** | Vier unabhängige Timer mit eigenem Titel und Farben – in Tagen, Stunden oder Minuten |
 
-- **Flugradar repariert:** adsb.lol lehnt seit Herbst 2026 Anfragen im alten HTTP/1.0 mit `HTTP 426` ab. Alle adsb.lol-Abfragen (Radar, Routen, Flug-Tracker) nutzen jetzt HTTP/1.1. Stückweise übertragene Antworten (`chunked`) werden direkt beim Lesen entpackt, ohne zusätzlichen Speicherpuffer.
-- **Keine Reboot-Schleife mehr bei abgelehnten Anfragen:** Bei `HTTP 401`, `403` oder `426` pausiert der jeweilige Dienst 10, dann 20, dann 40 Minuten, statt alle paar Sekunden neu zu fragen. Das Display zeigt „ADSB.LOL / Zugriff abgelehnt“ mit dem HTTP-Code.
-- **Optionaler adsb.lol-Schlüssel** im Flugradar-Reiter. Er wird als `x-api-key` mitgeschickt. Ohne Schlüssel begrenzt adsb.lol die Anfragen pro Tag und Internetanschluss; dafür gibt es neue Aktualisierungsintervalle von 1 und 3 Minuten.
+Dazu kommen Nachtmodus, Helligkeit ab 1 %, Ortssuche mit Karte, griechische und kyrillische Zeichen sowie eine Diagnoseansicht.
 
-Der Hardwaretest steht aus.
+## Galerie
 
-## v0.4.14.6
+| | | |
+| :---: | :---: | :---: |
+| <img src="docs/screens/abfahrten.png" width="260" alt="Abfahrten"><br><sub><b>Abfahrten</b> · Dresden Hauptbahnhof, mit Verspätung (gelb) und Ausfall (✕)</sub> | <img src="docs/screens/wetter.png" width="260" alt="Wetter"><br><sub><b>Wetter</b> · Brooklyn in °F</sub> | <img src="docs/screens/flugradar.png" width="260" alt="Flugradar"><br><sub><b>Flugradar</b> · Emirates A380 von Dubai nach Frankfurt</sub> |
+| <img src="docs/screens/flugtracker.png" width="260" alt="Flug-Tracker"><br><sub><b>Flug-Tracker</b> · ein Flug mit Plan- und Ist-Zeiten</sub> | <img src="docs/screens/uhr.png" width="260" alt="Uhr"><br><sub><b>Uhr</b> · mit Zeitzone</sub> | <img src="docs/screens/countdown-tage.png" width="260" alt="Countdown"><br><sub><b>Countdown</b> · in Tagen oder als Timer</sub> |
 
-- Hintergrundbeleuchtung: PWM-Frequenz von 1 kHz auf 300 Hz gesenkt und Auflösung von 255 auf 1023 Stufen erhöht. Bei 1 % ist die Hintergrundbeleuchtung damit pro Periode rund 33 µs statt rund 8 µs eingeschaltet. Kurze Interrupt-Verzögerungen durch WLAN, TLS oder Flash-Zugriffe sollen dadurch nicht mehr als Aufblitzen sichtbar sein. Der Hardwaretest steht aus.
-- Repository: Der Quellcode liegt jetzt direkt im Repository statt in Versionsarchiven. Der Workflow baut bei jedem Push und erstellt bei einem Versions-Tag ein GitHub Release.
+## Entwicklungsstand: v0.5.0-dev
 
-Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
+| Bereich | Stand |
+| --- | --- |
+| Abfahrten (VVO), Wetter, Uhr, Countdowns | ✅ im Alltag stabil |
+| Flugradar über HTTP/1.1, Pausen bei abgelehnten Anfragen | ✅ auf Hardware bestätigt (v0.4.14.7) |
+| Radar nur bei sichtbarer Ansicht, Tagesbudget ohne Schlüssel | ✅ läuft auf Hardware (v0.4.14.8), Langzeitbeobachtung läuft |
+| Hintergrundbeleuchtung bei 1 % ohne Aufblitzen | ✅ deutlich besser (v0.4.14.6) |
+| Sprachumschaltung Deutsch/Englisch | ⏳ Hardwaretest offen |
+| Abgekürzte Fahrtziele, Ortsname weglassen | ⏳ Hardwaretest offen |
+| Flug-Tracker mit eigenem aviationstack-Schlüssel | ⏳ nicht vollständig auf Hardware getestet |
+
+Alle Änderungen stehen in [`CHANGELOG.md`](CHANGELOG.md), offene Prüfungen in [`ROADMAP.md`](ROADMAP.md).
+
+## So funktioniert es
+
+```
+  Browser (Handy/PC)                     PixelStop-Würfel (ESP8266)
+ ┌──────────────────────┐   WLAN   ┌──────────────────────────────────┐
+ │ Webinterface         │◀────────▶│ Webserver · Einstellungen        │
+ │ Ortssuche + Karte ───┼─▶ OSM    │ Abrufe:  VVO ─────── Abfahrten   │
+ └──────────────────────┘          │          Open-Meteo ─ Wetter     │
+                                   │          adsb.lol ─── Flugradar  │
+                                   │          aviationstack  Tracker  │
+                                   │ Display 240 × 240 (ST7789)       │
+                                   └──────────────────────────────────┘
+```
+
+Der Würfel fragt die Dienste selbst ab und zeichnet die Ansichten direkt. Die Ortssuche läuft über den Browser, damit der knappe Arbeitsspeicher des ESP8266 frei bleibt. Das Flugradar fragt nur, solange es auf dem Display steht (plus kurz vor dem Wechsel), und teilt sich ohne eigenen Schlüssel das Tageskontingent von adsb.lol selbst ein.
 
 ## Unterstütztes Gerät
 
-**GeekMagic SmallTV-Ultra mit ESP8266 / ESP-12F, 4 MB Flash und ST7789-Display mit 240 × 240 Pixeln.** Andere SmallTV-Modelle sind nicht getestet. Die Firmware ist nicht für ESP32-Geräte bestimmt.
+**GeekMagic SmallTV-Ultra mit ESP8266 / ESP-12F, 4 MB Flash und ST7789-Display (240 × 240).** Andere SmallTV-Modelle sind nicht getestet. Die Firmware ist nicht für ESP32-Geräte bestimmt.
 
-## Programme
+## Installation und Einrichtung
 
-| Programm | Funktionen |
-| --- | --- |
-| **Abfahrten** | VVO-Haltestellensuche, Abfahrtsminuten, Verspätungen und Ausfälle; Verkehrsmittelfilter; bis zu zehn Einträge auf zwei Seiten |
-| **Wetter** | Aktuelle Temperatur, Wetterbild, Tageshöchst- und Tiefsttemperatur, Regenwahrscheinlichkeit sowie Sonnenauf- und -untergang; Celsius oder Fahrenheit |
-| **Flugradar** | Nächstgelegenes gemeldetes Flugzeug im gewählten Radius: Callsign, Airline, Route, Typ, Registrierung, Entfernung und Höhe |
-| **Uhr** | Uhrzeit und Datum mit wählbarer Zeitzone und automatischer Zeitabfrage |
-| **Flug-Tracker** | Status, Flughäfen, Flugzeiten und verfügbare Live-Daten eines eingetragenen Fluges; aviationstack-Schlüssel erforderlich |
-| **Countdown 1 bis 4** | Vier unabhängige Timer mit eigenem Titel und Farben; Kalendertage, Stunden/Minuten/Sekunden oder Minuten/Sekunden |
+1. Die Firmware auf den SmallTV-Ultra bringen. Der erste Flashweg hängt von der vorhandenen Firmware ab; der USB-Stromanschluss allein ist kein zugesicherter Programmierzugang.
+2. Beim ersten Start mit dem WLAN **PixelStop-Setup** verbinden und im Browser **192.168.4.1** öffnen.
+3. Unter **System** das WLAN wählen, Passwort eintragen und speichern.
+4. Nach dem Neustart das Webinterface über die IP-Adresse auf dem Display öffnen, je nach Netzwerk auch über `pixelstop.local`.
+5. Unter **System → Sprache / Language** Deutsch oder Englisch wählen.
+6. Unter **Anzeige** Programme, Wechselzeiten, Zeitzone, Helligkeit und Nachtmodus einstellen, danach Haltestelle, Orte und Timer in den jeweiligen Reitern.
 
-Programme können einzeln oder im automatischen Wechsel angezeigt werden. Die Anzeigedauer lässt sich je Programm einstellen. Ein Nachtmodus reduziert die Helligkeit in einem frei wählbaren Zeitfenster. Die Mindesthelligkeit beträgt tagsüber und nachts 1 %.
+> **Hinweis:** Wetter und Flugradar haben unabhängige Standorte (Ortssuche, Karte oder Koordinaten). Ein optionaler Anzeigename ersetzt den Ortsnamen auf dem Display. Ein leeres WLAN-Passwortfeld behält das gespeicherte Passwort.
 
-Wetterbilder unterscheiden Tag und Nacht, Bewölkung, Nebel, Niederschlagsart und Intensität. Unterstützt werden erweiterte lateinische Zeichen sowie griechische und kyrillische Buchstaben. Für nicht darstellbare Ortsnamen kann ein eigener Anzeigename eingetragen werden.
+**Updates** laufen über **System → Firmware-Update** mit der passenden `.bin`. Die Einstellungen bleiben dabei erhalten.
 
-## Einrichtung
+## Firmware bauen
 
-1. Die zum SmallTV-Ultra passende Firmware installieren. Der Erstflashweg hängt von der vorhandenen Firmware ab; der USB-Stromanschluss allein ist kein zugesicherter Programmierzugang.
-2. Beim ersten Start ohne gespeicherte WLAN-Verbindung mit dem WLAN **SmallTV-Setup** verbinden und im Browser **192.168.4.1** öffnen.
-3. Unter **System** das WLAN auswählen und das Passwort eintragen. Einstellungen speichern.
-4. Nach dem Neustart das Webinterface über die auf dem Display angezeigte IP-Adresse öffnen. Je nach Netzwerk funktioniert auch der Hostname mit der Endung `.local`.
-5. Unter **Anzeige** Programme, Wechselzeiten, Zeitzone, Helligkeit und Nachtmodus einstellen.
-6. In den jeweiligen Programmreitern Haltestelle, Standorte oder Timer konfigurieren und speichern.
+Der Workflow [`build.yml`](.github/workflows/build.yml) baut die Firmware bei jedem Push und Pull Request; das Ergebnis liegt unter **Actions** als Artefakt `pixelstop-v<Version>-firmware`. Ein Tag wie `v0.5.0` (passend zu `FW_VERSION` in [`src/Version.h`](src/Version.h)) erzeugt zusätzlich ein **GitHub Release** mit BIN-Datei, Prüfsumme und Begleitpaket. Lokal genügt `pio run -e smalltv_ultra`.
 
-Wetter und Flugradar haben unabhängige Standorte. Sie lassen sich über die Ortssuche, die Karte oder manuell eingegebene Koordinaten festlegen. Ein Kartenpunkt bleibt auch dann verwendbar, wenn kein Ortsname verfügbar ist. Ein optionaler Anzeigename ersetzt den Namen auf dem Display.
-
-Solange nach einer Kartenauswahl der Ortsname ermittelt wird, bleibt die Speichertaste deaktiviert. Ein Fehler bei der Namensabfrage verhindert anschließend nicht das Speichern gültiger Koordinaten.
-
-Der **Hostname** ist der Gerätename im Netzwerk. Ein leeres WLAN-Passwortfeld behält das bereits gespeicherte Passwort.
-
-## Firmware über GitHub bauen
-
-Der Quellcode liegt direkt im Repository (`src/`, `tools/`, `tests/`, `platformio.ini`). Der Workflow `.github/workflows/build.yml` baut ihn automatisch:
-
-- **Push auf `main` oder Pull Request:** Alle Prüfungen laufen, die fertige Firmware liegt anschließend unter **Actions** als Artefakt `smalltv-dd-v<Version>-firmware`.
-- **Neue Version veröffentlichen:** `FW_VERSION` in `src/main.cpp` anpassen, committen und einen passenden Tag setzen, z. B. `v0.4.14.6`. Der Workflow erstellt dann ein **GitHub Release** mit BIN-Datei, Prüfsumme und Begleitpaket (Buildlog, ELF, Lizenztexte, Quellen und Buildobjekte). Tag und `FW_VERSION` müssen übereinstimmen.
-- **Manuell:** Unter **Actions → Build SmallTV DD → Run workflow**.
-
-Lokal baut `pio run -e smalltv_ultra` dieselbe Firmware nach `.pio/build/smalltv_ultra/firmware.bin`.
-
-Ältere Versionsarchive und versionsbezogene Workflows bis v0.4.14.5.1 sind in der Git-Historie erhalten.
-
-## Updates
-
-Im Webinterface unter **System → Firmware-Update** die passende `.bin` auswählen. Während des Updates die Stromversorgung aufrechterhalten. Die Einstellungen werden im Gerät gespeichert und bleiben bei einem normalen Firmwareupdate erhalten.
+Die Screenshots dieser README erzeugt `python3 tools/render_screens.py docs/screens --frame --sheet` aus dem echten Displaycode.
 
 ## Datenquellen und Grenzen
 
-- **VVO** liefert Abfahrten, **Open-Meteo** das Wetter.
-- **OpenStreetMap / Nominatim** liefert Kartendaten und Ortsnamen. Gewässernamen werden übernommen, soweit die Ortsabfrage sie liefert; eine weltweite Gewässerabdeckung wird nicht zugesichert.
-- **adsb.lol** liefert Radarpositionen, **adsb.lol und adsbdb** ergänzen Routen. **adsbdb** ergänzt verfügbare Airline- und Flugzeugtypenamen; lokale Bezeichnungen dienen als Rückfall.
-- **adsb.lol** begrenzt Anfragen ohne Schlüssel pro Tag und Internetanschluss. Ein eigener Schlüssel kann im Flugradar-Reiter eingetragen werden.
-- **aviationstack** liefert die Flugplandaten des optionalen Flug-Trackers. Dafür ist ein eigener Schlüssel erforderlich; Tarif und Abrufkontingent bestimmen die Nutzungsmöglichkeiten.
+| Dienst | Wofür | Hinweis |
+| --- | --- | --- |
+| **VVO** | Abfahrten | Region Dresden/Oberelbe |
+| **Open-Meteo** | Wetter | kostenlose API für nichtkommerzielle Nutzung |
+| **adsb.lol** | Radarpositionen, Routen | ohne Schlüssel begrenzte Anfragen pro Tag und Anschluss; Schlüssel optional |
+| **adsbdb** | Airline, Flugzeugtyp, Routen | eigene Weiterverwendungsbedingungen für Routen |
+| **aviationstack** | Flug-Tracker | eigener Schlüssel, Tarifgrenzen |
+| **OpenStreetMap / Nominatim** | Karte, Ortsnamen | nur manuelle Suche, über den Browser |
 
-Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung falsch oder unvollständig sein. Unpassende oder nicht verfügbare Routen werden nicht durch vermutete Flughäfen ersetzt. `N/A` bedeutet fehlende Information, `GND` einen ausdrücklich gemeldeten Bodenstatus. Höhenangaben stammen aus den verfügbaren Flugdaten und sind keine Höhe über dem Gelände.
+Radar-Routen stammen aus Zusatzdatenbanken und können trotz Positionsprüfung falsch oder unvollständig sein; unpassende Routen werden nicht durch geratene Flughäfen ersetzt. `N/A` steht für fehlende Daten, `GND` für ein ausdrücklich gemeldetes Flugzeug am Boden. Höhen sind Flughöhen, keine Höhe über Grund. Weitere Hinweise in [`THIRD_PARTY_SERVICES.md`](THIRD_PARTY_SERVICES.md).
 
-adsb.lol kann Abfragen vorübergehend begrenzen. Während einer bestätigten Anbieterpause bleibt das zuletzt empfangene Flugzeug stehen. Die Anzeige nennt die Zeit seit dem letzten erfolgreichen Positionsabruf. Das ausgewählte Aktualisierungsintervall verlängert sich nach HTTP 429 automatisch auf mindestens 15 Sekunden, bei wiederholter Begrenzung auf mindestens 20 Sekunden. Nach zehn Minuten ohne weitere Begrenzung gilt wieder der gespeicherte Wert. Die Wartezeit beginnt nach Abschluss des Abrufs; die Antwortdauer kommt hinzu. Zusätzliche adsb.lol-Routenabrufe pausieren während dieser Drosselung.
-
-### Radar-Footer und Fehlermeldungen
-
-| Anzeige | Bedeutung |
+| Radar-Fußzeile | Bedeutung |
 | --- | --- |
-| `ADSB.LOL LIVE 4s` | Letzter erfolgreicher Positionsabruf vor vier Sekunden |
-| `LETZTER STAND 16s` | Vorherige Daten nach einem echten Abruffehler, vorübergehend weiter angezeigt |
-| `ABRUFPAUSE 46s` | Bestätigte Anbieterpause; Alter des letzten erfolgreichen Positionsabrufs, kein Countdown bis zum nächsten Abruf |
-| `KEIN FLUGZEUG` | Erfolgreiche Abfrage hat kein geeignetes Flugzeug geliefert |
-| `FLUGRADAR / keine aktuellen Daten`, `ABRUF FEHLGESCHLAGEN` | Abruf konnte keine verwendbaren Positionsdaten liefern und es gibt keinen noch gültigen bisherigen Stand |
+| `ADSB.LOL LIVE 4s` | letzter erfolgreicher Abruf vor 4 Sekunden |
+| `LETZTER STAND 16s` | Abruf fehlgeschlagen, vorheriger Stand wird kurz weiter gezeigt |
+| `ABRUFPAUSE 46s` | adsb.lol bittet um eine Pause; Alter des letzten Abrufs |
+| `KEIN FLUGZEUG` | Abfrage erfolgreich, aber nichts im Umkreis |
+| `ADSB.LOL / Zugriff abgelehnt` | adsb.lol lehnt ab (401/403/426); lange Pause statt ständiger Wiederholung |
 
-Der Abrufcounter lässt sich im Flugradar-Reiter deaktivieren und ist standardmäßig aktiviert. Nur die betroffene Footerfläche wird bei einem Sekundenwechsel aktualisiert. Die Uhrzeit steht rechts. Während blockierender Netzwerkoperationen können Sekundenupdates kurz stehen bleiben und anschließend zum tatsächlichen Alter springen. Zusatzdaten wie Airline und Route setzen das Alter nicht zurück. „LIVE“ beschreibt den Empfangsstand des Würfels, keine zugesicherte Aktualität der ursprünglichen Messung.
+## Pläne
 
-Die rote Fehlermeldung ist keine Aussage, dass keine Flugzeuge fliegen. Ursachen können WLAN-/Verbindungsfehler, HTTP-Fehler, eine unvollständige oder ungültige Antwort, Speichermangel oder fehlende Koordinaten sein. HTTP 200 allein garantiert keine verwendbaren Daten. Nach einem echten Abruffehler wird ein vorhandener Stand nach 30 Sekunden ohne neue Positionsdaten entfernt. Fehler beim Laden von Zusatzdaten allein lösen diese Meldung nicht aus. Während einer bestätigten Anbieterpause bleibt ein vorhandenes Flugzeug erhalten; ohne zuvor empfangenes Flugzeug kann kein alter Stand angezeigt werden.
-
-### Ortssuche und Internetverbindung
-
-Freitextsuche und Ortsauflösung auf der Karte laufen über die Internetverbindung des Browsers. Der ESP8266 übernimmt die ausgewählten Koordinaten und Namen. Kartenkacheln kommen ebenfalls direkt zum Browser. Die Orte für Wetter und Radar bleiben unabhängig. Wiederholte Anfragen werden im Browser zwischengespeichert; schnelle Kartenauswahlen werden zusammengefasst und Anfragen nacheinander versendet.
-
-Unter System → Erweiterte Einstellungen kann ein Nominatim-kompatibler Ortsdienst für diesen Browser eingestellt werden. Die Standardadresse ist Nominatim von OpenStreetMap. Die Auswahl bleibt im Browser gespeichert. Der Offlinehinweis nutzt den vom Browser gemeldeten Verbindungszustand; eine gemeldete Onlineverbindung garantiert keine Erreichbarkeit eines externen Dienstes. Gültige Koordinaten können auch ohne ermittelten Ortsnamen gespeichert werden.
-
-Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und Datenquellen. Weitere Hinweise enthält `THIRD_PARTY_SERVICES.md`.
-
-## Versionsgeschichte
-
-| Version | Änderungen |
-| --- | --- |
-| **v0.4.14.8**   | Radar-Abfragen nur bei sichtbarem Radar plus Vorabruf; Tagesbudget mit automatischer Intervallstreckung ohne Schlüssel |
-| **v0.4.14.7**   | adsb.lol über HTTP/1.1 mit Chunk-Entpacker; lange Pause bei 401/403/426 statt Reboot-Schleife; optionaler adsb.lol-Schlüssel; Intervalle 1 und 3 min |
-| **v0.4.14.6**   | Hintergrundbeleuchtung mit 300 Hz und 1023 Stufen gegen Aufblitzen bei 1 %; Quellcode direkt im Repository, Releases über Tags |
-| **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |
-| **v0.4.14.5** | Unveränderte PWM-Werte nicht erneut setzen; fehlerhafte leere Airline-Cacheeinträge vermeiden; Offlinehinweise; Ortsdienst einklappen und Anbieterinformationen unter System |
-| **v0.4.14.4.2** | Einheitlicher optionaler Abrufcounter für LIVE, LETZTER STAND und ABRUFPAUSE; standardmäßig aktiviert |
-| **v0.4.14.4.1** | Zeitangabe bei Anbieterpause links zum Statustext verschoben |
-| **v0.4.14.4** | Letztes Flugzeug während bestätigter Anbieterpause erhalten; Alter seit letztem erfolgreichen Positionsabruf anzeigen |
-| **v0.4.14.3** | Freitextsuche und Karten-Ortsauflösung in den Browser verlagert; Warteschlange, Cache und austauschbarer Ortsdienst |
-| **v0.4.14.2** | Geo-Empfang und Speicherbudget getrennt geprüft; TLS-Objekte vor JSON-Auswertung vollständig freigegeben; Ortsabfragen auf Hardware noch nicht zuverlässig |
-| **v0.4.14.1** | TLS-Speicherprüfung an tatsächliche Stackgröße und kleinere zusammenhängende Blockanforderung angepasst |
-| **v0.4.14** | Weitere gezielte Korrekturen am Geo-Empfang auf Basis von v0.4.13; Karten- und Freitextsuche blieben in den Hardwaretests problematisch |
-| **v0.4.13** | Zusätzliche Speicherprüfung vor Geo-Verbindung; Diagnosemarker erweitert; feste Diagnosebezeichnungen in Flash verlagert |
-| **v0.4.12** | Schreibkapazität und Fehler des Geo-Zwischenpuffers korrekt melden; Empfang begrenzen; stabile lesbare Flugzeugtypen einschließlich Embraer; VVO-Hinweis ausgeschrieben |
-| **v0.4.11** | Geo-Antwort zwischenspeichern und erst nach TLS-Freigabe auswerten; Flugzeugtyp plausibilisieren; letzter Fehler separat behalten; Programmauswahl neu geordnet; Standortname ohne Wechsel möglich |
-
-Die Geo-Korrekturen v0.4.11 bis v0.4.14.2 beseitigten nicht alle auf Hardware beobachteten Probleme. Erst die Verlagerung der Ortssuche in den Browser ab v0.4.14.3 wurde im Gespräch als stabil bestätigt. Die Tabelle beschreibt Änderungen, keine zugesicherte Fehlerfreiheit aller historischen Builds.
-
-
-### v0.4.10
-
-- **Speicher bei Netzwerkabfragen:** JSON-Speicher wächst in kleineren Blöcken. Ein eigener Allocator hält 3 KiB freien Heap zurück; bei fehlendem Speicher wird die Antwort verworfen. Nicht mehr benötigte Anfrage-, Filter- und TLS-Daten werden vor der weiteren Auswertung freigegeben. Auch ein unvollständig aufgebauter JSON-Filter wird erkannt. Das soll die in v0.4.9 beobachteten Abstürze bei Karten- und VVO-Abfragen vermeiden; der Hardwaretest steht aus.
-- **TLS-Puffer:** Wetter, VVO, Ortsabfragen und Radar-Metadaten prüfen einmal pro Start, ob der jeweilige Server kleinere TLS-Empfangsblöcke unterstützt. Nur bei bestätigter Unterstützung wird ein 512-Byte-Puffer verwendet. Andernfalls bleibt der bisherige größere Puffer.
-- **Radar-Drosselung:** Ein erfolgreicher Abruf setzt nach HTTP 429 nicht mehr sofort alle Drosselungshinweise zurück. Positionsabrufe laufen vorübergehend mit mindestens 15 beziehungsweise 20 Sekunden Abstand; zusätzliche adsb.lol-Routenabfragen pausieren. Retry-After und Anbieterpausen bleiben maßgeblich. Kürzere HTTP-Antworttimeouts verkürzen einige Wartephasen, sind aber keine garantierte Obergrenze für die gesamte Verbindung.
-- **Routen:** HTTP 201 wird beim adsb.lol-Routenendpunkt als mögliche erfolgreiche Antwort verarbeitet. Callsign, Antwortstruktur und Plausibilität der Flughäfen werden weiterhin geprüft.
-- **Diagnose:** Der Log unterscheidet JSON-Speichermangel, unvollständige, leere, zu tief verschachtelte und ungültige Antworten. Der Systemstatus zeigt das vorübergehende Radar-Mindestintervall. Der Build enthält die passende ELF-Datei zur späteren Zuordnung von Absturzadressen.
-- **Helligkeit:** Normal- und Nachtmodus erlauben mindestens 1 %. Zuvor gespeicherte 0 % werden beim Laden auf 1 % angehoben.
-- **Lizenz:** Eigener Projektcode und Dokumentation stehen unter MIT. Copyright- und Lizenzhinweis bleiben bei Weitergabe verpflichtend. Herkunft aus smalltv-mod, Bibliothekslizenzen und externe Datenrechte werden getrennt aufgeführt. Dem Firmware-Build liegen Quellen, Lizenzhinweise und Buildobjekte bei.
-
-### Ältere Versionen
-
-| Version | Wichtigste Neuerungen |
-| --- | --- |
-| **v0.4.9** | Diagnose-Log mit Neustart-Hinweisen, getrennte Radar-Zusatzabfragen, gestufte Wetter-/VVO-Wiederholungen und Speichersperre während der Ortsnamensabfrage |
-| **v0.4.8** | Anbieterpausen, positionsgeprüfte Radar-Routen, Online-Ergänzung von Airline und Typ, Bodenstatus GND, Kartenkorrekturen und Teilaktualisierungen in weiteren Programmen |
-| **v0.4.7** | Einstellbare Zeitzonen, griechische und kyrillische Zeichen, differenziertere Wetterbilder sowie Verbesserungen bei Radar-Abrufen und der Anzeige veralteter Daten |
-| **v0.4.6** | Erweiterter lateinischer Zeichensatz, mehrteilige Flugrouten, Tracker-Footer und Verbesserungen am Webinterface |
-| **v0.4.5** | Kompakte Abfahrtsziele, Verbesserungen an Karten- und Standortauswahl, Speichern der Einstellungen und Radar-Verbindungen |
-| **v0.4.4** | Bis zu zehn Abfahrten mit Seitenwechsel, Temperatureinheiten, Uhr im Footer und robustere Radarfehlerbehandlung |
-| **v0.4.3** | Überarbeitung der öffentlichen Projektangaben |
-| **v0.4.2** | Karten-Picker, Rückmeldungen im Webinterface und ruhigere Uhr- und Countdown-Anzeige |
-| **v0.4.1** | Programmrotation, WLAN-Scan, Ortssuche, deutsche Sonderzeichen und Verkehrsmittelfilter |
-| **v0.4** | Flug-Tracker und vier speicherbare Countdowns |
-| **v0.3** | Live-Wetter, Flugradar und weitere Hauptansichten |
-| **v0.2** | VVO-Haltestellensuche und Abfahrtsmonitor |
-| **v0.1** | WLAN-Einrichtung, Webinterface, automatische Zeitabfrage und Firmware-Updates |
+- **Mehr Regionen:** Abfahrten nicht nur vom VVO, sondern auswählbar je Verkehrsverbund bzw. deutschlandweit (geplant für v0.6.0).
+- **Eigene Ersetzungen für Fahrtziele** im Webinterface.
+- Englische Diagnosetexte.
 
 ## Diagnose und Fehlerberichte
 
-Unter **System → Diagnose** zeigt **Log laden** die letzten Ereignisse; **Log herunterladen** speichert sie als Textdatei. Nach einem Radar-Aussetzer oder einer fehlgeschlagenen Wetter-/VVO-Abfrage den Log möglichst direkt laden. Nach einem Reboot ist der vorherige vollständige Log verloren; Reset-Information und ein gültiger RTC-Marker können Hinweise erhalten. Der Log wird im RAM geführt und nicht fortlaufend in den Flash geschrieben.
+Unter **System → Diagnose** zeigt **Log laden** die letzten Ereignisse. Nach einem Aussetzer den Log möglichst direkt laden; nach einem Neustart bleiben nur Reset-Grund und letzter Marker erhalten. Hilfreich für Fehlerberichte sind Firmwareversion, betroffene Ansicht, Schritte zum Nachstellen und ein Foto. Bitte **keine WLAN-Passwörter oder API-Schlüssel** veröffentlichen.
 
-Hilfreich sind Firmwareversion, Gerät, betroffene Ansicht, Schritte zur Reproduktion sowie ein Foto oder der bereinigte Systemstatus. Keine WLAN-Passwörter oder API-Schlüssel veröffentlichen.
+## Credits und Lizenz
 
-## Lizenz
+- Eigener Projektcode und Dokumentation: **MIT**, Copyright (c) 2026 du13500. Copyright- und Lizenzhinweis bei Weitergabe erhalten.
+- Hardware- und Display-Grundlage aus [smalltv-mod](https://github.com/giovi321/smalltv-mod) von giovi321 (WTFPL); der ursprüngliche Hinweis liegt bei.
+- Bibliotheken und ihre Lizenzen: siehe [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) und [`LICENSES/`](LICENSES).
+- Sprachflagge: [English_language.svg](https://commons.wikimedia.org/wiki/File:English_language.svg) von Rei-artur und Kjoonlee, Wikimedia Commons, gemeinfrei.
+- Kartendaten © OpenStreetMap-Mitwirkende.
 
-Eigener Projektcode und Dokumentation: **MIT**, Copyright (c) 2026 du13500. Der Copyright- und Lizenzhinweis muss bei Weitergabe erhalten bleiben. Die Grundlage aus smalltv-mod von giovi321 wurde unter WTFPL veröffentlicht; der ursprüngliche Hinweis bleibt mitgeliefert. Für Bibliotheken und externe Daten gelten die jeweiligen Bedingungen. Kartendaten: © OpenStreetMap-Mitwirkende. Dieses Projekt ist unabhängig von GeekMagic, VVO und den genannten Datenanbietern.
+---
+
+**Know before you go. 🚏**
+
+<sub>PixelStop is an independent hobby project and is not affiliated with GeekMagic, VVO or any of the data providers named above.</sub>
