@@ -1,22 +1,20 @@
 # SmallTV Deutsch/VVO
 
-[![Build SmallTV DD v0.4.14.5.1](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
+[![Build SmallTV DD v0.4.14.6](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/smalltv-deutsch-vvo/actions/workflows/build.yml)
 
-> 🟨 **v0.4.14.5.1 · Entwicklungsbuild**  
+> 🟨 **v0.4.14.6 · Entwicklungsbuild**  
 > Für den **GeekMagic SmallTV-Ultra** · Deutschsprachige Oberfläche · Hardwaretest dieser Version noch offen
 
 **Ein kleiner WLAN-Würfel für Abfahrten, Wetter, Flugradar, Uhr und Countdowns.** Nach der Einrichtung benötigt das Gerät nur USB-Strom und WLAN. Ein eigener Server oder Raspberry Pi ist nicht erforderlich.
 
 Entwickelt von **du13500**, auf Grundlage von **smalltv-mod**. Der Flug-Tracker ist eine zusätzliche, optionale Ansicht für einen bestimmten Flug.
 
-## v0.4.14.5.1
+## v0.4.14.6
 
-- VVO: Nur bei `ServiceError` mit `no serving lines found` steht mittig grau „Haltestelle wird nicht bedient“. Andere Fehler behalten ihre Anzeige. Haltestellenname oben, neutraler VVO-Footer unten.
-- Hintergrundbeleuchtung: Test der phasensynchronen PWM-Ansteuerung des vorhandenen ESP8266-Frameworks bei unveränderter Frequenz und Helligkeitseinstellung. Das Aufblitzen bestand unter v0.4.14.5 fort; eine vollständige Behebung durch diese Änderung ist noch nicht auf Hardware bestätigt.
-- Ein gemeinsamer Build-Workflow `build.yml`, der bei zukünftigen Versionen ersetzt wird. Die README löst keinen Firmwarebuild aus. Neue Läufe ersetzen einen noch laufenden Build desselben Branches.
-- Versionsgeschichte von v0.4.11 bis zum aktuellen Stand ergänzt. Drei Downloads: Quellarchiv, Workflowdatei und README.
+- Hintergrundbeleuchtung: PWM-Frequenz von 1 kHz auf 300 Hz gesenkt und Auflösung von 255 auf 1023 Stufen erhöht. Bei 1 % ist die Hintergrundbeleuchtung damit pro Periode rund 33 µs statt rund 8 µs eingeschaltet. Kurze Interrupt-Verzögerungen durch WLAN, TLS oder Flash-Zugriffe sollen dadurch nicht mehr als Aufblitzen sichtbar sein. Der Hardwaretest steht aus.
+- Repository: Der Quellcode liegt jetzt direkt im Repository statt in Versionsarchiven. Der Workflow baut bei jedem Push und erstellt bei einem Versions-Tag ein GitHub Release.
 
-Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Die Änderungen dieser Version benötigen einen Hardwaretest. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
+Ortssuche und Radar wurden ab v0.4.14.3 im Praxistest als stabil gemeldet. Der Flug-Tracker mit eigenem aviationstack-Schlüssel ist weiterhin nicht vollständig auf Hardware getestet.
 
 ## Unterstütztes Gerät
 
@@ -105,6 +103,7 @@ Die Anbieterlinks und Nutzungsregeln stehen direkt unter System → Dienste und 
 
 | Version | Änderungen |
 | --- | --- |
+| **v0.4.14.6**   | Hintergrundbeleuchtung mit 300 Hz und 1023 Stufen gegen Aufblitzen bei 1 %; Quellcode direkt im Repository, Releases über Tags |
 | **v0.4.14.5.1** | Neutrale VVO-Meldung für nicht bediente Haltestellen; Test einer phasensynchronen Hintergrundbeleuchtung; gemeinsamer Build-Workflow; Versionsgeschichte ergänzt |
 | **v0.4.14.5** | Unveränderte PWM-Werte nicht erneut setzen; fehlerhafte leere Airline-Cacheeinträge vermeiden; Offlinehinweise; Ortsdienst einklappen und Anbieterinformationen unter System |
 | **v0.4.14.4.2** | Einheitlicher optionaler Abrufcounter für LIVE, LETZTER STAND und ABRUFPAUSE; standardmäßig aktiviert |

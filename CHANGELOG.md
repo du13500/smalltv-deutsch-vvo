@@ -7,6 +7,11 @@
 
 # Änderungen
 
+## v0.4.14.6
+
+- Hintergrundbeleuchtung: PWM 300 Hz statt 1 kHz und 1023 statt 255 Stufen; längere Einschaltpulse bei 1 % gegen Aufblitzen.
+- Quellcode direkt im Repository; Releases über Versions-Tags.
+
 ## v0.4.14.5
 
 - Unveränderte Helligkeitswerte setzen die PWM nicht erneut.

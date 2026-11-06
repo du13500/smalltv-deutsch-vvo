@@ -91,7 +91,7 @@ static int receiveGeo(String& url,GeoResponse& response,DiagRequest& trace,DiagO
   if(!geoReady()||!http.begin(client,url))return 0;
   url=String();
   http.addHeader("Accept","application/json");
-  http.setUserAgent("SmallTV-Deutsch-VVO/0.4.14.5.1 (github.com/du13500/smalltv-deutsch-vvo)");
+  http.setUserAgent("SmallTV-Deutsch-VVO/0.4.14.6 (github.com/du13500/smalltv-deutsch-vvo)");
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   if(!geoHeapReady(op,true))return 0;
   trace.stage(DS_GEO_CONNECT);
