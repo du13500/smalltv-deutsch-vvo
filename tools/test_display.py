@@ -28,6 +28,9 @@ pre=r'''
 #include "AircraftLabel.h"
 #include "WeatherVisual.h"
 #include "DestinationFormat.h"
+#define PSTR(x) (x)
+#define FPSTR(x) (x)
+#define PGM_P const char*
 struct String:std::string {
  using std::string::string;
  String(const std::string& s):std::string(s){}
@@ -57,7 +60,7 @@ Gfx* gfx=&display;
 const double PI=3.14159265358979323846;
 const int C_BLACK=0,C_WHITE=1,C_YELLOW=2,C_GRAY=3,C_RED=4,C_GREEN=5,C_CYAN=6,C_DGRAY=7,TFT_W=240;
 void centerText(const String& s,int y,int size,int color){draws.push_back({s,y,size,-1,color});}
-void drawFooter(const char* s,bool=true){footer=s;}
+void drawFooter(const String& s,bool=true){footer=s;}
 void printDisplayTextAt(int,int,const String& s,uint8_t size,uint16_t);
 String displayAscii(String s){return s;}
 String flightStatusGerman(const char*){return "STATUS";}
@@ -65,7 +68,10 @@ using std::min;using std::max;
 template<class T>T constrain(T x,T a,T b){return max(a,min(b,x));}
 const int COUNTDOWN_DAYS=0;
 struct CountdownSlot{String title,titleColor="#ffffff",countColor="#ffffff";uint8_t type=1;};
-struct Settings{String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
+enum Language:uint8_t{LANG_DE=0,LANG_EN=1};
+struct Settings{uint8_t lang=LANG_DE;String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
+static String tr(PGM_P de,PGM_P en){return String(cfg.lang==LANG_EN?en:de);}
+#define TR(de,en) tr(PSTR(de),PSTR(en))
 String lastCountdownRendered[4];uint8_t departurePage=0;
 uint16_t color565(const String&){return C_WHITE;}
 String timerValue="00:01:09";

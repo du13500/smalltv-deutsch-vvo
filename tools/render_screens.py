@@ -81,6 +81,8 @@ ARDUINO_H = r'''
 #define PROGMEM
 #define F(x) x
 #define FPSTR(x) (x)
+#define PSTR(x) (x)
+#define PGM_P const char*
 #define pgm_read_byte(p) (*(const uint8_t*)(p))
 #define pgm_read_dword(p) (*(const uint32_t*)(p))
 #define PI 3.14159265358979323846
@@ -237,6 +239,7 @@ static void dep(const char* line, const char* dir, int min, bool delayed = false
 }
 int main(int argc, char** argv) {
   std::string out = argc > 1 ? argv[1] : ".";
+  cfg.lang = (argc > 2 && !strcmp(argv[2], "en")) ? LANG_EN : LANG_DE;
   setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1); tzset();
   cfg.timeZone = "Europe/Berlin";
   cfg.rotationMask = 0x1FF;
@@ -275,7 +278,7 @@ int main(int argc, char** argv) {
   drawTrackedFlight(); dump((out + "/flugtracker.ppm").c_str());
 
   // Countdowns
-  CountdownSlot& c1 = cfg.countdown[0]; c1.title = "Urlaub"; c1.type = COUNTDOWN_DAYS; c1.targetDate = "2026-12-23"; c1.active = true; c1.dayDigits = 3;
+  CountdownSlot& c1 = cfg.countdown[0]; c1.title = cfg.lang == LANG_EN ? "Vacation" : "Urlaub"; c1.type = COUNTDOWN_DAYS; c1.targetDate = "2026-12-23"; c1.active = true; c1.dayDigits = 3;
   cfg.mode = MODE_COUNTDOWN1; drawCountdown(0); dump((out + "/countdown-tage.ppm").c_str());
   CountdownSlot& c2 = cfg.countdown[1]; c2.title = "Pizza"; c2.type = COUNTDOWN_MS; c2.titleColor = "#F3CE00"; c2.countColor = "#5DD78B";
   c2.durationSec = 720; c2.targetEpoch = (uint32_t)fakeNow + 534; c2.active = true;
@@ -297,9 +300,13 @@ with tempfile.TemporaryDirectory() as tmp:
                         '-o', str(exe)], capture_output=True, text=True)
     if r.returncode:
         sys.stderr.write(r.stderr[-6000:]); sys.exit(1)
-    subprocess.run([str(exe), str(t)], check=True)
+    (t / 'de').mkdir(); (t / 'en').mkdir()
+    subprocess.run([str(exe), str(t / 'de'), 'de'], check=True)
+    subprocess.run([str(exe), str(t / 'en'), 'en'], check=True)
     from PIL import Image
-    for ppm in sorted(t.glob('*.ppm')):
+    for ppm in sorted(t.glob('*/*.ppm')):
+        dest = out if ppm.parent.name == 'de' else out / 'en'
+        dest.mkdir(parents=True, exist_ok=True)
         img = Image.open(ppm).convert('RGB')
         if args.scale > 1:
             img = img.resize((240 * args.scale, 240 * args.scale), Image.NEAREST)
@@ -307,15 +314,15 @@ with tempfile.TemporaryDirectory() as tmp:
             pad = 12 * args.scale
             framed = Image.new('RGB', (img.width + 2 * pad, img.height + 2 * pad), (24, 26, 29))
             framed.paste(img, (pad, pad)); img = framed
-        img.save(out / (ppm.stem + '.png'))
-        print(out / (ppm.stem + '.png'))
-    if args.sheet:
+        img.save(dest / (ppm.stem + '.png'))
+        print(dest / (ppm.stem + '.png'))
+    for sheet_dir in ([out, out / 'en'] if args.sheet else []):
         order = ['abfahrten', 'wetter', 'flugradar', 'uhr', 'flugtracker', 'countdown-tage', 'countdown-timer']
-        tiles = [Image.open(out / (n + '.png')) for n in order]
+        tiles = [Image.open(sheet_dir / (n + '.png')) for n in order]
         w, h, gap = tiles[0].width, tiles[0].height, 8 * args.scale
         cols = 4
         sheet = Image.new('RGB', (cols * w + (cols + 1) * gap, 2 * h + 3 * gap), (24, 26, 29))
         for i, tile in enumerate(tiles):
             sheet.paste(tile, (gap + (i % cols) * (w + gap), gap + (i // cols) * (h + gap)))
         sheet = sheet.crop((0, 0, sheet.width, sheet.height))
-        sheet.save(out / 'uebersicht.png'); print(out / 'uebersicht.png')
+        sheet.save(sheet_dir / 'uebersicht.png'); print(sheet_dir / 'uebersicht.png')

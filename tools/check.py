@@ -32,4 +32,30 @@ subprocess.run(['python3',str(root/'tools/generate_font.py')],check=True)
 assert (root/'src/PixelFont.h').read_bytes()==font,'Regenerate PixelFont.h'
 for p in root.glob('src/*'):
  assert '0.4.5' not in p.read_text(),str(p)
-print('Release files, version, web JavaScript and generated font: OK')
+
+# English web interface: generated header is current and every German text has a translation.
+import sys,importlib.util
+spec=importlib.util.spec_from_file_location('webui_en',root/'tools/webui_en.py');W=importlib.util.module_from_spec(spec);spec.loader.exec_module(W)
+assert W.js() in (root/'src/webui_en.h').read_text(), 'src/webui_en.h is outdated: run tools/webui_en.py'
+from html.parser import HTMLParser
+body=re.sub(r'<script>.*?</script>|<style>.*?</style>','',html,flags=re.S)
+js=''.join(re.findall(r'<script>(.*?)</script>',html,re.S))
+need=set()
+class _P(HTMLParser):
+ def handle_data(self,d):
+  d=' '.join(d.split())
+  if d and re.search('[A-Za-zÄÖÜäöü]{2,}',d):need.add(d)
+ def handle_starttag(self,t,a):
+  for k,v in a:
+   if k in('placeholder','title','aria-label') and v:need.add(v)
+_P().feed(body)
+for m in re.findall(r'`((?:[^`\\]|\\.)*)`',js):
+ for t in re.findall(r'>([^<>$]*[A-Za-zÄÖÜäöü]{3,}[^<>$]*)<',m):need.add(' '.join(t.split()))
+ for t in re.findall(r'placeholder="([^"$]+)"',m):need.add(t)
+for l in re.findall(r"'((?:[^'\\\n]|\\.)*)'",js):
+ if re.search(r'[A-Za-zÄÖÜäöüß]{3,}',l) and (' ' in l.strip() or re.search('[äöüÄÖÜß]',l)) and '<' not in l and 'http' not in l and '${' not in l:need.add(l)
+neutral=re.compile(r'^(\d+ (s|min|km)|[A-Z][a-z]+/[A-Za-z_/]+|UTC|GitHub|PixelStop|v|[A-Za-z. /]+ ·|Deutsch|English| show|hint |toast |SSID|Bus|Hostname)$')
+known=set(W.EXACT)|set(W.FRAGMENTS)|set(W.LINES)
+missing=[n for n in sorted(need) if n not in ui_zones and not neutral.match(n) and n not in known and not any(n.startswith(p) for p in W.PREFIX)]
+assert not missing, 'Missing English web texts: '+repr(missing)
+print('Release files, version, web JavaScript and generated font, English web texts: OK')

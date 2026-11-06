@@ -27,6 +27,7 @@
 #include "WeatherVisual.h"
 #include "AircraftLabel.h"
 #include "DestinationFormat.h"
+#include "webui_en.h"
 
 // -----------------------------------------------------------------------------
 // SmallTV-Ultra hardware
@@ -67,6 +68,8 @@ enum AppMode : uint8_t {
   MODE_COUNTDOWN4 = 8
 };
 
+enum Language : uint8_t { LANG_DE = 0, LANG_EN = 1 };
+
 enum CountdownType : uint8_t {
   COUNTDOWN_DAYS = 0,
   COUNTDOWN_HMS  = 1,
@@ -89,6 +92,7 @@ struct Settings {
   String ssid;
   String pass;
   String hostname = "pixelstop";
+  uint8_t lang = LANG_DE;          // display and web interface language
 
   uint8_t mode = MODE_DEPARTURES; // current runtime view
   uint16_t rotationMask = (1U << MODE_DEPARTURES);
@@ -152,6 +156,12 @@ static uint32_t lastDeparturePageSwitchMs = 0;
 static bool planePlacePhase = false;
 static uint32_t lastPlanePlaceSwitchMs = 0;
 
+// ---- language ---------------------------------------------------------------
+// Display texts live in flash (PSTR), both languages; only the selected one
+// is copied into a String when drawn.
+static String tr(PGM_P de, PGM_P en) { return String(FPSTR(cfg.lang==LANG_EN ? en : de)); }
+#define TR(de,en) tr(PSTR(de),PSTR(en))
+
 // ---- ST7789 quirk -----------------------------------------------------------
 class SmallTV_ST7789 : public Arduino_ST7789 {
  public:
@@ -210,9 +220,14 @@ button.action,a.action{display:inline-block;border:0;border-radius:10px;backgrou
 
 <section id="countdown" class="page"><p class="hint">Vier dauerhaft gespeicherte Slots. Tages-Countdowns sind reine Kalendertage; Zeit-Countdowns laufen nach Null automatisch mit Plus weiter.</p><div id="countdownSlots"></div></section>
 
-<section id="system" class="page"><div class="card"><h2>WLAN</h2><div class="actions"><button class="action sec" type="button" id="wifiScanBtn">Netzwerke suchen</button></div><div id="wifiResults"></div><label>SSID</label><input id="ssid" autocomplete="off"><label>Passwort</label><input id="pass" type="password" placeholder="leer = gespeichertes Passwort behalten"><label>Hostname</label><input id="hostname"></div><div class="card"><h2>Status</h2><div id="status" class="status">lade…</div></div><div class="card"><h2>Diagnose</h2><div class="actions"><button class="action sec" type="button" id="logBtn">Log laden</button><button class="action sec" type="button" id="logCopyBtn">Log kopieren</button></div><pre id="diagnosticLog" class="status" style="overflow-wrap:anywhere">Noch nicht geladen.</pre></div><div class="card"><details id="geoAdvanced"><summary>Erweiterte Einstellungen</summary><h3>Ortsdienst</h3><p class="mini">Ortsauswahl über die Internetverbindung dieses Browsers. © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap-Mitwirkende</a>. <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a>: nur manuelle Auswahl, höchstens eine Anfrage pro Sekunde für die Anwendung.</p><label>Adresse des Ortsdienstes</label><input id="geoProviderUrl" type="url"><p class="mini">Nominatim-kompatibler Dienst. Gilt für diesen Browser.</p><button class="action sec" type="button" id="geoProviderBtn">Ortsdienst übernehmen</button></details></div><div class="card"><h2>Wartung</h2><a class="action sec" href="/update">Firmware-Update</a> <button class="action sec" type="button" id="rebootBtn">Neustart</button></div><div class="card" id="serviceInfo"><h2>Dienste und Datenquellen</h2><p class="mini">Für die verwendeten Dienste gelten die Bedingungen der jeweiligen Anbieter. Daten und Verfügbarkeit können eingeschränkt sein.</p><ul class="serviceList"><li><strong>Abfahrten</strong><br>Verkehrsverbund Oberelbe (VVO) · <a href="https://www.vvo-online.de/de/impressum/index.cshtml" target="_blank" rel="noopener">Anbieterinformationen</a></li><li><strong>Wetter</strong><br>Open-Meteo · <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Radarpositionen und Routen</strong><br>adsb.lol · <a href="https://www.adsb.lol/docs/open-data/api/" target="_blank" rel="noopener">API und Datenlizenz</a></li><li><strong>Zusatzdaten und Routen</strong><br>adsbdb · <a href="https://github.com/mrjackwills/adsbdb#readme" target="_blank" rel="noopener">Dokumentation und Datenbedingungen</a></li><li><strong>Flug-Tracker</strong><br>aviationstack · <a href="https://aviationstack.com/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Ortsnamen</strong><br>Nominatim / OpenStreetMap · <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Karten</strong><br>OpenStreetMap · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Copyright und Datenlizenz</a></li><li><strong>Kartenkacheln</strong><br>OpenStreetMap-Kachelserver · <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Kartenbibliothek</strong><br>Leaflet / unpkg · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Projektinformationen</a></li><li><strong>Uhrzeit</strong><br>NTP Pool / Cloudflare · <a href="https://www.ntppool.org/en/use.html" target="_blank" rel="noopener">Nutzungshinweise</a></li></ul><p class="mini">Nominatim: nur manuelle Ortssuche, höchstens eine Anfrage pro Sekunde für die Anwendung; Suchergebnisse werden zwischengespeichert. Open-Meteo: die kostenlose API ist für nichtkommerzielle Nutzung vorgesehen. aviationstack benötigt einen eigenen API-Schlüssel und unterliegt dessen Tarifgrenzen.</p><p class="mini">adsbdb nennt gesonderte Weiterverwendungsbedingungen für Routendaten. Links und Bedingungen zuletzt geprüft am 11.10.2026.</p></div></section>
+<section id="system" class="page"><div class="card"><h2>Sprache / Language</h2><select id="lang"><option value="0">Deutsch</option><option value="1">English</option></select></div><div class="card"><h2>WLAN</h2><div class="actions"><button class="action sec" type="button" id="wifiScanBtn">Netzwerke suchen</button></div><div id="wifiResults"></div><label>SSID</label><input id="ssid" autocomplete="off"><label>Passwort</label><input id="pass" type="password" placeholder="leer = gespeichertes Passwort behalten"><label>Hostname</label><input id="hostname"></div><div class="card"><h2>Status</h2><div id="status" class="status">lade…</div></div><div class="card"><h2>Diagnose</h2><div class="actions"><button class="action sec" type="button" id="logBtn">Log laden</button><button class="action sec" type="button" id="logCopyBtn">Log kopieren</button></div><pre id="diagnosticLog" class="status" style="overflow-wrap:anywhere">Noch nicht geladen.</pre></div><div class="card"><details id="geoAdvanced"><summary>Erweiterte Einstellungen</summary><h3>Ortsdienst</h3><p class="mini">Ortsauswahl über die Internetverbindung dieses Browsers. © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap-Mitwirkende</a>. <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a>: nur manuelle Auswahl, höchstens eine Anfrage pro Sekunde für die Anwendung.</p><label>Adresse des Ortsdienstes</label><input id="geoProviderUrl" type="url"><p class="mini">Nominatim-kompatibler Dienst. Gilt für diesen Browser.</p><button class="action sec" type="button" id="geoProviderBtn">Ortsdienst übernehmen</button></details></div><div class="card"><h2>Wartung</h2><a class="action sec" href="/update">Firmware-Update</a> <button class="action sec" type="button" id="rebootBtn">Neustart</button></div><div class="card" id="serviceInfo"><h2>Dienste und Datenquellen</h2><p class="mini">Für die verwendeten Dienste gelten die Bedingungen der jeweiligen Anbieter. Daten und Verfügbarkeit können eingeschränkt sein.</p><ul class="serviceList"><li><strong>Abfahrten</strong><br>Verkehrsverbund Oberelbe (VVO) · <a href="https://www.vvo-online.de/de/impressum/index.cshtml" target="_blank" rel="noopener">Anbieterinformationen</a></li><li><strong>Wetter</strong><br>Open-Meteo · <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Radarpositionen und Routen</strong><br>adsb.lol · <a href="https://www.adsb.lol/docs/open-data/api/" target="_blank" rel="noopener">API und Datenlizenz</a></li><li><strong>Zusatzdaten und Routen</strong><br>adsbdb · <a href="https://github.com/mrjackwills/adsbdb#readme" target="_blank" rel="noopener">Dokumentation und Datenbedingungen</a></li><li><strong>Flug-Tracker</strong><br>aviationstack · <a href="https://aviationstack.com/terms" target="_blank" rel="noopener">Nutzungsbedingungen</a></li><li><strong>Ortsnamen</strong><br>Nominatim / OpenStreetMap · <a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Karten</strong><br>OpenStreetMap · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Copyright und Datenlizenz</a></li><li><strong>Kartenkacheln</strong><br>OpenStreetMap-Kachelserver · <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">Nutzungsregeln</a></li><li><strong>Kartenbibliothek</strong><br>Leaflet / unpkg · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Projektinformationen</a></li><li><strong>Uhrzeit</strong><br>NTP Pool / Cloudflare · <a href="https://www.ntppool.org/en/use.html" target="_blank" rel="noopener">Nutzungshinweise</a></li></ul><p class="mini">Nominatim: nur manuelle Ortssuche, höchstens eine Anfrage pro Sekunde für die Anwendung; Suchergebnisse werden zwischengespeichert. Open-Meteo: die kostenlose API ist für nichtkommerzielle Nutzung vorgesehen. aviationstack benötigt einen eigenen API-Schlüssel und unterliegt dessen Tarifgrenzen.</p><p class="mini">adsbdb nennt gesonderte Weiterverwendungsbedingungen für Routendaten. Links und Bedingungen zuletzt geprüft am 11.10.2026.</p></div></section>
 <div class="sticky"><button class="action" type="button" id="saveBtn">Einstellungen speichern</button></div><footer class="footer">PixelStop · entwickelt von du13500 · <a href="https://github.com/du13500/pixelstop" target="_blank" rel="noopener">GitHub</a></footer></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
+let I18N=null,LANG='de';
+function trText(t){if(!I18N||!t)return t;const k=t.trim();if(!k)return t;const e=I18N.exact[k];if(e!==undefined)return t.replace(k,e);for(const p in I18N.prefix)if(k.startsWith(p))return t.replace(p,I18N.prefix[p]);let o=t;for(const f in I18N.frag)o=o.split(f).join(I18N.frag[f]);if(o.includes('\n'))for(const l in I18N.lines)o=o.split(l).join(I18N.lines[l]);return o}
+function trNode(n){if(!n)return;if(n.nodeType===3){const v=trText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v;return}if(n.nodeType!==1||n.tagName==='SCRIPT'||n.tagName==='STYLE'||n.closest('#timeZone,#lang'))return;for(const a of['placeholder','title','aria-label']){const o=n.getAttribute(a);if(o){const v=trText(o);if(v!==o)n.setAttribute(a,v)}}for(const c of n.childNodes)trNode(c)}
+async function useLang(l){if(l===LANG)return;if(l!=='en'){try{localStorage.setItem('pixelstop.lang','de')}catch(e){}location.reload();return}try{const r=await fetch('/i18n/en.json');if(!r.ok)return;I18N=await r.json();LANG='en';document.documentElement.lang='en';try{localStorage.setItem('pixelstop.lang','en')}catch(e){}trNode(document.body);new MutationObserver(ms=>{for(const m of ms){if(m.type==='childList')m.addedNodes.forEach(trNode);else trNode(m.target)}}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title']})}catch(e){}}
+
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,Number(n)||0));
 const modeNames=['Abfahrten','Wetter','Flugradar','Uhr','Flug-Tracker','Countdown 1','Countdown 2','Countdown 3','Countdown 4'];
 const modeDefaults=[30,20,20,15,20,20,20,20,20];
@@ -268,7 +283,7 @@ function countdownPayload(i){let t=+$(`cdType${i}`).value,d=0;if(t===1)d=clamp($
 function loadCountdown(i,c){$(`cdTitle${i}`).value=c.title||'';$(`cdTitleColor${i}`).value=c.titleColor||'#ffffff';$(`cdCountColor${i}`).value=c.countColor||'#ff5d56';$(`cdType${i}`).value=c.type??0;$(`cdDate${i}`).value=c.targetDate||'';let d=Number(c.durationSec||0),h=Math.floor(d/3600),m=Math.floor((d%3600)/60),sec=d%60;$(`cdH${i}`).value=h;$(`cdM${i}`).value=m;$(`cdS${i}`).value=sec;$(`cdOnlyM${i}`).value=Math.floor(d/60);$(`cdOnlyS${i}`).value=sec;$(`cdStatus${i}`).textContent=c.active?'aktiv':'inaktiv';updateCdFields(i)}
 async function countdownAction(i,action){let body=countdownPayload(i);body.slot=i;body.action=action;try{await fetchJson('/api/countdown',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});await load();toast(action==='start'?'Countdown gestartet':'Countdown gestoppt')}catch(e){try{let c=await load();let wanted=action==='start';if(c?.countdowns?.[i]?.active===wanted){toast(action==='start'?'Countdown gestartet':'Countdown gestoppt');return}}catch(_){}toast(friendly(e),'err',4200)}}
 $('brightness').addEventListener('input',()=> $('brv').textContent=$('brightness').value);$('nightBrightness').addEventListener('input',()=> $('nbv').textContent=$('nightBrightness').value);
-async function load(){try{let c=await fetchJson('/api/config');['ssid','hostname','timeZone','stopName','stopId','weatherCity','weatherDisplayName','planePlace','planeDisplayName','trackedFlightNo'].forEach(k=>{if($(k))$(k).value=c[k]??''});['brightness','departureCount','departurePoll','weatherPoll','planeRadiusKm','planePoll','planePlaceToggleSec','trackerStatusPollMin'].forEach(k=>$(k).value=c[k]);['weatherLat','weatherLon','planeLat','planeLon'].forEach(k=>$(k).value=Number(c[k]).toFixed(4));$('weatherSearch').value=c.weatherCity||'';$('planeSearch').value=c.planePlace||'';$('nightEnabled').checked=!!c.nightEnabled;$('nightStart').value=hhmm(c.nightStart);$('nightEnd').value=hhmm(c.nightEnd);$('nightBrightness').value=c.nightBrightness;$('weatherTempColor').checked=!!c.weatherTempColor;$('weatherUnit').value=c.weatherFahrenheit?'F':'C';$('departureCompactDestinations').checked=!!c.departureCompactDestinations;$('departureAbbreviate').checked=c.departureAbbreviate!==false;$('departureDropTown').checked=c.departureDropTown!==false;$('weatherGeoGerman').checked=!!c.geoGermanNames;$('planeGeoGerman').checked=!!c.geoGermanNames;$('planeShowAge').checked=c.planeShowAge!==false;$('planeShowPlace').checked=!!c.planeShowPlace;updatePlanePlaceControls();$('brv').textContent=c.brightness;$('nbv').textContent=c.nightBrightness;let mask=Number(c.rotationMask||0),secs=c.rotationSec||modeDefaults;for(let i=0;i<9;i++){$(`modeOn${i}`).checked=!!(mask&(1<<i));$(`modeSec${i}`).value=secs[i]||modeDefaults[i]}let mm=Number(c.vvoMotMask??127);$('motTrain').checked=!!(mm&1);$('motSuburban').checked=!!(mm&2);$('motTram').checked=!!(mm&4);$('motBus').checked=!!(mm&8);$('motCable').checked=!!(mm&16);$('motFerry').checked=!!(mm&32);$('motTaxi').checked=!!(mm&64);$('aviationstackKey').value='';$('aviationstackKey').placeholder=c.aviationstackKeySet?'API-Key gespeichert, leer = behalten':'API-Key eintragen';$('adsbLolKey').value='';$('adsbLolKey').placeholder=c.adsbLolKeySet?'API-Key gespeichert, leer = behalten':'API-Key eintragen';(c.countdowns||[]).forEach((x,i)=>{if(i<4)loadCountdown(i,x)});statusNow();return c}catch(e){toast(friendly(e),'err',4200);throw e}}
+async function load(){try{let c=await fetchJson('/api/config');$('lang').value=String(+c.lang===1?1:0);useLang(+c.lang===1?'en':'de');['ssid','hostname','timeZone','stopName','stopId','weatherCity','weatherDisplayName','planePlace','planeDisplayName','trackedFlightNo'].forEach(k=>{if($(k))$(k).value=c[k]??''});['brightness','departureCount','departurePoll','weatherPoll','planeRadiusKm','planePoll','planePlaceToggleSec','trackerStatusPollMin'].forEach(k=>$(k).value=c[k]);['weatherLat','weatherLon','planeLat','planeLon'].forEach(k=>$(k).value=Number(c[k]).toFixed(4));$('weatherSearch').value=c.weatherCity||'';$('planeSearch').value=c.planePlace||'';$('nightEnabled').checked=!!c.nightEnabled;$('nightStart').value=hhmm(c.nightStart);$('nightEnd').value=hhmm(c.nightEnd);$('nightBrightness').value=c.nightBrightness;$('weatherTempColor').checked=!!c.weatherTempColor;$('weatherUnit').value=c.weatherFahrenheit?'F':'C';$('departureCompactDestinations').checked=!!c.departureCompactDestinations;$('departureAbbreviate').checked=c.departureAbbreviate!==false;$('departureDropTown').checked=c.departureDropTown!==false;$('weatherGeoGerman').checked=!!c.geoGermanNames;$('planeGeoGerman').checked=!!c.geoGermanNames;$('planeShowAge').checked=c.planeShowAge!==false;$('planeShowPlace').checked=!!c.planeShowPlace;updatePlanePlaceControls();$('brv').textContent=c.brightness;$('nbv').textContent=c.nightBrightness;let mask=Number(c.rotationMask||0),secs=c.rotationSec||modeDefaults;for(let i=0;i<9;i++){$(`modeOn${i}`).checked=!!(mask&(1<<i));$(`modeSec${i}`).value=secs[i]||modeDefaults[i]}let mm=Number(c.vvoMotMask??127);$('motTrain').checked=!!(mm&1);$('motSuburban').checked=!!(mm&2);$('motTram').checked=!!(mm&4);$('motBus').checked=!!(mm&8);$('motCable').checked=!!(mm&16);$('motFerry').checked=!!(mm&32);$('motTaxi').checked=!!(mm&64);$('aviationstackKey').value='';$('aviationstackKey').placeholder=c.aviationstackKeySet?'API-Key gespeichert, leer = behalten':'API-Key eintragen';$('adsbLolKey').value='';$('adsbLolKey').placeholder=c.adsbLolKeySet?'API-Key gespeichert, leer = behalten':'API-Key eintragen';(c.countdowns||[]).forEach((x,i)=>{if(i<4)loadCountdown(i,x)});statusNow();return c}catch(e){toast(friendly(e),'err',4200);throw e}}
 async function searchStop(){const box=$('stopResults'),q=$('stopName').value.trim();if(q.length<2){showBox('stopResults','Bitte mindestens zwei Zeichen eingeben.');return}showBox('stopResults','suche beim VVO…');try{const d=await fetchJson('/api/vvo/search?q='+encodeURIComponent(q));if(!d.stops.length){showBox('stopResults','Keine Haltestelle gefunden.');return}box.innerHTML=d.stops.map((x,i)=>`<button class="pickres" type="button" data-i="${i}">${x.label}</button>`).join('');box.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{const x=d.stops[i];$('stopId').value=x.id;$('stopName').value=x.name;showBox('stopResults','Ausgewählt: '+x.label)}))}catch(e){showBox('stopResults',friendly(e),true)}}
 function searchPlace(kind){if(saving)return;if(navigator.onLine===false){++geoGeneration[kind];geoPending[kind]=null;showBox(kind+'Results','Internetverbindung erforderlich',true);updateSaveGate();return}const q=$(kind+'Search').value.trim();if(q.length<2){showBox(kind+'Results','Bitte mindestens zwei Zeichen eingeben.');return}geoPending[kind]={q,generation:++geoGeneration[kind]};showBox(kind+'Results','suche Ort…');updateSaveGate();scheduleGeo()}
 function renderPlaceResults(kind,places){const box=$(kind+'Results');if(!places.length){showBox(kind+'Results','Kein Ort gefunden.');return}box.replaceChildren();places.forEach(x=>{const b=document.createElement('button'),s=document.createElement('span');b.type='button';b.className='pickres';b.textContent=x.label;s.className='sig';s.textContent=x.lat.toFixed(4)+', '+x.lon.toFixed(4);b.append(s);b.addEventListener('click',()=>{++geoGeneration[kind];geoPending[kind]=null;$(kind==='weather'?'weatherCity':'planePlace').value=x.name;setMapPoint(kind,x.lat,x.lon,true);showBox(kind+'Results','Ausgewählt: '+x.label+(maps[kind]?' · Marker auf Ortsmitte gesetzt':''));updateSaveGate()});box.append(b)});const note=document.createElement('p'),link=document.createElement('a');note.className='mini';note.textContent='Ortsdaten © ';link.href='https://www.openstreetmap.org/copyright';link.target='_blank';link.rel='noopener';link.textContent='OpenStreetMap-Mitwirkende';note.append(link);box.append(note)}
@@ -276,8 +291,8 @@ function updatePlanePlaceControls(){const off=!$('planeShowPlace').checked;$('pl
 function syncGeoLanguage(source){const v=$(source).checked;$('weatherGeoGerman').checked=v;$('planeGeoGerman').checked=v}
 function signalBars(r){return r>=-50?'▁▂▄▆█':r>=-60?'▁▂▄▆':r>=-70?'▁▂▄':r>=-80?'▁▂':'▁'}
 async function scanWifi(){showBox('wifiResults','suche WLAN-Netze…');try{let d=await fetchJson('/api/wifi/scan'),best=new Map();(d.networks||[]).forEach(n=>{if(!n.ssid)return;let o=best.get(n.ssid);if(!o||n.rssi>o.rssi)best.set(n.ssid,n)});let a=[...best.values()].sort((x,y)=>y.rssi-x.rssi);if(!a.length){showBox('wifiResults','Keine WLAN-Netze gefunden.');return}$('wifiResults').innerHTML=a.map((n,i)=>`<button class="pickres" type="button" data-i="${i}">${n.open?'○':'●'} ${n.ssid}<span class="sig">${signalBars(n.rssi)} ${n.rssi} dBm</span></button>`).join('');$('wifiResults').querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{$('ssid').value=a[i].ssid;showBox('wifiResults','Ausgewählt: '+a[i].ssid)}))}catch(e){showBox('wifiResults',friendly(e),true)}}
-async function save(){if(saving||geoBusy||geoPending.weather||geoPending.plane)return;let mask=0,rotationSec=[];for(let i=0;i<9;i++){if($(`modeOn${i}`).checked)mask|=1<<i;rotationSec.push(+$(`modeSec${i}`).value)}if(!mask){toast('Bitte mindestens ein Programm für die Anzeige auswählen.','warn',3500);return}let mot=($('motTrain').checked?1:0)|($('motSuburban').checked?2:0)|($('motTram').checked?4:0)|($('motBus').checked?8:0)|($('motCable').checked?16:0)|($('motFerry').checked?32:0)|($('motTaxi').checked?64:0);if(!mot){toast('Bitte mindestens ein Verkehrsmittel auswählen.','warn',3500);return}let [wlat,wlon]=coords('weather'),[plat,plon]=coords('plane');if(!Number.isFinite(wlat)||wlat<-90||wlat>90||!Number.isFinite(wlon)||wlon<-180||wlon>180){toast('Bitte gültige Wetter-Koordinaten eingeben.','warn',3500);return}if(!Number.isFinite(plat)||plat<-90||plat>90||!Number.isFinite(plon)||plon<-180||plon>180){toast('Bitte gültige Flugradar-Koordinaten eingeben.','warn',3500);return}let o={ssid:$('ssid').value,pass:$('pass').value,hostname:$('hostname').value,rotationMask:mask,rotationSec,brightness:+$('brightness').value,timeZone:$('timeZone').value,nightEnabled:$('nightEnabled').checked,nightStart:mins($('nightStart').value),nightEnd:mins($('nightEnd').value),nightBrightness:+$('nightBrightness').value,stopName:$('stopName').value,stopId:$('stopId').value,departureCount:+$('departureCount').value,departurePoll:+$('departurePoll').value,vvoMotMask:mot,departureCompactDestinations:$('departureCompactDestinations').checked,departureAbbreviate:$('departureAbbreviate').checked,departureDropTown:$('departureDropTown').checked,weatherCity:$('weatherCity').value,weatherDisplayName:$('weatherDisplayName').value,weatherLat:wlat,weatherLon:wlon,weatherPoll:+$('weatherPoll').value,weatherTempColor:$('weatherTempColor').checked,weatherFahrenheit:$('weatherUnit').value==='F',geoGermanNames:$('weatherGeoGerman').checked,planePlace:$('planePlace').value,planeDisplayName:$('planeDisplayName').value,planeLat:plat,planeLon:plon,planeRadiusKm:+$('planeRadiusKm').value,planePoll:+$('planePoll').value,planeShowAge:$('planeShowAge').checked,planeShowPlace:$('planeShowPlace').checked,planePlaceToggleSec:+$('planePlaceToggleSec').value,trackedFlightNo:$('trackedFlightNo').value,aviationstackKey:$('aviationstackKey').value,adsbLolKey:$('adsbLolKey').value,trackerStatusPollMin:+$('trackerStatusPollMin').value,countdowns:[0,1,2,3].map(countdownPayload)};saving=true;updateSaveGate();try{let r=await fetchJson('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});toast(r.reboot?'Gespeichert · SmallTV startet neu':'✓ Einstellungen gespeichert','ok',r.reboot?5500:2200);if(r.reboot)setTimeout(()=>location.reload(),7000);else await load()}catch(e){toast(friendly(e),'err',4200)}finally{saving=false;updateSaveGate()}}
-async function statusNow(){try{let s=await fetchJson('/api/status');$('status').textContent=`Firmware: ${s.fw} ${s.version}\nNetz: ${s.ssid||'-'}\nIP: ${s.ip}\nRSSI: ${s.rssi} dBm\nFreier Heap: ${s.heap} B (${s.maxBlock} B größter Block)\nFlugradar: ${s.flightStage||'-'}${s.flightHttp?` · HTTP ${s.flightHttp}`:''}${s.flightTlsRx?` · TLS RX ${s.flightTlsRx} B`:''}${s.flightTlsMinBlock?` · Blockbedarf ${s.flightTlsMinBlock} B`:''}${s.flightWaitSec?` · Pause ${s.flightWaitSec} s`:''}${s.flightMinIntervalSec?` · Mindestintervall ${s.flightMinIntervalSec} s`:''}\nadsb.lol heute: ${s.adsbToday} Anfragen${s.adsbKey?' · mit Schlüssel':` von 450 · Tagesbudget-Intervall ${s.adsbBudgetSec} s`}\nRadar-Route: ${s.routeStatus||'-'} · ${s.routeSource||'-'}${s.routeHttp?` · HTTP ${s.routeHttp}`:''}\nUptime: ${s.uptime}s\nTracker: ${s.trackerValid?'Daten vorhanden':(s.trackerError?'Fehler':'bereit')}`}catch(e){$('status').textContent='SmallTV derzeit nicht erreichbar.'}}
+async function save(){if(saving||geoBusy||geoPending.weather||geoPending.plane)return;let mask=0,rotationSec=[];for(let i=0;i<9;i++){if($(`modeOn${i}`).checked)mask|=1<<i;rotationSec.push(+$(`modeSec${i}`).value)}if(!mask){toast('Bitte mindestens ein Programm für die Anzeige auswählen.','warn',3500);return}let mot=($('motTrain').checked?1:0)|($('motSuburban').checked?2:0)|($('motTram').checked?4:0)|($('motBus').checked?8:0)|($('motCable').checked?16:0)|($('motFerry').checked?32:0)|($('motTaxi').checked?64:0);if(!mot){toast('Bitte mindestens ein Verkehrsmittel auswählen.','warn',3500);return}let [wlat,wlon]=coords('weather'),[plat,plon]=coords('plane');if(!Number.isFinite(wlat)||wlat<-90||wlat>90||!Number.isFinite(wlon)||wlon<-180||wlon>180){toast('Bitte gültige Wetter-Koordinaten eingeben.','warn',3500);return}if(!Number.isFinite(plat)||plat<-90||plat>90||!Number.isFinite(plon)||plon<-180||plon>180){toast('Bitte gültige Flugradar-Koordinaten eingeben.','warn',3500);return}let o={lang:+$('lang').value,ssid:$('ssid').value,pass:$('pass').value,hostname:$('hostname').value,rotationMask:mask,rotationSec,brightness:+$('brightness').value,timeZone:$('timeZone').value,nightEnabled:$('nightEnabled').checked,nightStart:mins($('nightStart').value),nightEnd:mins($('nightEnd').value),nightBrightness:+$('nightBrightness').value,stopName:$('stopName').value,stopId:$('stopId').value,departureCount:+$('departureCount').value,departurePoll:+$('departurePoll').value,vvoMotMask:mot,departureCompactDestinations:$('departureCompactDestinations').checked,departureAbbreviate:$('departureAbbreviate').checked,departureDropTown:$('departureDropTown').checked,weatherCity:$('weatherCity').value,weatherDisplayName:$('weatherDisplayName').value,weatherLat:wlat,weatherLon:wlon,weatherPoll:+$('weatherPoll').value,weatherTempColor:$('weatherTempColor').checked,weatherFahrenheit:$('weatherUnit').value==='F',geoGermanNames:$('weatherGeoGerman').checked,planePlace:$('planePlace').value,planeDisplayName:$('planeDisplayName').value,planeLat:plat,planeLon:plon,planeRadiusKm:+$('planeRadiusKm').value,planePoll:+$('planePoll').value,planeShowAge:$('planeShowAge').checked,planeShowPlace:$('planeShowPlace').checked,planePlaceToggleSec:+$('planePlaceToggleSec').value,trackedFlightNo:$('trackedFlightNo').value,aviationstackKey:$('aviationstackKey').value,adsbLolKey:$('adsbLolKey').value,trackerStatusPollMin:+$('trackerStatusPollMin').value,countdowns:[0,1,2,3].map(countdownPayload)};saving=true;updateSaveGate();try{let r=await fetchJson('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});toast(r.reboot?'Gespeichert · PixelStop startet neu':'✓ Einstellungen gespeichert','ok',r.reboot?5500:2200);if(r.reboot)setTimeout(()=>location.reload(),7000);else await load()}catch(e){toast(friendly(e),'err',4200)}finally{saving=false;updateSaveGate()}}
+async function statusNow(){try{let s=await fetchJson('/api/status');$('status').textContent=`Firmware: ${s.fw} ${s.version}\nNetz: ${s.ssid||'-'}\nIP: ${s.ip}\nRSSI: ${s.rssi} dBm\nFreier Heap: ${s.heap} B (${s.maxBlock} B größter Block)\nFlugradar: ${s.flightStage||'-'}${s.flightHttp?` · HTTP ${s.flightHttp}`:''}${s.flightTlsRx?` · TLS RX ${s.flightTlsRx} B`:''}${s.flightTlsMinBlock?` · Blockbedarf ${s.flightTlsMinBlock} B`:''}${s.flightWaitSec?` · Pause ${s.flightWaitSec} s`:''}${s.flightMinIntervalSec?` · Mindestintervall ${s.flightMinIntervalSec} s`:''}\nadsb.lol heute: ${s.adsbToday} Anfragen${s.adsbKey?' · mit Schlüssel':` von 450 · Tagesbudget-Intervall ${s.adsbBudgetSec} s`}\nRadar-Route: ${s.routeStatus||'-'} · ${s.routeSource||'-'}${s.routeHttp?` · HTTP ${s.routeHttp}`:''}\nUptime: ${s.uptime}s\nTracker: ${s.trackerValid?'Daten vorhanden':(s.trackerError?'Fehler':'bereit')}`}catch(e){$('status').textContent='PixelStop derzeit nicht erreichbar.'}}
 async function reboot(){toast('PixelStop startet neu…','ok',5000);try{await fetch('/api/reboot',{method:'POST'})}catch(e){}setTimeout(()=>location.reload(),6000)}
 async function copyLog(){
 try{const r=await fetch('/api/log');if(!r.ok)throw new Error();const text=await r.text();$('diagnosticLog').textContent=text;
@@ -286,7 +301,7 @@ const range=document.createRange();range.selectNodeContents($('diagnosticLog'));
 let copied=false;try{copied=document.execCommand('copy')}catch(e){}toast(copied?'Log kopiert':'Log markiert · bitte Kopieren wählen',copied?'ok':'warn',4500);
 }catch(e){toast('Log derzeit nicht erreichbar.','err',3500)}}
 $('logCopyBtn').addEventListener('click',copyLog);
-buildModeRows();buildCountdownCards();$('searchStopBtn').addEventListener('click',searchStop);$('weatherSearchBtn').addEventListener('click',()=>searchPlace('weather'));$('planeSearchBtn').addEventListener('click',()=>searchPlace('plane'));$('weatherMapBtn').addEventListener('click',()=>toggleMap('weather'));$('planeMapBtn').addEventListener('click',()=>toggleMap('plane'));$('planeShowPlace').addEventListener('change',updatePlanePlaceControls);$('weatherGeoGerman').addEventListener('change',()=>syncGeoLanguage('weatherGeoGerman'));$('planeGeoGerman').addEventListener('change',()=>syncGeoLanguage('planeGeoGerman'));['weather','plane'].forEach(k=>{ $(k+'Lat').addEventListener('change',()=>syncMapFromInputs(k));$(k+'Lon').addEventListener('change',()=>syncMapFromInputs(k))});$('wifiScanBtn').addEventListener('click',scanWifi);$('saveBtn').addEventListener('click',save);$('logBtn').addEventListener('click',async()=>{try{let r=await fetch('/api/log');if(!r.ok)throw new Error();$('diagnosticLog').textContent=await r.text()}catch(e){$('diagnosticLog').textContent='Log derzeit nicht erreichbar.'}});$('rebootBtn').addEventListener('click',reboot);load();setInterval(statusNow,5000);
+buildModeRows();buildCountdownCards();$('searchStopBtn').addEventListener('click',searchStop);$('weatherSearchBtn').addEventListener('click',()=>searchPlace('weather'));$('planeSearchBtn').addEventListener('click',()=>searchPlace('plane'));$('weatherMapBtn').addEventListener('click',()=>toggleMap('weather'));$('planeMapBtn').addEventListener('click',()=>toggleMap('plane'));$('planeShowPlace').addEventListener('change',updatePlanePlaceControls);$('weatherGeoGerman').addEventListener('change',()=>syncGeoLanguage('weatherGeoGerman'));$('planeGeoGerman').addEventListener('change',()=>syncGeoLanguage('planeGeoGerman'));['weather','plane'].forEach(k=>{ $(k+'Lat').addEventListener('change',()=>syncMapFromInputs(k));$(k+'Lon').addEventListener('change',()=>syncMapFromInputs(k))});$('wifiScanBtn').addEventListener('click',scanWifi);$('saveBtn').addEventListener('click',save);$('logBtn').addEventListener('click',async()=>{try{let r=await fetch('/api/log');if(!r.ok)throw new Error();$('diagnosticLog').textContent=await r.text()}catch(e){$('diagnosticLog').textContent='Log derzeit nicht erreichbar.'}});$('rebootBtn').addEventListener('click',reboot);try{if(localStorage.getItem('pixelstop.lang')==='en')useLang('en')}catch(e){}load();setInterval(statusNow,5000);
 </script></body></html>
 )HTML";
 
@@ -452,7 +467,7 @@ static bool saveConfig() {
   d["mode"] = cfg.mode; d["rotationMask"] = cfg.rotationMask; d["brightness"] = cfg.brightness;
   JsonArray rs = d["rotationSec"].to<JsonArray>(); for(uint8_t i=0;i<9;i++) rs.add(cfg.rotationSec[i]);
   d["nightEnabled"] = cfg.nightEnabled; d["nightStart"] = cfg.nightStart; d["nightEnd"] = cfg.nightEnd; d["nightBrightness"] = cfg.nightBrightness;
-  d["stopName"] = cfg.stopName; d["stopId"] = cfg.stopId; d["departureCount"] = cfg.departureCount; d["departurePoll"] = cfg.departurePoll; d["vvoMotMask"] = cfg.vvoMotMask; d["departureCompactDestinations"] = cfg.departureCompactDestinations; d["departureAbbreviate"] = cfg.departureAbbreviate; d["departureDropTown"] = cfg.departureDropTown;
+  d["stopName"] = cfg.stopName; d["stopId"] = cfg.stopId; d["departureCount"] = cfg.departureCount; d["departurePoll"] = cfg.departurePoll; d["vvoMotMask"] = cfg.vvoMotMask; d["lang"] = cfg.lang; d["departureCompactDestinations"] = cfg.departureCompactDestinations; d["departureAbbreviate"] = cfg.departureAbbreviate; d["departureDropTown"] = cfg.departureDropTown;
   d["weatherCity"] = cfg.weatherCity; d["weatherDisplayName"] = cfg.weatherDisplayName; d["weatherLat"] = cfg.weatherLat; d["weatherLon"] = cfg.weatherLon; d["weatherPoll"] = cfg.weatherPoll; d["weatherTempColor"] = cfg.weatherTempColor; d["weatherFahrenheit"] = cfg.weatherFahrenheit; d["geoGermanNames"] = cfg.geoGermanNames;
   d["planePlace"] = cfg.planePlace; d["planeDisplayName"] = cfg.planeDisplayName; d["planeLat"] = cfg.planeLat; d["planeLon"] = cfg.planeLon; d["planeRadiusKm"] = cfg.planeRadiusKm; d["planePoll"] = cfg.planePoll; d["planeShowAge"] = cfg.planeShowAge; d["planeShowPlace"] = cfg.planeShowPlace; d["planePlaceToggleSec"] = cfg.planePlaceToggleSec;
   d["trackedFlightNo"] = cfg.trackedFlightNo; d["aviationstackKey"] = cfg.aviationstackKey; d["trackerStatusPollMin"] = cfg.trackerStatusPollMin; d["adsbLolKey"] = cfg.adsbLolKey;
@@ -490,7 +505,7 @@ static void loadConfig() {
   JsonArrayConst rs=d["rotationSec"].as<JsonArrayConst>(); if(!rs.isNull()) for(uint8_t i=0;i<9&&i<rs.size();i++) cfg.rotationSec[i]=constrain((int)(rs[i]|cfg.rotationSec[i]),5,3600);
   cfg.brightness = constrain((int)(d["brightness"] | cfg.brightness), 1, 100);
   cfg.nightEnabled = d["nightEnabled"] | cfg.nightEnabled; cfg.nightStart = constrain((int)(d["nightStart"] | cfg.nightStart), 0, 1439); cfg.nightEnd = constrain((int)(d["nightEnd"] | cfg.nightEnd), 0, 1439); cfg.nightBrightness = constrain((int)(d["nightBrightness"] | cfg.nightBrightness), 1, 100);
-  cfg.stopName = d["stopName"] | cfg.stopName; cfg.stopId = d["stopId"] | cfg.stopId; {int dc=(int)(d["departureCount"] | cfg.departureCount); cfg.departureCount=(dc==10)?10:constrain(dc,3,5);} cfg.departurePoll = constrain((int)(d["departurePoll"] | cfg.departurePoll), 10, 300); cfg.vvoMotMask = ((uint8_t)(d["vvoMotMask"] | cfg.vvoMotMask)) & VVO_MOT_ALL; if(!cfg.vvoMotMask)cfg.vvoMotMask=VVO_MOT_ALL; cfg.departureCompactDestinations = d["departureCompactDestinations"] | cfg.departureCompactDestinations; cfg.departureAbbreviate = d["departureAbbreviate"] | cfg.departureAbbreviate; cfg.departureDropTown = d["departureDropTown"] | cfg.departureDropTown;
+  cfg.stopName = d["stopName"] | cfg.stopName; cfg.stopId = d["stopId"] | cfg.stopId; {int dc=(int)(d["departureCount"] | cfg.departureCount); cfg.departureCount=(dc==10)?10:constrain(dc,3,5);} cfg.departurePoll = constrain((int)(d["departurePoll"] | cfg.departurePoll), 10, 300); cfg.vvoMotMask = ((uint8_t)(d["vvoMotMask"] | cfg.vvoMotMask)) & VVO_MOT_ALL; if(!cfg.vvoMotMask)cfg.vvoMotMask=VVO_MOT_ALL; cfg.lang = (uint8_t)(d["lang"] | cfg.lang) == LANG_EN ? LANG_EN : LANG_DE; cfg.departureCompactDestinations = d["departureCompactDestinations"] | cfg.departureCompactDestinations; cfg.departureAbbreviate = d["departureAbbreviate"] | cfg.departureAbbreviate; cfg.departureDropTown = d["departureDropTown"] | cfg.departureDropTown;
   cfg.weatherCity = d["weatherCity"] | cfg.weatherCity; cfg.weatherDisplayName = d["weatherDisplayName"] | cfg.weatherDisplayName; cfg.weatherLat = d["weatherLat"] | cfg.weatherLat; cfg.weatherLon = d["weatherLon"] | cfg.weatherLon; cfg.weatherPoll = constrain((int)(d["weatherPoll"] | cfg.weatherPoll), 60, 3600); cfg.weatherTempColor = d["weatherTempColor"] | cfg.weatherTempColor; cfg.weatherFahrenheit = d["weatherFahrenheit"] | cfg.weatherFahrenheit; cfg.geoGermanNames = d["geoGermanNames"] | cfg.geoGermanNames;
   cfg.planePlace = d["planePlace"] | cfg.planePlace; cfg.planeDisplayName = d["planeDisplayName"] | cfg.planeDisplayName; cfg.planeLat = d["planeLat"] | cfg.planeLat; cfg.planeLon = d["planeLon"] | cfg.planeLon; cfg.planeRadiusKm = constrain((int)(d["planeRadiusKm"] | cfg.planeRadiusKm), 1, 250); cfg.planePoll = constrain((int)(d["planePoll"] | cfg.planePoll), 3, 300); cfg.planeShowAge = d["planeShowAge"] | cfg.planeShowAge; cfg.planeShowPlace = d["planeShowPlace"] | cfg.planeShowPlace; cfg.planePlaceToggleSec = (d["planePlaceToggleSec"] | cfg.planePlaceToggleSec)==0 ? 0 : constrain((int)(d["planePlaceToggleSec"] | cfg.planePlaceToggleSec), 5, 30);
   cfg.trackedFlightNo = d["trackedFlightNo"] | cfg.trackedFlightNo; cfg.aviationstackKey = d["aviationstackKey"] | cfg.aviationstackKey; cfg.adsbLolKey = d["adsbLolKey"] | cfg.adsbLolKey; cfg.trackerStatusPollMin = constrain((int)(d["trackerStatusPollMin"] | cfg.trackerStatusPollMin), 5, 120);
@@ -508,9 +523,9 @@ static void drawFooterClockOnly() {
   String tm=timeHHMM();visibleText(31,tm,232-textW(tm,1),226,1,C_GRAY,196,224,36,12);
 }
 
-static void drawFooter(const char* label, bool withClock=true) {
+static void drawFooter(const String& label, bool withClock=true) {
   if(viewFresh)gfx->drawFastHLine(8,218,224,C_DGRAY);
-  visibleText(30,String(label),8,226,1,C_GRAY,8,223,186,14);
+  visibleText(30,label,8,226,1,C_GRAY,8,223,186,14);
   if(withClock)drawFooterClockOnly();
 }
 
@@ -673,12 +688,12 @@ static String countdownValue(const CountdownSlot& c) {
 
 static String flightStatusGerman(const char* s) {
   if(!s||!*s)return "N/A";
-  if(!strcmp(s,"active"))return "IN DER LUFT";
-  if(!strcmp(s,"landed"))return "GELANDET";
-  if(!strcmp(s,"scheduled"))return "GEPLANT";
-  if(!strcmp(s,"cancelled"))return "ANNULLIERT";
-  if(!strcmp(s,"diverted"))return "UMGELEITET";
-  if(!strcmp(s,"incident"))return "STÖRUNG";
+  if(!strcmp(s,"active"))return TR("IN DER LUFT","IN THE AIR");
+  if(!strcmp(s,"landed"))return TR("GELANDET","LANDED");
+  if(!strcmp(s,"scheduled"))return TR("GEPLANT","SCHEDULED");
+  if(!strcmp(s,"cancelled"))return TR("ANNULLIERT","CANCELLED");
+  if(!strcmp(s,"diverted"))return TR("UMGELEITET","DIVERTED");
+  if(!strcmp(s,"incident"))return TR("STÖRUNG","INCIDENT");
   return String(s);
 }
 
@@ -702,30 +717,30 @@ static void drawDepartures(bool force=true) {
   uint8_t shown=count>startNow?min((uint8_t)5,(uint8_t)(count-startNow)):0;
   force=force||shown!=lastVisible||(pagedNow&&lastPage!=departurePage)||(!shown&&(lastError!=vvoError()||lastUnserved!=vvoNotServed()));
   beginView(force);lastVisible=shown;lastPage=departurePage;lastError=vvoError();lastUnserved=vvoNotServed();
-  String title = crop(cfg.stopName.length() ? departureText(cfg.stopName.c_str(),false) : String("HALTESTELLE"), 18);
+  String title = crop(cfg.stopName.length() ? departureText(cfg.stopName.c_str(),false) : String(TR("HALTESTELLE","STOP")), 18);
   visibleText(0,title,8,7,2,C_YELLOW,0,0,240,29);
   if(force)gfx->drawFastHLine(8,29,224,C_DGRAY);
 
   if (!cfg.stopId.length()) {
-    if(force)centerText("HALTESTELLE", 78, 2, C_WHITE);
-    if(force)centerText("IM WEBINTERFACE", 108, 2, C_GRAY);
-    if(force)centerText("AUSWÄHLEN", 136, 2, C_GRAY);
-    drawFooter("VVO NICHT KONFIGURIERT");
+    if(force)centerText(TR("HALTESTELLE","STOP"), 78, 2, C_WHITE);
+    if(force)centerText(TR("IM WEBINTERFACE","IN THE WEB"), 108, 2, C_GRAY);
+    if(force)centerText(TR("AUSWÄHLEN","INTERFACE"), 136, 2, C_GRAY);
+    drawFooter(TR("VVO NICHT KONFIGURIERT","VVO NOT CONFIGURED"));
     return;
   }
 
   uint8_t n = vvoCount();
   if (!n) {
     if (vvoNotServed()) {
-      if(force){centerText("Haltestelle wird",106,2,C_GRAY);centerText("nicht bedient",128,2,C_GRAY);}
+      if(force){centerText(TR("Haltestelle wird","Stop is"),106,2,C_GRAY);centerText(TR("nicht bedient","not served"),128,2,C_GRAY);}
       drawFooter("VVO");
     } else if (vvoError()) {
       if(force)centerText("VVO", 82, 4, C_RED);
-      if(force)centerText("nicht erreichbar", 128, 2, C_GRAY);
-      drawFooter("VVO FEHLER");
+      if(force)centerText(TR("nicht erreichbar","not reachable"), 128, 2, C_GRAY);
+      drawFooter(TR("VVO FEHLER","VVO ERROR"));
     } else {
       if(force)centerText("VVO", 82, 4, C_YELLOW);
-      if(force)centerText("lade Abfahrten...", 128, 2, C_GRAY);
+      if(force)centerText(TR("lade Abfahrten...","loading departures..."), 128, 2, C_GRAY);
       drawFooter("LIVE");
     }
     return;
@@ -745,7 +760,7 @@ static void drawDepartures(bool force=true) {
     uint16_t rightColor = C_WHITE;
     if (d.cancelled) { right = "X"; rightColor = C_RED; }
     else if (d.minutes < 0) { right = "?"; rightColor = C_GRAY; }
-    else if (d.minutes <= 0) { right = "JETZT"; rightColor = C_GREEN; }
+    else if (d.minutes <= 0) { right = TR("JETZT","NOW"); rightColor = C_GREEN; }
     else { right = String(d.minutes); rightColor = d.delayed ? C_YELLOW : C_WHITE; }
 
     uint16_t lc = glyphCount(line);
@@ -753,7 +768,7 @@ static void drawDepartures(bool force=true) {
     int lineY = y + (lineSize == 3 ? 0 : (lineSize == 2 ? 6 : 12));
     visibleText(1+row*3,line,8,lineY,lineSize,C_YELLOW,8,y,50,step);
 
-    uint8_t rs = (right == "JETZT") ? 1 : 2;
+    uint8_t rs = (d.minutes == 0 && !d.cancelled) ? 1 : 2;
     int rightX = 232 - textW(right, rs);
     uint8_t destSize = 2;
     String dest = crop(rawDest, 9);
@@ -765,7 +780,7 @@ static void drawDepartures(bool force=true) {
     bool destChanged=visibleText(2+row*3,dest,62,y+(destSize==2?6:12),destSize,C_WHITE,62,y,rightX-64,step);
     visibleText(3+row*3,right,rightX,y+(rs==1?10:6),rs,rightColor,rightX,y,232-rightX,step,destChanged);
   }
-  drawFooter(vvoError() ? "LIVE / LETZTER STAND" : "VVO LIVE");
+  drawFooter(vvoError() ? TR("LIVE / LETZTER STAND","LIVE / LAST DATA") : "VVO LIVE");
   if(paged&&force)drawFooterPageArrow(!departurePage);
 }
 
@@ -831,26 +846,26 @@ static String weatherUnit();
 static void drawWeather(bool force=true) {
   const WeatherSnapshot& w=weatherData();static bool valid=false,error=false;
   force=force||valid!=w.valid||(!w.valid&&error!=w.error);beginView(force);valid=w.valid;error=w.error;
-  String title=cfg.weatherDisplayName.length()?cfg.weatherDisplayName:(cfg.weatherCity.length()?cfg.weatherCity:String("WETTER"));
+  String title=cfg.weatherDisplayName.length()?cfg.weatherDisplayName:(cfg.weatherCity.length()?cfg.weatherCity:String(TR("WETTER","WEATHER")));
   visibleText(0,crop(displayAscii(title),18),8,7,2,C_YELLOW,0,0,240,22);
-  if(!w.valid){if(force){centerText(w.error?"WETTER FEHLER":"WETTER LÄDT",88,2,w.error?C_RED:C_YELLOW);centerText(w.error?"Open-Meteo nicht erreichbar":"Daten werden geladen...",124,1,C_GRAY);}drawFooter("OPEN-METEO");return;}
+  if(!w.valid){if(force){centerText(w.error?TR("WETTER FEHLER","WEATHER ERROR"):TR("WETTER LÄDT","WEATHER LOADING"),88,2,w.error?C_RED:C_YELLOW);centerText(w.error?TR("Open-Meteo nicht erreichbar","Open-Meteo not reachable"):TR("Daten werden geladen...","Loading data..."),124,1,C_GRAY);}drawFooter("OPEN-METEO");return;}
   String icon=String(w.code)+(w.isDay?"D":"N");
   if(force||visibleFields[1].text!=icon){if(!force)gfx->fillRect(8,22,224,66,C_BLACK);drawWeatherIcon(w.code,w.isDay);visibleFields[1].text=icon;}
   String temp=String((int)lroundf(displayTempValue(w.currentC)));
   uint16_t color=cfg.weatherTempColor?weatherTempColor565(w.currentC):C_WHITE;
   bool tempChanged=visibleCenter(2,temp,88,6,color,88,48);
   visibleText(3,weatherUnit(),176,103,2,cfg.weatherTempColor?color:C_GRAY,176,103,36,16,tempChanged);
-  String label=weatherLabel(w.code);visibleCenter(4,label,142,textW(label,2)<=224?2:1,C_WHITE,140,19);
+  String label=cfg.lang==LANG_EN?String(FPSTR(weatherLabelEn(w.code))):String(weatherLabel(w.code));visibleCenter(4,label,142,textW(label,2)<=224?2:1,C_WHITE,140,19);
   String hi="H "+String((int)lroundf(displayTempValue(w.highC)))+weatherUnit();
-  String lo="T "+String((int)lroundf(displayTempValue(w.lowC)))+weatherUnit();
+  String lo=TR("T ","L ")+String((int)lroundf(displayTempValue(w.lowC)))+weatherUnit();
   visibleText(5,hi,18,169,2,C_GRAY,8,166,112,24);
   visibleText(6,lo,222-textW(lo,2),169,2,C_GRAY,120,166,112,24);
-  String rain=w.rainPct>=0?String("REGEN ")+String(w.rainPct)+"%":String("REGEN --");
+  String rain=w.rainPct>=0?String(TR("REGEN ","RAIN "))+String(w.rainPct)+"%":String(TR("REGEN --","RAIN --"));
   visibleText(7,rain,18,197,1,C_CYAN,8,194,106,16);
   if(force){drawSunEventIcon(118,196,true);drawSunEventIcon(174,196,false);}
   visibleText(8,String(w.sunrise),133,197,1,C_GRAY,133,194,32,16);
   visibleText(9,String(w.sunset),189,197,1,C_GRAY,189,194,36,16);
-  drawFooter(w.error?"LIVE / LETZTER STAND":"OPEN-METEO LIVE");
+  drawFooter(w.error?TR("LIVE / LETZTER STAND","LIVE / LAST DATA"):"OPEN-METEO LIVE");
 }
 
 static uint16_t weatherTempColor565(float c) {
@@ -889,7 +904,7 @@ static String planePlaceTitle() {
 
 static void drawPlaneHeader() {
   gfx->fillRect(0,0,TFT_W,30,C_BLACK);
-  String title=(cfg.planeShowPlace&&(cfg.planePlaceToggleSec==0||planePlacePhase)&&planePlaceTitle().length())?planePlaceTitle():String("IN DER NÄHE");
+  String title=(cfg.planeShowPlace&&(cfg.planePlaceToggleSec==0||planePlacePhase)&&planePlaceTitle().length())?planePlaceTitle():String(TR("IN DER NÄHE","NEARBY"));
   printDisplayTextAt(8,7,title,2,C_YELLOW);
   gfx->drawFastHLine(8,29,224,C_DGRAY);
 }
@@ -950,8 +965,8 @@ static String compactType(const FlightSnapshot& f) {
 // Reception age follows the current status. Only this number/unit field
 // changes each second; the status label and clock keep their own areas.
 static bool lastPlanePauseRendered=false,lastPlaneAgeRendered=true;
-static const char* planeFooterLabel() {
-  return flightProviderPaused()?"ABRUFPAUSE":(flightData().error?"LETZTER STAND":"ADSB.LOL LIVE");
+static String planeFooterLabel() {
+  return flightProviderPaused()?TR("ABRUFPAUSE","PAUSED"):(flightData().error?TR("LETZTER STAND","LAST DATA"):"ADSB.LOL LIVE");
 }
 static void drawPlaneAge() {
   if(!cfg.planeShowAge||!flightData().valid)return;
@@ -975,10 +990,10 @@ static void drawPlane(bool force=true) {
   beginView(full);if(full)drawPlaneHeader();
   if(!f.valid){
     if(full){
-      if(f.error&&adsbLolAccessDenied(flightLastHttp())){centerText("ADSB.LOL",80,3,C_RED);centerText("Zugriff abgelehnt",118,2,C_WHITE);centerText(String("HTTP ")+String(flightLastHttp())+(flightLastHttp()==426?"":" - Schlüssel prüfen"),146,1,C_GRAY);centerText("längere Pause vor neuem Versuch",162,1,C_GRAY);}
-      else if(f.error){centerText("FLUGRADAR",80,3,C_RED);centerText("keine aktuellen Daten",125,1,C_GRAY);}
-      else{centerText("KEIN FLUGZEUG",80,2,C_WHITE);centerText("im gewählten Radius",116,1,C_GRAY);}
-      drawFooter(f.error?"ABRUF FEHLGESCHLAGEN":"ADSB.LOL");
+      if(f.error&&adsbLolAccessDenied(flightLastHttp())){centerText("ADSB.LOL",80,3,C_RED);centerText(TR("Zugriff abgelehnt","Access denied"),118,2,C_WHITE);centerText(String("HTTP ")+String(flightLastHttp())+(flightLastHttp()==426?"":TR(" - Schlüssel prüfen"," - check key")),146,1,C_GRAY);centerText(TR("längere Pause vor neuem Versuch","pausing before next try"),162,1,C_GRAY);}
+      else if(f.error){centerText(TR("FLUGRADAR","FLIGHT RADAR"),80,3,C_RED);centerText(TR("keine aktuellen Daten","no current data"),125,1,C_GRAY);}
+      else{centerText(TR("KEIN FLUGZEUG","NO AIRCRAFT"),80,2,C_WHITE);centerText(TR("im gewählten Radius","in selected radius"),116,1,C_GRAY);}
+      drawFooter(f.error?TR("ABRUF FEHLGESCHLAGEN","REQUEST FAILED"):"ADSB.LOL");
     }
     lastPlaneRendered=f;planeRendered=true;return;
   }
@@ -1031,19 +1046,19 @@ static void drawTrackedFlight(bool force=true) {
   force=force||state!=lastState||routeText!=oldRoute;beginView(force);lastState=state;oldRoute=routeText;
   if(state!=5&&!force)return;
   if(!cfg.trackedFlightNo.length()){
-    centerText("N/A",72,5,C_WHITE);centerText("N/A > N/A",126,3,C_YELLOW);centerText("Flugnummer im",172,1,C_GRAY);centerText("Webinterface eingeben",184,1,C_GRAY);drawFooter("");return;
+    centerText("N/A",72,5,C_WHITE);centerText("N/A > N/A",126,3,C_YELLOW);centerText(TR("Flugnummer im","Enter flight number"),172,1,C_GRAY);centerText(TR("Webinterface eingeben","in the web interface"),184,1,C_GRAY);drawFooter("");return;
   }
   if(!cfg.aviationstackKey.length()){
-    centerText(displayAscii(cfg.trackedFlightNo),62,4,C_WHITE);centerText("N/A > N/A",116,3,C_YELLOW);centerText("API-KEY FEHLT",166,2,C_RED);drawFooter("");return;
+    centerText(displayAscii(cfg.trackedFlightNo),62,4,C_WHITE);centerText("N/A > N/A",116,3,C_YELLOW);centerText(TR("API-KEY FEHLT","API KEY MISSING"),166,2,C_RED);drawFooter("");return;
   }
   const TrackedFlightSnapshot& f=trackedFlightData();
   if(!f.valid){
     centerText(displayAscii(cfg.trackedFlightNo),56,4,C_WHITE);
     centerText("N/A > N/A",108,3,C_YELLOW);
-    if(f.error)centerText("TRACKER FEHLER",158,2,C_RED);
-    else if(f.notFound)centerText("FLUG N/A",158,2,C_GRAY);
-    else centerText("lade Flugdaten...",158,2,C_GRAY);
-    drawFooter(f.error?"TRACKER FEHLER":(f.notFound?"FLUG NICHT GEFUNDEN":"LADE FLUGDATEN"));
+    if(f.error)centerText(TR("TRACKER FEHLER","TRACKER ERROR"),158,2,C_RED);
+    else if(f.notFound)centerText(TR("FLUG N/A","FLIGHT N/A"),158,2,C_GRAY);
+    else centerText(TR("lade Flugdaten...","loading flight data..."),158,2,C_GRAY);
+    drawFooter(f.error?TR("TRACKER FEHLER","TRACKER ERROR"):(f.notFound?TR("FLUG NICHT GEFUNDEN","FLIGHT NOT FOUND"):TR("LADE FLUGDATEN","LOADING FLIGHT DATA")));
     return;
   }
   String no=f.flightIata[0]?String(f.flightIata):cfg.trackedFlightNo;
@@ -1051,20 +1066,20 @@ static void drawTrackedFlight(bool force=true) {
   if(force)drawFlightRoute(f.route,f.origin,f.destination,36);
   visibleCenter(1,flightStatusGerman(f.status),64,1,C_GRAY,62,12);
 
-  auto row=[](uint8_t id,const char* label,const char* value,int y,uint16_t col){
+  auto row=[](uint8_t id,const String& label,const char* value,int y,uint16_t col){
     String v=(value&&*value)?String(value):String("N/A");
-    visibleText(id+10,String(label),8,y+5,1,C_GRAY,8,y,88,20);
+    visibleText(id+10,label,8,y+5,1,C_GRAY,8,y,88,20);
     visibleText(id,v,232-textW(v,2),y,2,col,100,y,132,20);
   };
-  row(2,"AB PLAN",f.depScheduled,82,C_WHITE);
-  row(3,"AB IST",f.depActual,105,C_WHITE);
-  row(4,"AN PLAN",f.arrScheduled,128,C_WHITE);
-  if(strcmp(f.arrActual,"N/A"))row(5,"AN IST",f.arrActual,151,C_GREEN);else row(5,"AN ETA",f.arrEstimated,151,C_CYAN);
-  String dur=trackedFlightDuration(f);row(6,"FLUGZEIT",dur.c_str(),174,C_WHITE);
+  row(2,TR("AB PLAN","DEP SCHED"),f.depScheduled,82,C_WHITE);
+  row(3,TR("AB IST","DEP ACTUAL"),f.depActual,105,C_WHITE);
+  row(4,TR("AN PLAN","ARR SCHED"),f.arrScheduled,128,C_WHITE);
+  if(strcmp(f.arrActual,"N/A"))row(5,TR("AN IST","ARR ACTUAL"),f.arrActual,151,C_GREEN);else row(5,TR("AN ETA","ARR ETA"),f.arrEstimated,151,C_CYAN);
+  String dur=trackedFlightDuration(f);row(6,TR("FLUGZEIT","FLIGHT TIME"),dur.c_str(),174,C_WHITE);
   String alt=f.altitudeM>0?String(f.altitudeM)+" m":String("N/A");
   String spd=f.speedKmh>1?String((int)lroundf(f.speedKmh))+" km/h":String("N/A");
   visibleText(7,alt,8,204,1,C_CYAN,8,200,110,14);visibleText(8,spd,232-textW(spd,1),204,1,C_CYAN,120,200,112,14);
-  drawFooter(f.error ? "LETZTER STAND" : "AVIATIONSTACK + ADSB.LOL");
+  drawFooter(f.error ? TR("LETZTER STAND","LAST DATA") : "AVIATIONSTACK + ADSB.LOL");
 }
 
 static void drawCountdown(uint8_t slot,bool force=true) {
@@ -1078,7 +1093,7 @@ static void drawCountdown(uint8_t slot,bool force=true) {
   if(layout&&hasTitle)centerText(title,28,glyphCount(title)<=12?3:2,color565(c.titleColor));
   int cy=c.type==COUNTDOWN_DAYS?(hasTitle?127:111):(hasTitle?135:120);
   if(layout||value!=old)drawSevenString(value,cy,color,!layout,old);
-  if(layout&&c.type==COUNTDOWN_DAYS)centerText("TAGE",hasTitle?183:168,2,color);
+  if(layout&&c.type==COUNTDOWN_DAYS)centerText(TR("TAGE","DAYS"),hasTitle?183:168,2,color);
   lastCountdownRendered[slot]=value;lastSlot=slot;oldTitle=title;oldTitleColor=c.titleColor;oldColor=c.countColor;oldType=c.type;
 }
 
@@ -1088,8 +1103,8 @@ static void drawClock(bool fullRedraw=true) {
   if(fullRedraw||old.length()!=t.length()){if(!fullRedraw)gfx->fillRect(0,72,TFT_W,66,C_BLACK);centerText(t,84,6,C_WHITE);}
   else for(size_t i=0;i<t.length();i++)if(t[i]!=old[i]){gfx->fillRect(x+i*36,84,36,48,C_BLACK);printDisplayTextAt(x+i*36,84,t.substring(i,i+1),6,C_WHITE);}
   visibleFields[1].text=t;
-  time_t now=time(nullptr);String date="warte auf NTP";
-  if(now>1609459200){struct tm tmv;localtime_r(&now,&tmv);static const char* wd[]={"SO","MO","DI","MI","DO","FR","SA"};char b[32];snprintf(b,sizeof(b),"%s  %02d.%02d.%04d",wd[tmv.tm_wday],tmv.tm_mday,tmv.tm_mon+1,tmv.tm_year+1900);date=b;}
+  time_t now=time(nullptr);String date=TR("warte auf NTP","waiting for NTP");
+  if(now>1609459200){struct tm tmv;localtime_r(&now,&tmv);static const char* wdDe[]={"SO","MO","DI","MI","DO","FR","SA"};static const char* wdEn[]={"SU","MO","TU","WE","TH","FR","SA"};char b[32];if(cfg.lang==LANG_EN)snprintf(b,sizeof(b),"%s  %04d-%02d-%02d",wdEn[tmv.tm_wday],tmv.tm_year+1900,tmv.tm_mon+1,tmv.tm_mday);else snprintf(b,sizeof(b),"%s  %02d.%02d.%04d",wdDe[tmv.tm_wday],tmv.tm_mday,tmv.tm_mon+1,tmv.tm_year+1900);date=b;}
   visibleCenter(2,date,145,2,C_GRAY,140,28);
 }
 
@@ -1119,7 +1134,7 @@ static void startAP() {
 
   gfx->fillScreen(C_BLACK);
   centerText("SETUP", 55, 4, C_YELLOW);
-  centerText("WLAN:", 105, 2, C_GRAY);
+  centerText(TR("WLAN:","WI-FI:"), 105, 2, C_GRAY);
   centerText("PixelStop-Setup", 128, 2, C_WHITE);
   centerText("192.168.4.1", 174, 2, C_GREEN);
 }
@@ -1170,7 +1185,7 @@ static void apiGetConfig() {
   d["ssid"]=cfg.ssid;d["hostname"]=cfg.hostname;d["mode"]=cfg.mode;d["rotationMask"]=cfg.rotationMask;d["brightness"]=cfg.brightness;d["timeZone"]=cfg.timeZone;
   JsonArray rs=d["rotationSec"].to<JsonArray>();for(uint8_t i=0;i<9;i++)rs.add(cfg.rotationSec[i]);
   d["nightEnabled"]=cfg.nightEnabled;d["nightStart"]=cfg.nightStart;d["nightEnd"]=cfg.nightEnd;d["nightBrightness"]=cfg.nightBrightness;
-  d["stopName"]=cfg.stopName;d["stopId"]=cfg.stopId;d["departureCount"]=cfg.departureCount;d["departurePoll"]=cfg.departurePoll;d["vvoMotMask"]=cfg.vvoMotMask;d["departureCompactDestinations"]=cfg.departureCompactDestinations;d["departureAbbreviate"]=cfg.departureAbbreviate;d["departureDropTown"]=cfg.departureDropTown;
+  d["stopName"]=cfg.stopName;d["stopId"]=cfg.stopId;d["departureCount"]=cfg.departureCount;d["departurePoll"]=cfg.departurePoll;d["vvoMotMask"]=cfg.vvoMotMask;d["lang"]=cfg.lang;d["departureCompactDestinations"]=cfg.departureCompactDestinations;d["departureAbbreviate"]=cfg.departureAbbreviate;d["departureDropTown"]=cfg.departureDropTown;
   d["weatherCity"]=cfg.weatherCity;d["weatherDisplayName"]=cfg.weatherDisplayName;d["weatherLat"]=cfg.weatherLat;d["weatherLon"]=cfg.weatherLon;d["weatherPoll"]=cfg.weatherPoll;d["weatherTempColor"]=cfg.weatherTempColor;d["weatherFahrenheit"]=cfg.weatherFahrenheit;d["geoGermanNames"]=cfg.geoGermanNames;
   d["planePlace"]=cfg.planePlace;d["planeDisplayName"]=cfg.planeDisplayName;d["planeLat"]=cfg.planeLat;d["planeLon"]=cfg.planeLon;d["planeRadiusKm"]=cfg.planeRadiusKm;d["planePoll"]=cfg.planePoll;d["planeShowAge"]=cfg.planeShowAge;d["planeShowPlace"]=cfg.planeShowPlace;d["planePlaceToggleSec"]=cfg.planePlaceToggleSec;
   d["trackedFlightNo"]=cfg.trackedFlightNo;d["trackerStatusPollMin"]=cfg.trackerStatusPollMin;d["aviationstackKeySet"]=cfg.aviationstackKey.length()>0;d["adsbLolKeySet"]=cfg.adsbLolKey.length()>0;
@@ -1198,6 +1213,7 @@ static void apiPostConfig() {
   cfg.departurePoll=constrain((int)(d["departurePoll"]|cfg.departurePoll),10,300);
   cfg.vvoMotMask=((uint8_t)(d["vvoMotMask"]|cfg.vvoMotMask))&VVO_MOT_ALL;
   if(!cfg.vvoMotMask) cfg.vvoMotMask=VVO_MOT_ALL;
+  cfg.lang=(uint8_t)(d["lang"]|cfg.lang)==LANG_EN?LANG_EN:LANG_DE;
   cfg.departureCompactDestinations=d["departureCompactDestinations"]|cfg.departureCompactDestinations;
   cfg.departureAbbreviate=d["departureAbbreviate"]|cfg.departureAbbreviate;
   cfg.departureDropTown=d["departureDropTown"]|cfg.departureDropTown;
@@ -1308,6 +1324,7 @@ static void apiLog(){
 static void setupWeb() {
   server.on("/api/log",HTTP_GET,apiLog);
   server.on("/",HTTP_GET,[]{server.send_P(200,"text/html; charset=utf-8",WEBUI);});
+  server.on("/i18n/en.json",HTTP_GET,[]{server.sendHeader("Cache-Control","max-age=86400");server.send_P(200,"application/json; charset=utf-8",WEBUI_EN);});
   server.on("/api/config",HTTP_GET,apiGetConfig);server.on("/api/config",HTTP_POST,apiPostConfig);server.on("/api/countdown",HTTP_POST,apiCountdown);server.on("/api/status",HTTP_GET,apiStatus);server.on("/api/vvo/search",HTTP_GET,apiVvoSearch);server.on("/api/geo/search",HTTP_GET,apiGeoSearch);server.on("/api/geo/reverse",HTTP_GET,apiGeoReverse);server.on("/api/wifi/scan",HTTP_GET,apiWifiScan);
   server.on("/api/reboot",HTTP_POST,[]{server.send(200,"application/json","{\"ok\":true}");diagEvent(D_REBOOT,DS_BEGIN);delay(300);ESP.restart();});updater.setup(&server,"/update");
   server.onNotFound([](){if(apMode){server.sendHeader("Location","http://192.168.4.1/",true);server.send(302,"text/plain","");}else server.send(404,"text/plain","Nicht gefunden");});server.begin();
@@ -1343,7 +1360,7 @@ void setup() {
 
   if(!apMode){
     gfx->fillScreen(C_BLACK);
-    centerText("VERBUNDEN",50,3,C_GREEN);
+    centerText(TR("VERBUNDEN","CONNECTED"),50,3,C_GREEN);
     centerText(WiFi.localIP().toString(),105,2,C_WHITE);
     centerText(cfg.hostname+".local",137,2,C_GRAY);
     delay(2200);
