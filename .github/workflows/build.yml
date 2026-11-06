@@ -52,6 +52,7 @@ jobs:
           python3 tools/test_radar.py
           python3 tools/test_policy.py
           python3 tools/test_chunked.py
+          python3 tools/test_destinations.py
           python3 tools/test_display.py
           python3 tools/test_brightness.py
           python3 tools/test_diagnostics.py

@@ -223,6 +223,7 @@ MAIN = r'''
 #include "TimeZones.h"
 #include "WeatherVisual.h"
 #include "AircraftLabel.h"
+#include "DestinationFormat.h"
 static inline bool adsbLolAccessDenied(int c){return c==401||c==403||c==426;}
 ''' + GFX + '\n' + decl + '\n' + FIXTURES + '\n' + views + r'''
 static void dump(const char* path) {
