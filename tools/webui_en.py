@@ -51,6 +51,7 @@ EXACT = {
  "Breitengrad": "Latitude", "Längengrad": "Longitude", "Temperatureinheit": "Temperature unit",
  "Celsius (°C)": "Celsius (°C)", "Fahrenheit (°F)": "Fahrenheit (°F)", "Farbige Darstellung": "Colours",
  "Aktuelle Temperatur farbig darstellen": "Colour the current temperature",
+ "3-Tage-Vorhersage im Wechsel anzeigen": "Alternate with a 3-day forecast",
  "z. B. Dresden oder 01237": "e.g. Dresden or 01237", "z. B. ZUHAUSE": "e.g. HOME", "z. B. Schönefeld": "e.g. Schönefeld",
  "Kartenmaterial © OpenStreetMap-Mitwirkende. Auf die gewünschte Position tippen, um den Standort exakt zu setzen.":
    "Map data © OpenStreetMap contributors. Tap the desired position to set the exact location.",
@@ -79,7 +80,8 @@ EXACT = {
  "Stunden : Minuten : Sekunden": "Hours : Minutes : Seconds", "Minuten : Sekunden": "Minutes : Seconds", "Zieltag": "Target date",
  "Stunden": "Hours", "Minuten": "Minutes", "Sekunden": "Seconds", "Countdown-Farbe": "Countdown colour", "Farbe": "Colour",
  "inaktiv": "inactive", "aktiv": "active", "Start / aktivieren": "Start / activate", "Stoppen": "Stop", "z. B. URLAUB": "e.g. VACATION",
- "Countdown gestartet": "Countdown started", "Countdown gestoppt": "Countdown stopped",
+ "Countdown gestartet": "Countdown started",
+ "Jetzt anzeigen": "Show now", "Wird jetzt angezeigt": "Showing now", "Koordinaten": "Coordinates", "ⓘ Mehr dazu": "ⓘ More info", "Countdown gestoppt": "Countdown stopped",
  # System
  "Netzwerke suchen": "Scan networks", "SSID": "SSID", "Passwort": "Password", "Hostname": "Hostname",
  "leer = gespeichertes Passwort behalten": "empty = keep stored password", "Log laden": "Load log", "Log kopieren": "Copy log",

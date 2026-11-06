@@ -6,7 +6,7 @@
 Bought as a small Wi-Fi cube with a rather modest stock firmware – and from day one with the plan to turn it into something of my own.
 
 [![Build](https://github.com/du13500/pixelstop/actions/workflows/build.yml/badge.svg)](https://github.com/du13500/pixelstop/actions/workflows/build.yml)
-![Version](https://img.shields.io/badge/version-v0.5.0--dev-orange)
+![Version](https://img.shields.io/badge/version-v0.5.1--dev-orange)
 ![Hardware](https://img.shields.io/badge/hardware-ESP8266%20%C2%B7%20SmallTV--Ultra-blue)
 ![Hardware test](https://img.shields.io/badge/hardware%20test-v0.5.0%20pending-yellow)
 ![Hobby project](https://img.shields.io/badge/hobby%20project-non--commercial-lightgrey)
@@ -25,7 +25,7 @@ The cube shows, in rotation or permanently:
 | View | What you see |
 | --- | --- |
 | **Departures** | Live departures of a stop of Verkehrsverbund Oberelbe (VVO, Dresden region): line, destination, minutes, delays and cancellations; up to ten departures on two pages, filter by mode of transport |
-| **Weather** | Current temperature, day/night weather icon, high and low, chance of rain, sunrise and sunset; °C or °F |
+| **Weather** | Current temperature, day/night weather icon, high and low, chance of rain, sunrise and sunset, alternating with a 3-day forecast; °C or °F |
 | **Flight radar** | The nearest aircraft within the chosen radius: callsign, airline, route, type, registration, distance and altitude |
 | **Clock** | Time and date with a selectable time zone |
 | **Flight tracker** | One specific flight with scheduled and actual times and live altitude (your own aviationstack key required) |
@@ -38,9 +38,9 @@ Plus night mode, brightness down to 1 %, place search with a map, Greek and Cyri
 | | | |
 | :---: | :---: | :---: |
 | <img src="docs/screens/en/abfahrten.png" width="260" alt="Departures"><br><sub><b>Departures</b> · Dresden Hauptbahnhof with a delay (yellow) and a cancellation (✕)</sub> | <img src="docs/screens/en/wetter.png" width="260" alt="Weather"><br><sub><b>Weather</b> · Brooklyn in °F</sub> | <img src="docs/screens/en/flugradar.png" width="260" alt="Flight radar"><br><sub><b>Flight radar</b> · Emirates A380 from Dubai to Frankfurt</sub> |
-| <img src="docs/screens/en/flugtracker.png" width="260" alt="Flight tracker"><br><sub><b>Flight tracker</b> · one flight with scheduled and actual times</sub> | <img src="docs/screens/en/uhr.png" width="260" alt="Clock"><br><sub><b>Clock</b> · with time zone</sub> | <img src="docs/screens/en/countdown-tage.png" width="260" alt="Countdown"><br><sub><b>Countdown</b> · in days or as a timer</sub> |
+| <img src="docs/screens/en/flugtracker.png" width="260" alt="Flight tracker"><br><sub><b>Flight tracker</b> · one flight with scheduled and actual times</sub> | <img src="docs/screens/en/vorhersage.png" width="260" alt="3-day forecast"><br><sub><b>Forecast</b> · the next three days</sub> | <img src="docs/screens/en/countdown-tage.png" width="260" alt="Countdown"><br><sub><b>Countdown</b> · in days or as a timer</sub> |
 
-## Status: v0.5.0-dev
+## Status: v0.5.1-dev
 
 | Area | Status |
 | --- | --- |
@@ -48,8 +48,8 @@ Plus night mode, brightness down to 1 %, place search with a map, Greek and Cyri
 | Flight radar over HTTP/1.1, pauses on rejected requests | ✅ confirmed on hardware (v0.4.14.7) |
 | Radar only while visible, daily budget without a key | ✅ running on hardware (v0.4.14.8), long-term observation ongoing |
 | Backlight at 1 % without flashes | ✅ much improved (v0.4.14.6) |
-| German/English language switch | ⏳ hardware test pending |
-| Abbreviated destinations, omitting the town name | ⏳ hardware test pending |
+| German/English language switch, abbreviated destinations | ✅ confirmed on hardware (v0.5.0) |
+| 3-day forecast, tidier web interface, “Show now” | ⏳ hardware test pending |
 | Flight tracker with your own aviationstack key | ⏳ not fully tested on hardware |
 
 All changes are listed in [`CHANGELOG.md`](CHANGELOG.md) (German), open checks in [`ROADMAP.md`](ROADMAP.md).

@@ -71,37 +71,40 @@ static float distanceKm(float lat1, float lon1, float lat2, float lon2) {
   return sqrtf(dLat*dLat + dLon*dLon);
 }
 
-static const char* airlineFor(const char* cs) {
-  if (!cs || strlen(cs) < 3) return "";
-  struct M { const char* p; const char* n; };
-  static const M map[] = {
-    {"EWG","Eurowings"},{"DLH","Lufthansa"},{"RYR","Ryanair"},{"EJU","easyJet"},
-    {"EZY","easyJet"},{"CFG","Condor"},{"WZZ","Wizz Air"},{"TVS","Smartwings"},
-    {"AUA","Austrian"},{"SWR","SWISS"},{"KLM","KLM"},{"AFR","Air France"},
-    {"BAW","British Airways"},{"LOT","LOT"},{"SAS","SAS"},{"THY","Turkish Airlines"},
-    {"BEL","Brussels Airlines"},{"UAE","Emirates"},{"QTR","Qatar Airways"},{"EXS","Jet2"},
-    {"TUI","TUI"},{"ITY","ITA Airways"},{"IBE","Iberia"},{"VLG","Vueling"}
-  };
-  for (const auto& m : map) if (!strncmp(cs, m.p, 3)) return m.n;
-  return "";
-}
+// Fallback names for common airlines and aircraft types. The tables live in
+// flash (PROGMEM) and the match is copied into the caller's buffer.
+struct NameEntry4 { char key[5]; char name[20]; };
+static const NameEntry4 AIRLINE_NAMES[] PROGMEM = {
+  {"EWG","Eurowings"},{"DLH","Lufthansa"},{"RYR","Ryanair"},{"EJU","easyJet"},
+  {"EZY","easyJet"},{"CFG","Condor"},{"WZZ","Wizz Air"},{"TVS","Smartwings"},
+  {"AUA","Austrian"},{"SWR","SWISS"},{"KLM","KLM"},{"AFR","Air France"},
+  {"BAW","British Airways"},{"LOT","LOT"},{"SAS","SAS"},{"THY","Turkish Airlines"},
+  {"BEL","Brussels Airlines"},{"UAE","Emirates"},{"QTR","Qatar Airways"},{"EXS","Jet2"},
+  {"TUI","TUI"},{"ITY","ITA Airways"},{"IBE","Iberia"},{"VLG","Vueling"}
+};
+static const NameEntry4 TYPE_NAMES[] PROGMEM = {
+  {"A20N","Airbus A320neo"},{"A21N","Airbus A321neo"},{"A320","Airbus A320"},
+  {"A321","Airbus A321"},{"A319","Airbus A319"},{"A318","Airbus A318"},
+  {"A359","Airbus A350-900"},{"A35K","Airbus A350-1000"},{"A333","Airbus A330-300"},
+  {"A332","Airbus A330-200"},{"B738","Boeing 737-800"},{"B737","Boeing 737-700"},
+  {"B38M","Boeing 737 MAX 8"},{"B39M","Boeing 737 MAX 9"},{"B788","Boeing 787-8"},
+  {"B789","Boeing 787-9"},{"B772","Boeing 777-200"},{"B77W","Boeing 777-300ER"},
+  {"E190","Embraer E190"},{"E195","Embraer E195"},{"E290","Embraer E190-E2"},
+  {"E295","Embraer E195-E2"},{"CRJ9","CRJ900"},{"BCS1","Airbus A220-100"},
+  {"BCS3","Airbus A220-300"},{"AT76","ATR 72-600"},{"DH8D","Dash 8 Q400"}
+};
 
-static const char* typeNameFor(const char* t) {
-  if (!t || !*t) return "";
-  struct M { const char* c; const char* n; };
-  static const M map[] = {
-    {"A20N","Airbus A320neo"},{"A21N","Airbus A321neo"},{"A320","Airbus A320"},
-    {"A321","Airbus A321"},{"A319","Airbus A319"},{"A318","Airbus A318"},
-    {"A359","Airbus A350-900"},{"A35K","Airbus A350-1000"},{"A333","Airbus A330-300"},
-    {"A332","Airbus A330-200"},{"B738","Boeing 737-800"},{"B737","Boeing 737-700"},
-    {"B38M","Boeing 737 MAX 8"},{"B39M","Boeing 737 MAX 9"},{"B788","Boeing 787-8"},
-    {"B789","Boeing 787-9"},{"B772","Boeing 777-200"},{"B77W","Boeing 777-300ER"},
-    {"E190","Embraer E190"},{"E195","Embraer E195"},{"E290","Embraer E190-E2"},
-    {"E295","Embraer E195-E2"},{"CRJ9","CRJ900"},{"BCS1","Airbus A220-100"},
-    {"BCS3","Airbus A220-300"},{"AT76","ATR 72-600"},{"DH8D","Dash 8 Q400"}
-  };
-  for (const auto& m : map) if (!strcmp(t, m.c)) return m.n;
-  return t;
+// Copies the name for `key` (first `keyLen` chars, 0 = whole key) or `fallback`.
+static void nameFromTable(const NameEntry4* table, size_t count, const char* key, size_t keyLen,
+                          const char* fallback, char* out, size_t cap) {
+  if (key && *key) {
+    for (size_t i = 0; i < count; i++) {
+      NameEntry4 e; memcpy_P(&e, &table[i], sizeof(e));
+      bool hit = keyLen ? (strlen(key) >= keyLen && !strncmp(key, e.key, keyLen)) : !strcmp(key, e.key);
+      if (hit) { strlcpy(out, e.name, cap); return; }
+    }
+  }
+  strlcpy(out, fallback ? fallback : "", cap);
 }
 
 static RoutePoint jsonPoint(JsonObjectConst o,const char* latKey,const char* lonKey) {
@@ -395,8 +398,8 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     strlcpy(next.registration, a["r"] | "", sizeof(next.registration));
     strlcpy(next.category,a["category"]|"",sizeof(next.category));
     strlcpy(next.typeCode, a["t"] | "", sizeof(next.typeCode));
-    strlcpy(next.typeName, typeNameFor(next.typeCode), sizeof(next.typeName));
-    strlcpy(next.airline, airlineFor(next.callsign), sizeof(next.airline));
+    nameFromTable(TYPE_NAMES, sizeof(TYPE_NAMES)/sizeof(TYPE_NAMES[0]), next.typeCode, 0, next.typeCode, next.typeName, sizeof(next.typeName));
+    nameFromTable(AIRLINE_NAMES, sizeof(AIRLINE_NAMES)/sizeof(AIRLINE_NAMES[0]), next.callsign, 3, "", next.airline, sizeof(next.airline));
     next.onGround=a["alt_baro"].is<const char*>()&&!strcmp(a["alt_baro"].as<const char*>(),"ground");
     next.altitudeKnown=a["alt_baro"].is<float>();
     next.altitudeFt=next.altitudeKnown?(int32_t)lroundf(a["alt_baro"].as<float>()):0;

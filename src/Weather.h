@@ -12,6 +12,9 @@ struct WeatherSnapshot {
   bool isDay;
   char sunrise[6];
   char sunset[6];
+  // Next three days (tomorrow first); `days` says how many are filled.
+  uint8_t days;
+  struct Day { float highC; float lowC; int16_t code; int16_t rainPct; } day[3];
 };
 
 void weatherReset();
@@ -19,4 +22,4 @@ bool weatherPollDue(uint16_t pollSec);
 bool weatherFetch(float lat, float lon, const char* timeZone = "Europe/Berlin");
 const WeatherSnapshot& weatherData();
 uint32_t weatherLastOkMs();
-const char* weatherLabel(int code);
+const char* weatherLabel(int code); // flash string: use FPSTR()

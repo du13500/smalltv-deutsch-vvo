@@ -55,6 +55,7 @@ struct Gfx {
  void drawLine(int x,int y,int x2,int y2,int c){lines.push_back({x,y,x2,y2,c});}
  void drawPixel(int x,int y,int c){fillRect(x,y,1,1,c);}
  void drawFastHLine(int x,int y,int w,int c){drawLine(x,y,x+w-1,y,c);}
+ void drawFastVLine(int x,int y,int h,int c){drawLine(x,y,x,y+h-1,c);}
 } display;
 Gfx* gfx=&display;
 const double PI=3.14159265358979323846;
@@ -69,10 +70,10 @@ template<class T>T constrain(T x,T a,T b){return max(a,min(b,x));}
 const int COUNTDOWN_DAYS=0;
 struct CountdownSlot{String title,titleColor="#ffffff",countColor="#ffffff";uint8_t type=1;};
 enum Language:uint8_t{LANG_DE=0,LANG_EN=1};
-struct Settings{uint8_t lang=LANG_DE;String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
+struct Settings{uint8_t lang=LANG_DE;String stopPlace;String trackedFlightNo,aviationstackKey,planePlace,planeDisplayName,stopName,stopId,weatherDisplayName,weatherCity,timeZone;bool planeShowPlace=false,planeShowAge=true,departureCompactDestinations=false,departureAbbreviate=true,departureDropTown=true,weatherForecast=true,weatherFahrenheit=false,weatherTempColor=false;uint16_t planePlaceToggleSec=10;uint8_t departureCount=5;CountdownSlot countdown[4];} cfg;
 static String tr(PGM_P de,PGM_P en){return String(cfg.lang==LANG_EN?en:de);}
 #define TR(de,en) tr(PSTR(de),PSTR(en))
-String lastCountdownRendered[4];uint8_t departurePage=0;
+String lastCountdownRendered[4];uint8_t departurePage=0;uint8_t weatherPage=0;
 uint16_t color565(const String&){return C_WHITE;}
 String timerValue="00:01:09";
 String countdownValue(const CountdownSlot&){return timerValue;}
@@ -195,6 +196,12 @@ int main(){
  weather.rainPct=20;clearDraws();drawWeather(false);assert(fullScreens==0&&draws.size()==1&&draws[0].text=="REGEN 20%");
  weather.error=true;clearDraws();drawWeather(false);assert(fullScreens==0&&footer=="LIVE / LETZTER STAND");
  // Departures: unchanged response stays, minutes alone redraw one field.
+ cfg.stopName="S-Bahnhof Reick";cfg.stopPlace="Dresden";
+ assert(departureText("Dresden Flughafen",true)=="Flughafen");
+ assert(departureText(cfg.stopName.c_str(),false)=="S-Bahnhof Reick");
+ cfg.stopPlace="";assert(departureText("Dresden Flughafen",true)=="Flughafen");
+ cfg.stopPlace="Pirna";assert(departureText("Pirna Copitz",true)=="Copitz"&&departureText("Dresden Hauptbahnhof",true)=="Dresden Hbf");
+ cfg.stopPlace="";cfg.stopName="Freital, Bahnhof";assert(departureText("Freital Deuben",true)=="Deuben");
  cfg.stopId="123";cfg.stopName="Haltestelle";departureN=2;
  strcpy(departures[0].line,"4");strcpy(departures[0].direction,"Laubegast");departures[0].minutes=3;
  strcpy(departures[1].line,"65");strcpy(departures[1].direction,"Heidenau");departures[1].minutes=8;
@@ -219,7 +226,7 @@ int main(){
 }
 '''
 pre+='\nstatic bool lastPlanePauseRendered=false,lastPlaneAgeRendered=true;\n'
-names=['nextCodepoint','glyphCount','drawSpecialGlyph','textW','crop','stopTown','departureText','beginView','visibleText','visibleCenter','planePlaceTitle','drawPlaneHeader','routePart','drawFlightRoute','samePlane','planeDistance','planeAltitude','compactType','planeFooterLabel','drawPlaneAge','drawPlaneFooter','drawPlane','drawTrackedFlight','drawCloud','drawSun','drawMoon','drawSnowflake','drawWeatherIcon','drawSunEventIcon','drawWeather','drawDepartures','segMask','drawSevenDigit','sevenUnit','sevenCharWidth','drawSevenString','drawCountdown','drawClock']
+names=['nextCodepoint','glyphCount','drawSpecialGlyph','textW','crop','stopTown','departureText','beginView','visibleText','visibleCenter','planePlaceTitle','drawPlaneHeader','routePart','drawFlightRoute','samePlane','planeDistance','planeAltitude','compactType','planeFooterLabel','drawPlaneAge','drawPlaneFooter','drawPlane','drawTrackedFlight','wxLen','drawCloud','drawSun','drawMoon','drawSnowflake','drawWeatherIconAt','drawWeatherIcon','drawSunEventIcon','centerTextIn','drawForecast','drawWeather','drawDepartures','segMask','drawSevenDigit','sevenUnit','sevenCharWidth','drawSevenString','drawCountdown','drawClock']
 with tempfile.TemporaryDirectory() as t:
  p=Path(t);(p/'test.cpp').write_text(pre+'\n'+'\n'.join(fn(name) for name in names)+'\n'+post)
  subprocess.run(['g++','-std=c++11','-Wall','-Wextra','-Werror','-I'+str(root/'src'),str(p/'test.cpp'),'-o',str(p/'test')],check=True)
