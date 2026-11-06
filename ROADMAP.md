@@ -1,5 +1,7 @@
 # Nächste Prüfungen
 
+- v0.5.0-dev am Gerät: Sprachumschaltung (Display und Webinterface), abgekürzte Fahrtziele, Startbildschirm und Setup-WLAN „PixelStop-Setup“.
+
 - v0.4.14.8: Anfragezähler über einen Tag beobachten; Budgetwerte anpassen, sobald adsb.lol genaue Zahlen nennt (Limit, Reset-Zeitpunkt, Zählung von Fehlern und Routen).
 
 - Flugradar v0.4.14.7 am Gerät prüfen: Positionen, Routen und Flug-Tracker über HTTP/1.1, freier Heap während der Abfrage, mit und ohne adsb.lol-Schlüssel.
