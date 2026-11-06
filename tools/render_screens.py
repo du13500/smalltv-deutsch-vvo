@@ -255,6 +255,9 @@ int main(int argc, char** argv) {
   wx.valid = true; wx.currentC = 8.9f; wx.highC = 11.7f; wx.lowC = 5.6f; wx.rainPct = 70; wx.code = 61; wx.isDay = true;
   strlcpy(wx.sunrise, "06:31", sizeof wx.sunrise); strlcpy(wx.sunset, "16:42", sizeof wx.sunset);
   drawWeather(); dump((out + "/wetter.ppm").c_str());
+  wx.days = 3;
+  wx.day[0] = {13.4f, 6.1f, 3, 10}; wx.day[1] = {9.8f, 3.2f, 63, 80}; wx.day[2] = {6.2f, -1.4f, 71, 60};
+  weatherPage = 1; drawWeather(true); dump((out + "/vorhersage.ppm").c_str()); weatherPage = 0;
 
   // Flugradar
   cfg.mode = MODE_PLANE; cfg.planePlace = "Dresden-Klotzsche"; cfg.planeShowAge = true; cfg.planeShowPlace = false;
@@ -317,7 +320,7 @@ with tempfile.TemporaryDirectory() as tmp:
         img.save(dest / (ppm.stem + '.png'))
         print(dest / (ppm.stem + '.png'))
     for sheet_dir in ([out, out / 'en'] if args.sheet else []):
-        order = ['abfahrten', 'wetter', 'flugradar', 'uhr', 'flugtracker', 'countdown-tage', 'countdown-timer']
+        order = ['abfahrten', 'wetter', 'vorhersage', 'flugradar', 'uhr', 'flugtracker', 'countdown-tage', 'countdown-timer']
         tiles = [Image.open(sheet_dir / (n + '.png')) for n in order]
         w, h, gap = tiles[0].width, tiles[0].height, 8 * args.scale
         cols = 4

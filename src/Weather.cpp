@@ -71,9 +71,9 @@ bool weatherFetch(float lat, float lon, const char* timeZone) {
   url += F("&longitude=");
   url += String(lon, 4);
   url += F("&current=temperature_2m,weather_code,is_day");
-  url += F("&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset");
+  url += F("&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset");
   String zone=timeZone;zone.replace("/","%2F");
-  url += F("&timezone=");url += zone;url += F("&forecast_days=1");
+  url += F("&timezone=");url += zone;url += F("&forecast_days=4");
 
   if (!http.begin(client, url)) { g_w.error = true; return false; }
   http.addHeader("Accept", "application/json");
@@ -93,6 +93,7 @@ bool weatherFetch(float lat, float lon, const char* timeZone) {
   filter["daily"]["temperature_2m_max"][0] = true;
   filter["daily"]["temperature_2m_min"][0] = true;
   filter["daily"]["precipitation_probability_max"][0] = true;
+  filter["daily"]["weather_code"][0] = true;
   filter["daily"]["sunrise"][0] = true;
   filter["daily"]["sunset"][0] = true;
 
@@ -119,6 +120,14 @@ bool weatherFetch(float lat, float lon, const char* timeZone) {
   next.rainPct = doc["daily"]["precipitation_probability_max"][0] | -1;
   hhmm(doc["daily"]["sunrise"][0] | (const char*)nullptr, next.sunrise);
   hhmm(doc["daily"]["sunset"][0] | (const char*)nullptr, next.sunset);
+  for (uint8_t i = 1; i <= 3; i++) {
+    JsonVariantConst hi = doc["daily"]["temperature_2m_max"][i], lo = doc["daily"]["temperature_2m_min"][i];
+    if (hi.isNull() || lo.isNull()) break;
+    WeatherSnapshot::Day& d = next.day[next.days++];
+    d.highC = hi.as<float>(); d.lowC = lo.as<float>();
+    d.code = doc["daily"]["weather_code"][i] | 0;
+    d.rainPct = doc["daily"]["precipitation_probability_max"][i] | -1;
+  }
   g_w = next;
   g_lastOkMs = millis();
   trace.finish(true);

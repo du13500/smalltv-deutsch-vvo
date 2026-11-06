@@ -51,6 +51,7 @@ EXACT = {
  "Breitengrad": "Latitude", "Längengrad": "Longitude", "Temperatureinheit": "Temperature unit",
  "Celsius (°C)": "Celsius (°C)", "Fahrenheit (°F)": "Fahrenheit (°F)", "Farbige Darstellung": "Colours",
  "Aktuelle Temperatur farbig darstellen": "Colour the current temperature",
+ "3-Tage-Vorhersage im Wechsel anzeigen": "Alternate with a 3-day forecast",
  "z. B. Dresden oder 01237": "e.g. Dresden or 01237", "z. B. ZUHAUSE": "e.g. HOME", "z. B. Schönefeld": "e.g. Schönefeld",
  "Kartenmaterial © OpenStreetMap-Mitwirkende. Auf die gewünschte Position tippen, um den Standort exakt zu setzen.":
    "Map data © OpenStreetMap contributors. Tap the desired position to set the exact location.",

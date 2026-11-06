@@ -12,6 +12,9 @@ struct WeatherSnapshot {
   bool isDay;
   char sunrise[6];
   char sunset[6];
+  // Next three days (tomorrow first); `days` says how many are filled.
+  uint8_t days;
+  struct Day { float highC; float lowC; int16_t code; int16_t rainPct; } day[3];
 };
 
 void weatherReset();
