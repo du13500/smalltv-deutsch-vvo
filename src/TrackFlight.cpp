@@ -140,7 +140,7 @@ bool trackedFlightFetchStatus(const String& apiKey, const String& flightNumber) 
 
   if (!http.begin(client, url)) { g_t.error = true; return false; }
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  http.setUserAgent("SmallTV-DD/0.4.14.6");
   int code = http.GET();trace.http(code);
   if (code != HTTP_CODE_OK) { http.end(); g_t.error = true; return false; }
 
@@ -265,7 +265,7 @@ bool trackedFlightFetchLive() {
   url += urlEncode(String(g_t.flightIcao));
   if (!http.begin(client, url)) return false;
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  http.setUserAgent("SmallTV-DD/0.4.14.6");
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();trace.http(code);
   serviceResponse(SERVICE_ADSB_LOL,code,http.header("Retry-After").c_str());

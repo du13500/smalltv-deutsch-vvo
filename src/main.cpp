@@ -39,7 +39,10 @@
 #define TFT_H    240
 
 #define FW_NAME    "SmallTV DD"
-#define FW_VERSION "0.4.14.5.1"
+#define FW_VERSION "0.4.14.6"
+// Backlight PWM (test of v0.4.14.6 against flashes at 1 % brightness)
+#define BL_PWM_FREQ 300
+#define BL_PWM_RANGE 1023
 
 #define C_BLACK   0x0000
 #define C_WHITE   0xFFFF
@@ -183,7 +186,7 @@ nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
 button.action,a.action{display:inline-block;border:0;border-radius:10px;background:var(--accent);color:#111;padding:11px 15px;font-family:inherit;font-size:14px;line-height:1.3;font-weight:750;text-decoration:none;min-height:42px}button.sec,a.sec{background:var(--card2);color:var(--text)}button.danger{background:var(--red);color:#111}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.serviceList{padding-left:20px}.serviceList li{margin:12px 0;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:750}details h3{margin-top:16px}.sticky{position:sticky;bottom:10px;padding-top:12px}.sticky button{width:100%;font-size:16px}#saveBtn:disabled{background:#45494f;color:#aeb3ba;cursor:wait}.status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;color:#cdd2d8}.pickres{display:block;width:100%;text-align:left;margin:6px 0;padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--card2);color:var(--text)}input[type=range]{padding:4px}input[type=color]{padding:3px;height:44px}.val{color:var(--accent);font-weight:700}.hidden{display:none}.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}.check{display:flex;align-items:center;gap:8px;background:#1d2024;border:1px solid var(--border);border-radius:9px;padding:9px;color:var(--text);margin:0}.check input{width:auto;margin:0}.modeRow{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;border-bottom:1px solid var(--border);padding:8px 0}.modeRow:last-child{border-bottom:0}.modeLeft{display:flex;align-items:center;gap:9px}.modeLeft input{width:auto}.wifirow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.sig{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);float:right}.ok{color:var(--green)}.err{color:var(--red)}.mapwrap{margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#16181b}.map{height:300px;width:100%}.mapnote{padding:8px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}.footer{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;padding:18px 6px 6px}.footer a{color:var(--muted)}.toast{position:fixed;z-index:9999;top:18px;left:50%;transform:translate(-50%,-18px);opacity:0;pointer-events:none;min-width:220px;max-width:min(90vw,520px);padding:14px 18px;border-radius:12px;font-weight:800;text-align:center;box-shadow:0 8px 28px #0008;transition:opacity .18s ease,transform .18s ease}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.ok{background:var(--green);color:#0b1a10}.toast.err{background:var(--red);color:#200}.toast.warn{background:var(--accent);color:#111}.subhead{font-size:13px;font-weight:400;color:var(--muted);margin:18px 0 5px}.depblock{transition:opacity .15s ease}.depblock.disabled{opacity:.42}.depblock.disabled label{color:var(--muted)}select:disabled,input:disabled{cursor:not-allowed;opacity:.58}
 @media(max-width:560px){nav{grid-template-columns:repeat(3,1fr)}.row,.colorrow,.modeRow,.wifirow{grid-template-columns:1fr}.triple{grid-template-columns:repeat(3,1fr)}.checks{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
-<div class="head"><h1>SmallTV Deutsch/VVO</h1><span class="chip">v0.4.14.5.1</span></div>
+<div class="head"><h1>SmallTV Deutsch/VVO</h1><span class="chip">v0.4.14.6</span></div>
 <nav><button class="tab on" data-p="anzeige">Anzeige</button><button class="tab" data-p="abfahrten">Abfahrten</button><button class="tab" data-p="wetter">Wetter</button><button class="tab" data-p="flugradar">Flugradar</button><button class="tab" data-p="flugtracker">Flug-Tracker</button><button class="tab" data-p="countdown">Countdown</button><button class="tab" data-p="system">System</button></nav>
 
 <section id="anzeige" class="page on">
@@ -382,7 +385,7 @@ static void applyBrightness() {
   }
   if (b > 100) b = 100;
   // SmallTV backlight is active-low.
-  int duty = 255 - ((int)b * 255 / 100);
+  int duty = BL_PWM_RANGE - ((int)b * BL_PWM_RANGE / 100);
   // Reapplying PWM can interrupt very dim backlighting. Update only on change.
   static int lastDuty=-1;
   if(duty==lastDuty)return;
@@ -1271,7 +1274,10 @@ void setup() {
   Serial.begin(115200);
   // Select the framework phase-locked generator for the single backlight PWM.
   enablePhaseLockedWaveform();
-  analogWriteRange(255);
+  // Lower PWM frequency: at 1 % the on-pulse becomes ~33 us instead of ~8 us,
+  // so interrupt jitter from WiFi/TLS/flash access is far less visible.
+  analogWriteFreq(BL_PWM_FREQ);
+  analogWriteRange(BL_PWM_RANGE);
   pinMode(TFT_BL,OUTPUT);
 
   bus = new Arduino_HWSPI(TFT_DC,TFT_CS);

@@ -38,7 +38,7 @@ static void printEvent(Print& out,const Event& e){
  char b[160];snprintf(b,sizeof(b),"%lu ms | %s | %s | HTTP %d | Heap %lu B | Block %lu B | Wert %lu\n",(unsigned long)e.at,op,stage,e.code,(unsigned long)e.heap,(unsigned long)e.block,(unsigned long)e.value);out.print(b);
 }
 void diagPrint(Print& out){
- out.print(F("SmallTV DD v0.4.14.5.1 Diagnose\nWert: bei OK/Fehler Dauer in ms; bei Pause Wartezeit in ms. Zeit: seit jeweiligem Start.\nHTTP -1: Verbindung fehlgeschlagen; -11: Antwort-Timeout; 429: Anbieterlimit.\nReset: "));out.println(resetReason);out.print(F("Reset-Info: "));out.println(resetInfo);
+ out.print(F("SmallTV DD v0.4.14.6 Diagnose\nWert: bei OK/Fehler Dauer in ms; bei Pause Wartezeit in ms. Zeit: seit jeweiligem Start.\nHTTP -1: Verbindung fehlgeschlagen; -11: Antwort-Timeout; 429: Anbieterlimit.\nReset: "));out.println(resetReason);out.print(F("Reset-Info: "));out.println(resetInfo);
  if(previousValid){out.print(F("Letzter RTC-Marker des vorherigen Starts (Hinweis, kein Ursachenbeweis):\n"));Event e={previous.at,previous.heap,previous.block,previous.value,(int16_t)previous.code,(uint8_t)previous.op,(uint8_t)previous.stage};printEvent(out,e);}else out.println(F("Kein gueltiger vorheriger RTC-Marker. Stromverlust/OTA kann ihn loeschen."));
  if(hasLastError){out.println(F("Letzter Fehler dieses Starts (separat behalten):"));printEvent(out,lastError);if(lastErrorLookup[0])out.println(lastErrorLookup);}
  out.println(F("Letzte 24 Ereignisse dieses Starts:"));for(uint8_t i=0;i<count;i++)printEvent(out,events[(next+24-count+i)%24]);

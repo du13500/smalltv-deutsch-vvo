@@ -113,7 +113,7 @@ static bool lookupRouteAdsbLol(const FlightSnapshot& f,RoutePoint pos,Enrichment
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,"https://api.adsb.lol/api/0/routeset"))return false;
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
-  http.addHeader("Content-Type","application/json");http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  http.addHeader("Content-Type","application/json");http.setUserAgent("SmallTV-DD/0.4.14.6");
   JsonDocument request(networkJsonAllocator());JsonObject plane=request["planes"].to<JsonArray>().add<JsonObject>();
   plane["callsign"]=f.callsign;plane["lat"]=pos.lat;plane["lng"]=pos.lon;
   if(request.overflowed()){trace.stage(DS_JSON_MEMORY);http.end();return false;}
@@ -145,7 +145,7 @@ static bool lookupMetadata(const FlightSnapshot& f,RoutePoint pos,Enrichment& ou
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,url))return false;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.6");
   int code=http.GET();trace.http(code);g_routeHttp=code;serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return false;}
   JsonDocument filter(networkJsonAllocator());filter["response"]["aircraft"]["type"]=true;filter["response"]["aircraft"]["icao_type"]=true;
@@ -199,7 +199,7 @@ static void lookupAirline(const FlightSnapshot& f,Enrichment& out) {
   BearSSL::WiFiClientSecure client;makeSecure(client,&g_adsbDbSession,g_adsbDbRx?g_adsbDbRx:4096);
   HTTPClient http;http.useHTTP10(true);http.setTimeout(5000);http.setReuse(false);
   if(!http.begin(client,String("https://api.adsbdb.com/v0/airline/")+prefix))return;
-  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);http.setUserAgent("SmallTV-DD/0.4.14.6");
   int code=http.GET();trace.http(code);serviceResponse(SERVICE_ADSB_DB,code,http.header("Retry-After").c_str());
   if(code!=200){http.end();return;}
   JsonDocument filter(networkJsonAllocator());filter["response"][0]["name"]=true;filter["response"][0]["icao"]=true;
@@ -355,7 +355,7 @@ bool flightFetch(float homeLat, float homeLon, uint16_t radiusKm) {
     url += String(radiusNm);
     if (!http.begin(client, url)) return flightFailure("Verbindung fehlgeschlagen");
     http.addHeader("Accept", "application/json");
-    http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+    http.setUserAgent("SmallTV-DD/0.4.14.6");
 
     const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
     int code = http.GET();trace.http(code);

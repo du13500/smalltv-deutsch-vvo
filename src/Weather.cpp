@@ -76,7 +76,7 @@ bool weatherFetch(float lat, float lon, const char* timeZone) {
 
   if (!http.begin(client, url)) { g_w.error = true; return false; }
   http.addHeader("Accept", "application/json");
-  http.setUserAgent("SmallTV-DD/0.4.14.5.1");
+  http.setUserAgent("SmallTV-DD/0.4.14.6");
 
   const char* headers[]={"Retry-After"};http.collectHeaders(headers,1);
   int code = http.GET();
